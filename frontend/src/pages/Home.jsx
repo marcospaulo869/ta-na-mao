@@ -54,17 +54,65 @@ export default function Home() {
           {/* Brand logo */}
           <div className="flex justify-center mb-4" data-testid="brand-logo-hero">
             <div className="relative">
+              {/* Gold aura behind */}
               <div className="absolute inset-0 rounded-full bg-[#d4af37] opacity-30 blur-3xl scale-90" />
-              <img
-                src="/brand/logo.png"
-                alt="Madeira Forte - Móveis Planejados"
-                className="relative w-40 h-40 md:w-48 md:h-48 object-contain drop-shadow-[0_8px_32px_rgba(212,175,55,0.4)]"
-              />
+
+              {/* Oval-framed wood logo */}
+              <div
+                className="relative w-64 h-52 md:w-72 md:h-60"
+                style={{
+                  filter: "drop-shadow(0 8px 32px rgba(212,175,55,0.45))",
+                }}
+              >
+                <div
+                  className="w-full h-full overflow-hidden"
+                  style={{
+                    clipPath: "ellipse(50% 50% at 50% 50%)",
+                  }}
+                >
+                  <img
+                    src="/brand/logo.png"
+                    alt="Madeira Forte - Móveis Planejados"
+                    className="w-full h-full object-cover"
+                    data-testid="brand-logo-img"
+                    style={{ objectPosition: "center" }}
+                  />
+                </div>
+
+                {/* Elegant gold ring on top of the oval */}
+                <svg
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <ellipse
+                    cx="50"
+                    cy="50"
+                    rx="49.5"
+                    ry="49.5"
+                    fill="none"
+                    stroke="#d4af37"
+                    strokeWidth="0.6"
+                    opacity="0.85"
+                  />
+                  <ellipse
+                    cx="50"
+                    cy="50"
+                    rx="47"
+                    ry="47"
+                    fill="none"
+                    stroke="#f3e5ab"
+                    strokeWidth="0.25"
+                    opacity="0.6"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
 
           <h1
-            className="tmf-heading font-black uppercase tmf-gold-text leading-[0.9] tracking-tighter"
+            className="tmf-heading uppercase tmf-gold-text leading-[1.1] tracking-normal"
             style={{ fontSize: "clamp(2.5rem, 9vw, 5rem)" }}
             data-testid="brand-title"
           >

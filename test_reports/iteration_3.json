@@ -1,0 +1,20 @@
+{
+  "summary": "Iteration 3 typography regression fix verified. Archivo Black font is loaded and applied to brand-title (fontFamily='\"Archivo Black\", Outfit, sans-serif'; document.fonts.check bold 40px Archivo Black = true). Line-height ratio computed 88px/80px = 1.100 exactly matching target ~1.1 (was 0.9 before). Screenshot of hero shows clean 'O' letters in TUDO and no clipping of Á accent between FÁCIL and TUDO MAIS. All 10 pre-existing testids on Home present (brand-logo-hero, brand-title, btn-foto-parede, btn-foto-piso, btn-criar-parede, btn-paredes-salvas, plugin-download-card, btn-download-plugin, btn-download-sample, btn-open-readme). Full save flow works: /parede/nova -> fill altura=250, largura=350 -> btn-salvar-tudo -> navigates to /paredes with success toast 'Parede 11 salva com sucesso!' and wall card visible. Download endpoints /downloads/tudo_mais_facil.rbz and /downloads/parede_exemplo.tmf.json both return 200.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_3.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "index.css still references 'Cabinet Grotesk' font-family in .tmf-btn and .tmf-btn-secondary (lines 103, 161) which is not imported. Will fall back to sans-serif on those buttons. Not user-visible bug for this iteration since the affected elements are buttons already looking OK, but should be cleaned up for consistency (either import Cabinet Grotesk or switch to Outfit/Archivo)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "100%"},
+  "seed_data_creation": "One new wall (Parede 11) created via save flow test; safe to keep per instructions.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Typography fix fully verified. Font Archivo Black loads correctly via Google Fonts import. All prior testids intact. Only remaining minor lint: .tmf-btn/.tmf-btn-secondary in index.css still reference non-imported 'Cabinet Grotesk'."
+}

@@ -23,7 +23,7 @@ export default function AppShell({ title, subtitle, back = "/", children, action
                 alt="Madeira Forte"
                 className="w-8 h-8 object-contain drop-shadow-[0_2px_8px_rgba(212,175,55,0.5)]"
               />
-              <span className="tmf-heading text-lg font-black tmf-gold-text leading-none">
+              <span className="tmf-heading text-lg tmf-gold-text leading-none">
                 TUDO MAIS FÁCIL
               </span>
             </div>
