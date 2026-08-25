@@ -57,9 +57,9 @@ export default function Home() {
               {/* Gold aura behind */}
               <div className="absolute inset-0 rounded-full bg-[#d4af37] opacity-30 blur-3xl scale-90" />
 
-              {/* Oval-framed wood logo */}
+              {/* Oval-framed wood logo (vertical) */}
               <div
-                className="relative w-64 h-52 md:w-72 md:h-60"
+                className="relative w-52 h-64 md:w-60 md:h-72"
                 style={{
                   filter: "drop-shadow(0 8px 32px rgba(212,175,55,0.45))",
                 }}
@@ -124,7 +124,7 @@ export default function Home() {
             MADEIRA FORTE PLANEJADOS
           </div>
           <p className="text-[#a3a39a] mt-6 max-w-lg mx-auto text-sm md:text-base">
-            Colete medidas de qualquer ambiente em minutos. Salve suas paredes e envie direto para o plugin do
+            Capture as medidas de qualquer ambiente em minutos. Salve suas paredes e envie direto para o plugin do
             <span className="text-[#d4af37]"> SketchUp</span> gerar o modelo 3D automaticamente.
           </p>
         </div>
