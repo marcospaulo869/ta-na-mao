@@ -1,0 +1,35 @@
+{
+  "summary": "Iteration 2 re-verification. Regression fix (PontoParede.tipo now Optional) confirmed: POST /api/walls with tomadas/interruptores/saidas_agua/saidas_esgoto/saidas_gas/registros_agua items missing 'tipo' returns 200 (was 422). Full frontend E2E succeeded: filled altura_pe_direito=270 and largura_total=380, added coluna, porta, tomada, saida_gas via testids, clicked btn-salvar-tudo, POST /api/walls returned 200, navigation to /paredes occurred, new wall card visible with 1 abertura and 2 instalacoes. Export flow verified: GET /api/walls/{id}/export returns 200 with unit=mm and pontos.tomadas[{distancia_centro:500.0,lado:'direito',altura_piso:300.0}] (cm×10 correct) and pontos.saidas_gas present.",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "passed": [
+    "POST /api/walls accepts all 6 ponto arrays (tomadas, interruptores, saidas_agua, saidas_esgoto, saidas_gas, registros_agua) without 'tipo' field -> 200 OK",
+    "PontoParede.tipo defaults to null in response",
+    "Frontend /parede/nova -> fill inputs -> add coluna/porta/tomada/saida_gas -> btn-salvar-tudo -> POST /api/walls 200 -> navigate to /paredes -> wall-card-{id} visible; success toast shown",
+    "GET /api/walls/{id}/export -> 200, unit=mm, altura 270->2700, largura 380->3800, pontos.tomadas[0].distancia_centro=500.0 (50cm→500mm), altura_piso=300.0 (30cm→300mm), pontos.saidas_gas present",
+    "btn-export-{id} on /paredes triggers GET /api/walls/{id}/export"
+  ],
+  "failed": [],
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/parede/nova", "issues": ["Sticky 'Salvar tudo' footer button can overlap section-toggle buttons in shorter viewports (<=900px). With force=True clicks in automation, the save button intercepts clicks meant for section-eletrica-toggle/section-hidraulica-toggle, causing accidental saves. Not a user-facing blocker (real users scroll), but consider adding bottom padding or reducing sticky footer height."]}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_2.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "PontoParede.tipo is now Optional[str]=None — correct fix. Consider auto-populating 'tipo' server-side per array key (tomada/interruptor/agua/esgoto/gas/registro_agua) so the exported JSON carries semantic type per ponto for the future SketchUp plugin, instead of null.",
+    "Export endpoint drops 'tipo' from _export_ponto; if 'tipo' is meaningful downstream, include it in export payload.",
+    "CORS_ORIGINS defaults to '*' with allow_credentials=True — browsers reject this combo; safe today because no auth, but tighten before adding cookies/auth."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "N/A (no auth)",
+  "seed_data_creation": "During tests, walls Parede 05..10 were created via API/UI in the shared MongoDB. Non-destructive.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Regression fix for PontoParede.tipo (Optional) is verified end-to-end. Backend has 10 walls in DB from prior iterations; safe to ignore. All primary flows (create with pontos, list, export mm) pass. When automating /parede/nova with Playwright, avoid force=True on section toggles because the sticky 'Salvar tudo' footer can intercept clicks visually — use scrollIntoView({block:'center'}) then normal click.",
+  "rca of the issue": "Iteration 1 failure RCA: Backend PontoParede required 'tipo: str' while frontend PontosParede factory in CriarParede.jsx never emitted 'tipo' because each category has its own array. Fix applied in iteration 2: PontoParede.tipo is Optional[str]=None with docstring explaining semantics live in the parent array key. Verified via direct curl + full Playwright E2E + export round-trip."
+}

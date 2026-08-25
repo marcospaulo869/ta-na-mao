@@ -1,0 +1,92 @@
+{
+  "theme": "dark",
+  "project_type": "mobile_web_app",
+  "typography": {
+    "headings": {
+      "family": "Cabinet Grotesk",
+      "rationale": "Provides a premium, architectural, and corporate identity suitable for high-end carpentry and architecture.",
+      "styles": "Tracking-tight, font-bold for the logo/branding."
+    },
+    "body": {
+      "family": "Outfit",
+      "rationale": "Clean geometric sans that ensures high readability on mobile screens during on-site usage."
+    },
+    "data_and_measurements": {
+      "family": "IBM Plex Mono",
+      "rationale": "Brings the 'High Tech' and technical precision (blueprint/CAD) aesthetic to the measurement fields."
+    }
+  },
+  "colors": {
+    "background": "#0A0A08",
+    "surface": "#12120F",
+    "primary_gold": "#D4AF37",
+    "light_gold": "#F3E5AB",
+    "text_primary": "#FFFFFF",
+    "text_secondary": "#A3A39A",
+    "text_on_gold": "#0A0A0A",
+    "border_subtle": "#F3E5AB20",
+    "rationale": "Tinted black background with warm undertones to pair perfectly with gold. Avoided pure #000000. Used light gold for buttons as requested."
+  },
+  "visual_enhancers": {
+    "buttons": {
+      "style": "Glassmorphism / Crystal Light Gold",
+      "classes": "bg-[#F3E5AB]/80 backdrop-blur-xl border border-[#F3E5AB] text-[#0A0A0A] rounded-none sm:rounded-sm shadow-[0_4px_24px_rgba(212,175,55,0.15)]",
+      "rationale": "User requested 'cor DOURADO CLARO com aspecto TRANSPARENTE na forma RETANGULAR com inscrição na cor PRETA'. The heavy blur ensures the black text remains readable over the transparent gold, giving a premium 'humanized' tech feel."
+    },
+    "inputs": {
+      "style": "Technical Grid / Reto-Futurism",
+      "classes": "bg-transparent border-b border-[#F3E5AB]/30 focus:border-[#D4AF37] text-white font-mono rounded-none",
+      "rationale": "Gives a blueprint/technical drawing feel to the measurement inputs. Kept rectangular to match the architectural vibe."
+    },
+    "hero_overlay": {
+      "classes": "bg-[#0A0A08]/90",
+      "rationale": "Keeps the background image barely visible to provide texture without distracting from the core tools."
+    }
+  },
+  "components_instructions": {
+    "home_screen": {
+      "layout": "Flex column, vertical stacking. Centered branding.",
+      "branding": "Top positioned 'TUDO MAIS FÁCIL' in Gold (#D4AF37), large uppercase font.",
+      "main_buttons": [
+        "Tirar foto cor parede",
+        "Tirar foto cor piso",
+        "Criar nova parede"
+      ],
+      "spacing": "Generous spacing. gap-6 between main action buttons. Button height min h-20 (p-6) for easy mobile tapping."
+    },
+    "measurement_form": {
+      "structure": "Multi-step or Accordion-based layout to organize 24 inputs.",
+      "categories": ["Estrutura", "Aberturas", "Elétrica", "Hidráulica", "Gás"],
+      "repeatable_fields": "CRITICAL: The user must be able to click '+ Adicionar' to add multiple instances of doors, columns, windows, outlets etc. Use a dynamic array state.",
+      "ui_pattern": "Dense layout within accordions. Use Shadcn Accordion. Minimalist styling, JS/JSX based components."
+    },
+    "saved_walls_list": {
+      "layout": "Bento grid or dense list view.",
+      "item_format": "'Parede 01', 'Parede 02', etc. Include an 'Export to SketchUp (JSON)' action."
+    },
+    "photo_capture": {
+      "ui_pattern": "Full-screen camera overlay or file input with a custom styled trigger. Must have a section showing the 'extracted dominant color' (mocked if necessary, but visually present)."
+    }
+  },
+  "media": {
+    "image_urls": {
+      "background_texture": {
+        "url": "https://images.pexels.com/photos/13722891/pexels-photo-13722891.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=1080&w=1920",
+        "description": "Sleek modern dark kitchen/cabinetry to be used as a heavily darkened background image to give contextual architectural mood."
+      }
+    }
+  },
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "No pure #000000. Use the tinted background #0A0A08.",
+    "Do not use default Shadcn border radiuses for buttons; force them to be strictly rectangular (rounded-none or max rounded-sm) as requested.",
+    "Do not center-align the app container globally. Align text to the left for data readability, center only for the Hero logo and primary Home action buttons.",
+    "Ensure all interactive elements have data-testid attributes (e.g., data-testid='btn-create-wall').",
+    "Use Phosphor Icons (@phosphor-icons/react) for technical, clean architectural iconography.",
+    "Provide animations: hover states on buttons must slightly increase brightness and scale (e.g., hover:bg-[#F3E5AB] hover:-translate-y-1 transition-transform). Do NOT use transition-all.",
+    "For form states, implement dynamic arrays cleanly to allow adding multiple item instances (e.g., multiple columns on one wall).",
+    "Implement the 'transparent light gold' button EXACTLY as specified using backdrop-blur and high-opacity rgba to respect the 'aspecto TRANSPARENTE' and 'DOURADO CLARO' user request while maintaining contrast for the black text.",
+    "Avoid generic 'SaaS blue' or gradients entirely. Stick strictly to the Dark + Gold palette to convey the premium architectural/high-tech aesthetic.",
+    "Use sonner for toast notifications when a wall is saved or data is exported.",
+    "Since the codebase is primarily JS/JSX, provide standard React functional components."
+  ]
+}

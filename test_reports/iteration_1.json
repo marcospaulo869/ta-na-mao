@@ -1,0 +1,38 @@
+{
+  "summary": "Backend APIs pass end-to-end (root, photos CRUD, walls CRUD with auto-numbered nome, export with cm→mm conversion and Content-Disposition, 404 on missing). Frontend Home page loads with brand-title and all 4 primary CTAs; CriarParede form loads and repeatable groups add rows. However, saving a wall that includes any ponto (tomada/interruptor/água/esgoto/gás/registro) fails with 422 because the frontend PontoParede factory does not send required 'tipo' field expected by backend PontoParede model. Save without pontos works and navigates to /paredes.",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "passed": [
+    "GET /api/ returns {app, version, status} 200",
+    "POST /api/photos creates photo; GET /api/photos strips data_base64; GET /api/photos/{id} includes data_base64",
+    "POST /api/walls auto-assigns nome 'Parede 01' when no name; accepts custom nome and increments numero",
+    "GET /api/walls returns list sorted by numero",
+    "PUT /api/walls/{id} updates fields (attached foto_parede_id)",
+    "DELETE /api/walls/{id} returns 200 for existing and 404 for missing",
+    "GET /api/walls/{id}/export returns unit=mm with correct cm×10 conversion (280→2800, 400→4000), includes cores.parede_hex from linked photo, and Content-Disposition attachment header",
+    "Home shows brand-title 'TUDO MAIS FÁCIL' and all buttons (btn-foto-parede, btn-foto-piso, btn-criar-parede, btn-paredes-salvas)",
+    "/parede/nova renders criar-parede-form with Estrutura open by default; sections toggle; grp-colunas-add / grp-portas-add / grp-tomadas-add add repeatable rows",
+    "Save without pontos: POST /api/walls succeeds and navigates to /paredes (walls-grid renders)"
+  ],
+  "failed": [
+    {
+      "area": "integration (frontend↔backend)",
+      "issue": "Saving a wall containing any ponto (tomadas/interruptores/saidas_agua/saidas_esgoto/saidas_gas/registros_agua) returns HTTP 422. Backend PontoParede model requires 'tipo: str' but frontend factory in CriarParede.jsx (PontosParede.factory, lines 341-346) does not emit a 'tipo' field. Console shows: 'Failed to load resource: 422 at /api/walls'. curl reproduction: POST /api/walls with tomadas=[{distancia_centro:50,lado:'direito',altura_piso:30}] → 422 {loc:['body','tomadas',0,'tipo'], msg:'Field required'}. This blocks the full 24-field wall creation flow required by the MVP.",
+      "evidence": "curl POST /api/walls with a tomada payload returned 422 with pydantic missing-field error on 'tipo'. Playwright test after clicking grp-tomadas-add and btn-salvar-tudo timed out on navigation to /paredes; console captured 422.",
+      "priority": "HIGH"
+    },
+    {
+      "area": "frontend a11y/testability",
+      "issue": "Testids on estrutura inputs use hyphens (input-altura-pe-direito) whereas the review request expected underscores (input_altura_pe_direito). Not a bug per se, but worth noting for future test scripts.",
+      "evidence": "grep in CriarParede.jsx shows testid=\"input-altura-pe-direito\", testid=\"input-largura-total\", etc.",
+      "priority": "LOW"
+    }
+  ],
+  "action_items": [
+    "Fix ponto payload: either (a) set 'tipo' on each ponto in the frontend factory (e.g., pass tipoKey into PontosParede and include it in factory: tipo: 'tomada' | 'interruptor' | 'agua' | 'esgoto' | 'gas' | 'registro_agua'), or (b) make backend PontoParede.tipo optional with a default (e.g., 'generic') or infer from array key. Frontend fix is preferred so the exported JSON keeps semantic type per ponto.",
+    "Re-test full save flow with tomada/interruptor/água/esgoto/gás/registro after fix, then verify export JSON includes those pontos under 'pontos.*' with correct mm values.",
+    "Consider aligning field testids to match spec if external test harnesses depend on the underscore version (optional)."
+  ],
+  "success_rate": {"backend": "100%", "frontend": "80%"},
+  "retest_needed": true,
+  "full_testing_deferred": true
+}
