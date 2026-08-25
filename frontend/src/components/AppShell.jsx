@@ -17,10 +17,17 @@ export default function AppShell({ title, subtitle, back = "/", children, action
             <span className="tmf-mono text-xs uppercase tracking-widest">Voltar</span>
           </Link>
           <Link to="/" data-testid="brand-logo" className="flex flex-col items-center">
-            <span className="tmf-heading text-lg font-black tmf-gold-text leading-none">
-              TUDO MAIS FÁCIL
-            </span>
-            <span className="tmf-mono text-[9px] tracking-[0.35em] text-[#a3a39a] mt-0.5">
+            <div className="flex items-center gap-2">
+              <img
+                src="/brand/logo.png"
+                alt="Madeira Forte"
+                className="w-8 h-8 object-contain drop-shadow-[0_2px_8px_rgba(212,175,55,0.5)]"
+              />
+              <span className="tmf-heading text-lg font-black tmf-gold-text leading-none">
+                TUDO MAIS FÁCIL
+              </span>
+            </div>
+            <span className="tmf-mono text-[9px] tracking-[0.35em] text-[#a3a39a] mt-1">
               MADEIRA FORTE PLANEJADOS
             </span>
           </Link>

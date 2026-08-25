@@ -39,7 +39,7 @@ export default function Home() {
   return (
     <div className="min-h-screen tmf-grid-bg relative overflow-x-hidden" data-testid="home-page">
       {/* Hero brand */}
-      <section className="relative pt-14 pb-8 px-5">
+      <section className="relative pt-10 pb-8 px-5">
         <div className="max-w-3xl mx-auto text-center tmf-fade-in">
           <div className="inline-flex items-center gap-2 mb-6">
             <span className="w-8 h-px bg-[#d4af37]" />
@@ -48,6 +48,19 @@ export default function Home() {
             </span>
             <span className="w-8 h-px bg-[#d4af37]" />
           </div>
+
+          {/* Brand logo */}
+          <div className="flex justify-center mb-4" data-testid="brand-logo-hero">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-[#d4af37] opacity-30 blur-3xl scale-90" />
+              <img
+                src="/brand/logo.png"
+                alt="Madeira Forte - Móveis Planejados"
+                className="relative w-40 h-40 md:w-48 md:h-48 object-contain drop-shadow-[0_8px_32px_rgba(212,175,55,0.4)]"
+              />
+            </div>
+          </div>
+
           <h1
             className="tmf-heading font-black uppercase tmf-gold-text leading-[0.9] tracking-tighter"
             style={{ fontSize: "clamp(2.5rem, 9vw, 5rem)" }}
