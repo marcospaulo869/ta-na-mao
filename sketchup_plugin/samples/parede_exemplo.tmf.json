@@ -1,0 +1,49 @@
+{
+  "format": "TUDO_MAIS_FACIL_WALL",
+  "format_version": "1.0",
+  "unit": "mm",
+  "wall": {
+    "id": "sample-001",
+    "nome": "Parede Exemplo",
+    "numero": 1,
+    "altura_pe_direito": 2800,
+    "largura_total": 4000,
+    "altura_rodape": 80,
+    "espessura_rodape": 15,
+    "colunas": [
+      { "largura": 150, "profundidade": 150 }
+    ],
+    "vigas": [
+      { "altura": 200, "largura": 150 }
+    ],
+    "portas": [
+      { "largura_vao": 800, "altura_vao": 2100, "largura_vista": 50, "espessura_vista": 15 }
+    ],
+    "janelas": [
+      { "largura_vista": 50, "largura_vao": 1200, "altura_vao": 1000 }
+    ],
+    "pontos": {
+      "tomadas": [
+        { "distancia_centro": 500, "lado": "direito", "altura_piso": 300 },
+        { "distancia_centro": 1500, "lado": "esquerdo", "altura_piso": 300 }
+      ],
+      "interruptores": [
+        { "distancia_centro": 200, "lado": "direito", "altura_piso": 1100 }
+      ],
+      "saidas_agua": [
+        { "distancia_centro": 800, "lado": "esquerdo", "altura_piso": 900 }
+      ],
+      "saidas_esgoto": [
+        { "distancia_centro": 800, "lado": "esquerdo", "altura_piso": 200 }
+      ],
+      "saidas_gas": [],
+      "registros_agua": [
+        { "distancia_centro": 900, "lado": "esquerdo", "altura_piso": 1200 }
+      ]
+    },
+    "cores": {
+      "parede_hex": "#E8DDCB",
+      "piso_hex": "#8B6F47"
+    }
+  }
+}

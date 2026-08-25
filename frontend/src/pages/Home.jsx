@@ -6,6 +6,8 @@ import {
   Stack,
   ArrowRight,
   Package,
+  DownloadSimple,
+  Cube,
 } from "@phosphor-icons/react";
 import { listWalls } from "@/lib/api";
 
@@ -137,6 +139,57 @@ export default function Home() {
             v1.0 · MVP · FASE 1 DE 2
           </div>
         </footer>
+      </section>
+
+      {/* SketchUp plugin download */}
+      <section className="max-w-xl mx-auto px-5 pb-20 relative z-10">
+        <div className="tmf-card tmf-corner-marks" data-testid="plugin-download-card">
+          <div className="flex items-center gap-3 mb-3">
+            <Cube size={24} weight="duotone" className="text-[#d4af37]" />
+            <div>
+              <div className="tmf-heading uppercase font-bold text-white tracking-wide">
+                Plugin SketchUp
+              </div>
+              <div className="tmf-mono text-[10px] tracking-widest text-[#d4af37] mt-0.5">
+                FASE 2 · PRONTO PARA INSTALAR
+              </div>
+            </div>
+          </div>
+          <p className="text-[#a3a39a] text-sm mb-4">
+            Instale o plugin no SketchUp e importe suas paredes direto da nuvem — a geometria
+            3D é gerada automaticamente com aberturas, colunas, vigas e pontos elétricos.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <a
+              href="/downloads/tudo_mais_facil.rbz"
+              download
+              data-testid="btn-download-plugin"
+              className="tmf-btn-secondary flex items-center gap-2 justify-center"
+            >
+              <DownloadSimple size={14} weight="bold" />
+              Plugin .rbz
+            </a>
+            <a
+              href="/downloads/parede_exemplo.tmf.json"
+              download
+              data-testid="btn-download-sample"
+              className="tmf-btn-secondary flex items-center gap-2 justify-center"
+            >
+              <DownloadSimple size={14} weight="bold" />
+              JSON exemplo
+            </a>
+            <a
+              href="/downloads/README-plugin.md"
+              target="_blank"
+              rel="noreferrer"
+              data-testid="btn-open-readme"
+              className="tmf-btn-secondary flex items-center gap-2 justify-center"
+            >
+              <Package size={14} weight="bold" />
+              Como instalar
+            </a>
+          </div>
+        </div>
       </section>
     </div>
   );

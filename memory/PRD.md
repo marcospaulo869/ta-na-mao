@@ -57,15 +57,13 @@ Suite completa (Marcenaria + Arquitetura + Documentação + Apresentação) que 
 
 ## Implementado até agora
 - **2026-01-25** — MVP Fase 1 completa: backend CRUD + export mm, frontend com brand identity dourado/preto, formulário 24 campos, captura de foto, integração da logomarca oficial da Madeira Forte, testado end-to-end pelo testing agent (100% pass após 1 fix)
+- **2026-01-25** — MVP Fase 2 completa: Plugin SketchUp Ruby (`tudo_mais_facil.rbz`) com menu + toolbar + HtmlDialog dourado/preto; importa via arquivo local (.tmf.json) OU direto da nuvem (Net::HTTP GET); gera geometria 3D automática: paredes com aberturas cortadas, colunas distribuídas, vigas, rodapé, marcadores coloridos para tomadas/interruptores/água/esgoto/gás/registro; aplica cores das fotos como materiais SketchUp; tudo em 1 undo. Download disponível na home do app (`/downloads/tudo_mais_facil.rbz`).
 - **Fix**: `PontoParede.tipo` tornou-se `Optional` para compatibilidade com frontend
 
 ## Prioridade — Backlog
 
 ### P0 (próxima sessão)
-- **Plugin Ruby SketchUp (.rbz)** que lê o JSON exportado e gera o modelo 3D automaticamente
-  - Menu customizado dentro do SketchUp com botão "Importar Parede TMF"
-  - Geração paramétrica: paredes com recortes, colunas, vigas, rodapés
-  - Aplicação de materiais a partir das cores dominantes
+- **Teste real** do plugin dentro do SketchUp (Windows/Mac) — validar geometria com dimensões reais
 
 ### P1
 - Autenticação (JWT ou Google Login) para separar clientes/assinantes
