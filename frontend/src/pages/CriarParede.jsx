@@ -4,6 +4,7 @@ import AppShell from "@/components/AppShell";
 import Section from "@/components/Section";
 import { Field, SideSelect } from "@/components/Field";
 import RepeatableGroup from "@/components/RepeatableGroup";
+import VoiceRecorder from "@/components/VoiceRecorder";
 import { toast } from "sonner";
 import { CheckCircle, FloppyDisk, Crown, FolderSimple } from "@phosphor-icons/react";
 import { createWall, getWall, listProjects, updateWall } from "@/lib/api";
@@ -58,6 +59,31 @@ export default function CriarParede() {
 
   const patch = (p) => setWall((w) => ({ ...w, ...p }));
   const bind = (key) => (val) => patch({ [key]: val });
+
+  const mergeFromVoice = (parsed) => {
+    setWall((w) => {
+      const next = { ...w };
+      // Scalar fields overwrite
+      ["altura_pe_direito", "largura_total", "altura_rodape", "espessura_rodape"].forEach((k) => {
+        if (parsed[k] != null) next[k] = parsed[k];
+      });
+      // Array fields append (with a fresh id per item)
+      const arrays = [
+        "colunas", "vigas", "portas", "janelas",
+        "tomadas", "interruptores", "saidas_agua",
+        "saidas_esgoto", "saidas_gas", "registros_agua",
+      ];
+      arrays.forEach((k) => {
+        if (Array.isArray(parsed[k]) && parsed[k].length) {
+          next[k] = [
+            ...(w[k] || []),
+            ...parsed[k].map((item) => ({ id: uid(), ...item })),
+          ];
+        }
+      });
+      return next;
+    });
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -146,6 +172,9 @@ export default function CriarParede() {
             </select>
           </div>
         </div>
+
+        {/* Voice AI dictation */}
+        <VoiceRecorder onParsed={mergeFromVoice} currentWall={wall} />
 
         {/* Estrutura */}
         <Section title="Estrutura da parede" tag="Campos 1–6" defaultOpen testid="section-estrutura">

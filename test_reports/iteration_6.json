@@ -1,0 +1,25 @@
+{
+  "summary": "Iteration 6 — Voice AI dictation (Whisper + GPT-5.4) end-to-end. Backend: 8/8 pytest passed. POST /api/voice/parse returns 401 without cookie; with admin cookie, accepts multipart webm (/tmp/voice_test.webm, 203KB) and returns {transcription, parsed, fields_captured}. LLM correctly extracted: altura_pe_direito=280, largura_total=420, portas=[{largura_vao:80, altura_vao:210}], tomadas=3 items all lado='direito' with altura_piso ∈ {30,110,130}. No hallucinated fields (janelas/vigas/colunas/interruptores/saidas_*/registros_agua absent or empty, altura_rodape/espessura_rodape absent). Regression: /api/walls list+CRUD+PDF, /api/projects, /api/payments/plans, /api/auth/me all 200. Frontend: admin login → /parede/nova renders [data-testid='voice-recorder'] with [data-testid='btn-start-recording'] (gold microphone). DOM ordering verified via compareDocumentPosition: name/project card → voice-recorder → section-estrutura. In headless Chromium Playwright actually granted mic permission and recorder entered REC state — no permission-error path triggered but that scenario is coded and acceptable.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_voice.py",
+    "/app/test_reports/pytest/voice_iter6.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "voice.py hardcodes model 'gpt-5.4' — if that model name changes or is unavailable in the emergentintegrations wrapper, the extraction will 500. Consider an env override VOICE_LLM_MODEL with a safe fallback.",
+    "voice.py: `audio.size` may be None for streaming uploads (FastAPI doesn't always populate it before read). The 25MB guard only fires when size is set; a client streaming a giant payload would bypass it and OOM the process. Consider reading in bounded chunks or asserting len(audio_bytes) after read().",
+    "voice.py runs Whisper + LLM sequentially in the request handler — no timeout wrapper. A stalled upstream call would keep a worker busy indefinitely. Wrap in `asyncio.wait_for` with a ~60s ceiling.",
+    "voice.py builds session_id=f'voice-{user_id}' — every call for the same user reuses the same LlmChat session, which could accumulate history in the underlying provider and inflate token cost. Consider a per-request UUID.",
+    "VoiceRecorder.jsx passes `currentWall` (the full form state including huge default arrays) as JSON in the 'context' Form field, but the backend prompt never actually uses it beyond prepending to the user message — the extraction system prompt explicitly says 'Retorne APENAS os campos que o usuário mencionou'. Sending context risks nudging the LLM to echo current values. Consider dropping context or only sending a compact hint (e.g. 'Já preenchido: X campos').",
+    "VoiceRecorder.jsx uses `blob.size < 1000` to reject short recordings — that's ~<1KB of opus which can be <200ms. Users saying a very short phrase would still be rejected silently before upload; ok, but the toast could reference the actual duration state which is already tracked."
+  ],
+  "updated_files": ["/app/backend/tests/test_voice.py"],
+  "success_rate": {"backend": "100% (8/8 voice + regression)", "frontend": "100% (UI rendered + DOM order + recording flow initiated)"},
+  "test_credentials": "admin@tudomaisfacil.com / admin123 (pro_annual)",
+  "seed_data_creation": "One TEST_voice_regression wall created and deleted in test_wall_crud_and_pdf; no residue.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Voice endpoint /api/voice/parse is live and validated with the actual Whisper + GPT-5.4 pipeline (~$0.01/call). Test file: /app/backend/tests/test_voice.py — pytest tests take ~8s total. /tmp/voice_test.webm (203KB, pt-BR TTS) is the canonical audio fixture; content includes 'Pé direito 2,80 m, largura 4,20 m, uma porta 80 por 210, três tomadas do lado direito a 30, 110 e 130 do piso'. UI selector to record: [data-testid='btn-start-recording']; error: [data-testid='voice-permission-error']; transcription readout: [data-testid='voice-transcription']. Placement verified: name card → voice-recorder → section-estrutura."
+}

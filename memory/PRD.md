@@ -65,7 +65,8 @@ Suite completa (Marcenaria + Arquitetura + Documentação + Apresentação) que 
 - **2026-01-25** — MVP Fase 2: Plugin SketchUp Ruby (`tudo_mais_facil.rbz`) — gera geometria 3D
 - **2026-01-25** — Fixes: PontoParede.tipo Optional, tipografia Archivo Black, logo vertical, textos revisados
 - **2026-01-25** — Auth + Freemium + Stripe (14/14 backend + 100% frontend)
-- **2026-01-25** — **Projetos + PDF**: Modelo Project com cliente/telefone/endereço, CRUD, attach/detach de paredes, PDF elegante gold/black via reportlab (por parede E por projeto), botão WhatsApp direto do detalhe do projeto (envia link do PDF), rota /projetos e /projeto/:id, select-project no CriarParede. **Testing agent: 15/15 backend novos + 14/14 regressão + 100% frontend**.
+- **2026-01-25** — Projetos + PDF (15/15 backend + 100% frontend). Botão WhatsApp direto.
+- **2026-01-26** — **🎙️ Ditado por Voz**: MediaRecorder API + Whisper (whisper-1) para transcrição em pt-BR + GPT-5.4 para extração estruturada JSON. Testes reais confirmaram: "Pé direito 2,80m, largura 4,20m, porta 80×210, 3 tomadas..." → parsed corretamente (altura_pe_direito=280, largura=420, portas[1], tomadas[3]). Timeout 60s, session id único por request. Componente VoiceRecorder com botão dourado no CriarParede entre nome/projeto e Estrutura. **8/8 backend + regressão + frontend 100%**.
 
 ## Prioridade — Backlog
 

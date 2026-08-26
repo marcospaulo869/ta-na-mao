@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from auth import router as auth_router, get_current_user, ensure_indexes, seed_admin
 from payments import router as payments_router
 from projects import router as projects_router
+from voice import router as voice_router
 from pdf_report import build_wall_pdf, build_project_pdf
 from fastapi.responses import Response as FastResponse
 
@@ -414,6 +415,7 @@ app.include_router(api_router)
 app.include_router(auth_router)
 app.include_router(payments_router)
 app.include_router(projects_router)
+app.include_router(voice_router)
 
 
 # Stripe delivers to /api/stripe/webhook by convention — expose an alias
