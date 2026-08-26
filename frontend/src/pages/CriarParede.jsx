@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import Section from "@/components/Section";
 import { Field, SideSelect } from "@/components/Field";
 import RepeatableGroup from "@/components/RepeatableGroup";
 import { toast } from "sonner";
-import { CheckCircle, FloppyDisk, Crown } from "@phosphor-icons/react";
-import { createWall, getWall, updateWall } from "@/lib/api";
+import { CheckCircle, FloppyDisk, Crown, FolderSimple } from "@phosphor-icons/react";
+import { createWall, getWall, listProjects, updateWall } from "@/lib/api";
 
 const uid = () =>
   (window.crypto?.randomUUID?.() || `id_${Math.random().toString(36).slice(2)}`);
 
 const emptyWall = () => ({
   nome: "",
+  project_id: null,
   altura_pe_direito: 280,
   largura_total: 400,
   altura_rodape: 8,
@@ -33,10 +34,19 @@ const emptyWall = () => ({
 
 export default function CriarParede() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
-  const [wall, setWall] = useState(emptyWall());
+  const [wall, setWall] = useState(() => ({
+    ...emptyWall(),
+    project_id: location.state?.defaultProjectId || null,
+  }));
   const [saving, setSaving] = useState(false);
+  const [projects, setProjects] = useState([]);
   const isEdit = Boolean(id);
+
+  useEffect(() => {
+    listProjects().then(setProjects).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (id) {
@@ -59,7 +69,11 @@ export default function CriarParede() {
         const created = await createWall(wall);
         toast.success(`${created.nome} salva com sucesso!`);
       }
-      navigate("/paredes");
+      if (wall.project_id) {
+        navigate(`/projeto/${wall.project_id}`);
+      } else {
+        navigate("/paredes");
+      }
     } catch (e) {
       if (e.response?.status === 402) {
         toast.error(e.response.data.detail, {
@@ -96,6 +110,40 @@ export default function CriarParede() {
           />
           <div className="tmf-mono text-[10px] text-[#a3a39a] mt-1 tracking-wider">
             SE VAZIO, SERÁ NUMERADA AUTOMATICAMENTE (PAREDE 01, 02...)
+          </div>
+
+          {/* Project selector */}
+          <div className="mt-4 pt-4 border-t border-[rgba(243,229,171,0.12)]">
+            <label className="tmf-label flex items-center gap-2">
+              <FolderSimple size={12} weight="fill" className="text-[#d4af37]" />
+              Projeto (opcional)
+            </label>
+            <select
+              className="tmf-input bg-transparent"
+              value={wall.project_id || ""}
+              onChange={(e) => patch({ project_id: e.target.value || null })}
+              data-testid="select-project"
+              style={{ colorScheme: "dark" }}
+            >
+              <option value="" style={{ background: "#12120f", color: "#fff" }}>
+                — sem projeto —
+              </option>
+              {/* Placeholder for preselected project while list is loading */}
+              {wall.project_id && !projects.some((p) => p.id === wall.project_id) && (
+                <option
+                  value={wall.project_id}
+                  style={{ background: "#12120f", color: "#fff" }}
+                >
+                  carregando projeto...
+                </option>
+              )}
+              {projects.map((p) => (
+                <option key={p.id} value={p.id} style={{ background: "#12120f", color: "#fff" }}>
+                  {p.nome}
+                  {p.cliente_nome ? ` · ${p.cliente_nome}` : ""}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

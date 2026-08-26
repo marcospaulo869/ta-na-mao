@@ -12,6 +12,8 @@ import Register from "@/pages/Register";
 import AuthCallback from "@/pages/AuthCallback";
 import Precos from "@/pages/Precos";
 import { PagamentoSucesso, PagamentoCancelado } from "@/pages/Pagamento";
+import Projetos from "@/pages/Projetos";
+import ProjetoDetalhe from "@/pages/ProjetoDetalhe";
 
 function AppRouter() {
   const location = useLocation();
@@ -64,6 +66,22 @@ function AppRouter() {
         element={
           <ProtectedRoute>
             <ParedesSalvas />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projetos"
+        element={
+          <ProtectedRoute>
+            <Projetos />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projeto/:id"
+        element={
+          <ProtectedRoute>
+            <ProjetoDetalhe />
           </ProtectedRoute>
         }
       />

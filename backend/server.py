@@ -15,6 +15,9 @@ from datetime import datetime, timezone
 
 from auth import router as auth_router, get_current_user, ensure_indexes, seed_admin
 from payments import router as payments_router
+from projects import router as projects_router
+from pdf_report import build_wall_pdf, build_project_pdf
+from fastapi.responses import Response as FastResponse
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -69,6 +72,7 @@ class Wall(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: Optional[str] = None
+    project_id: Optional[str] = None
     nome: str
     numero: int = 1
     altura_pe_direito: float = 280
@@ -93,6 +97,7 @@ class Wall(BaseModel):
 
 class WallCreate(BaseModel):
     nome: Optional[str] = None
+    project_id: Optional[str] = None
     altura_pe_direito: float = 280
     largura_total: float = 400
     espessura_rodape: float = 1.5
@@ -167,8 +172,11 @@ def _sanitize_wall(doc: dict) -> dict:
 
 
 @api_router.get("/walls", response_model=List[Wall])
-async def list_walls(user=Depends(get_current_user)):
-    docs = await db.walls.find({"user_id": user["user_id"]}, {"_id": 0}).sort("numero", 1).to_list(1000)
+async def list_walls(user=Depends(get_current_user), project_id: Optional[str] = None):
+    query = {"user_id": user["user_id"]}
+    if project_id:
+        query["project_id"] = project_id
+    docs = await db.walls.find(query, {"_id": 0}).sort("numero", 1).to_list(1000)
     return [_sanitize_wall(d) for d in docs]
 
 
@@ -228,6 +236,50 @@ async def delete_wall(wall_id: str, user=Depends(get_current_user)):
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Parede não encontrada")
     return {"ok": True, "deleted": wall_id}
+
+
+@api_router.get("/walls/{wall_id}/pdf")
+async def wall_pdf(wall_id: str, user=Depends(get_current_user)):
+    doc = await db.walls.find_one({"id": wall_id, "user_id": user["user_id"]}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Parede não encontrada")
+    # Resolve photo colors
+    if doc.get("foto_parede_id"):
+        p = await db.photos.find_one({"id": doc["foto_parede_id"]}, {"_id": 0, "cor_dominante_hex": 1})
+        doc["cor_parede_hex"] = p["cor_dominante_hex"] if p else None
+    if doc.get("foto_piso_id"):
+        p = await db.photos.find_one({"id": doc["foto_piso_id"]}, {"_id": 0, "cor_dominante_hex": 1})
+        doc["cor_piso_hex"] = p["cor_dominante_hex"] if p else None
+    pdf_bytes = build_wall_pdf(doc)
+    return FastResponse(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{doc["nome"].replace(" ", "_")}.pdf"'},
+    )
+
+
+@api_router.get("/projects/{project_id}/pdf")
+async def project_pdf(project_id: str, user=Depends(get_current_user)):
+    proj = await db.projects.find_one({"id": project_id, "user_id": user["user_id"]}, {"_id": 0})
+    if not proj:
+        raise HTTPException(status_code=404, detail="Projeto não encontrado")
+    walls = await db.walls.find(
+        {"project_id": project_id, "user_id": user["user_id"]}, {"_id": 0}
+    ).sort("numero", 1).to_list(500)
+    # Enrich with colors
+    for w in walls:
+        if w.get("foto_parede_id"):
+            p = await db.photos.find_one({"id": w["foto_parede_id"]}, {"_id": 0, "cor_dominante_hex": 1})
+            w["cor_parede_hex"] = p["cor_dominante_hex"] if p else None
+        if w.get("foto_piso_id"):
+            p = await db.photos.find_one({"id": w["foto_piso_id"]}, {"_id": 0, "cor_dominante_hex": 1})
+            w["cor_piso_hex"] = p["cor_dominante_hex"] if p else None
+    pdf_bytes = build_project_pdf(proj, walls)
+    return FastResponse(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{proj["nome"].replace(" ", "_")}.pdf"'},
+    )
 
 
 @api_router.get("/walls/{wall_id}/export")
@@ -361,6 +413,7 @@ async def delete_photo(photo_id: str, user=Depends(get_current_user)):
 app.include_router(api_router)
 app.include_router(auth_router)
 app.include_router(payments_router)
+app.include_router(projects_router)
 
 
 # Stripe delivers to /api/stripe/webhook by convention — expose an alias

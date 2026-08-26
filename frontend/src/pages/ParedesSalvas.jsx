@@ -10,8 +10,9 @@ import {
   DoorOpen,
   Package,
   Plus,
+  FilePdf,
 } from "@phosphor-icons/react";
-import { deleteWall, exportWallUrl, listWalls } from "@/lib/api";
+import { deleteWall, exportWallUrl, listWalls, wallPdfUrl } from "@/lib/api";
 
 export default function ParedesSalvas() {
   const navigate = useNavigate();
@@ -141,8 +142,18 @@ export default function ParedesSalvas() {
                 data-testid={`btn-export-${w.id}`}
               >
                 <DownloadSimple size={14} weight="bold" />
-                Exportar SketchUp
+                SketchUp
               </button>
+              <a
+                href={wallPdfUrl(w.id)}
+                target="_blank"
+                rel="noreferrer"
+                className="tmf-btn-secondary flex items-center gap-2 flex-1"
+                data-testid={`btn-pdf-${w.id}`}
+              >
+                <FilePdf size={14} weight="fill" />
+                PDF
+              </a>
               <button
                 className="tmf-btn-secondary flex items-center gap-2"
                 onClick={() => navigate(`/parede/${w.id}`)}

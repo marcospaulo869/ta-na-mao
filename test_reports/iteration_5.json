@@ -1,0 +1,36 @@
+{
+  "summary": "Iteration 5 — Projects + PDF end-to-end testing. Backend: 15/15 pytest tests pass (Projects CRUD auth+isolation, attach/detach with cross-user 404, DELETE project detaches walls, WallCreate accepts project_id, GET /walls?project_id filter, wall PDF + project PDF valid %PDF- bytes with attachment Content-Disposition and application/pdf media type, 401 unauth and 404 for foreign owner on both PDF endpoints). Frontend: admin login → home shows btn-projetos with 'N CADASTRADOS' and btn-paredes-salvas counts; /projetos renders projects-grid; btn-toggle-new-project reveals new-project-form; input-project-nome/cliente/telefone/endereco + btn-save-project creates project and navigates to /projeto/{id}; project-meta-card shows cliente info; btn-download-project-pdf link points to /api/projects/{id}/pdf; btn-whatsapp-project, btn-new-wall-in-project, btn-attach-existing all present; attach-modal opens and lists unlinked walls (9 candidates for admin); btn-new-wall-in-project passes defaultProjectId via location.state and /parede/nova has select-project pre-selected (verified after async projects list loaded); btn-salvar-tudo then navigates back to /projeto/{id}; /paredes list has both btn-export-{id} and btn-pdf-{id} per wall card with correct /api/walls/{id}/pdf href.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "/parede/nova with defaultProjectId",
+        "issues": [
+          "Minor race: on mount, projects list is fetched async via useEffect. Before it resolves, <select> has no matching <option> so it briefly renders the placeholder ('— sem projeto —') even though wall.project_id state is set. Once projects load (~200ms), the correct option becomes selected. Not visible to end-users in practice but could be pre-populated by seeding a single-option list with {id: defaultProjectId, nome: 'carregando...'} or by disabling the select until projects load."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_projects_and_pdf.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_iter5.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "projects.py update_project uses model_dump(exclude_unset=True) on ProjectCreate — but ProjectCreate declares all fields with Optional defaults, so PUT with a partial body still zeroes out missing fields when the client omits keys. Currently the UI sends the full meta object so it works, but a partial PATCH-style update from another client would clobber fields. Consider a ProjectUpdate model with truly optional semantics or switch to $set-only-provided keys explicitly.",
+    "server.py list_walls filter accepts project_id but doesn't validate the caller owns that project. That's fine because the query already scopes to user_id so cross-user leakage is impossible, but returning [] silently for a foreign project id could be confusing. Optional: 404 when project_id is unknown/foreign.",
+    "pdf_report.py builds PDFs synchronously in the request thread (reportlab is CPU-bound). For a project with many walls this can block the FastAPI event loop. Wrap build_wall_pdf/build_project_pdf in `await asyncio.to_thread(...)` before returning.",
+    "ProjetoDetalhe.jsx uses `data-testid=\"btn-export-wall-${id}\"` (not `btn-export-${id}`) — inconsistent with ParedesSalvas.jsx (`btn-export-${id}`). Not a blocker; the request only mandates btn-export-{id}/btn-pdf-{id} on ParedesSalvas, which is compliant. But consistency would be nice.",
+    "CriarParede.jsx: after createWall failure with 402, error toast is shown but wall.project_id is still set; retry after upgrade works. OK. Also note: on the /parede/nova page, the select-project has an async race — see design_issues above."
+  ],
+  "updated_files": ["/app/backend/tests/test_projects_and_pdf.py"],
+  "success_rate": {"backend": "100% (15/15 new + 14/14 existing regression)", "frontend": "100% (all target flows verified)"},
+  "test_credentials": "admin@tudomaisfacil.com / admin123 (pro_annual). Extra test users created dynamically as test_other_*@example.com.",
+  "seed_data_creation": "Created 3+ TEST_-prefixed projects, several TEST walls attached/detached, plus 2 additional UI-created projects (TEST UI 1787710086, TEST UI2 ...). All cleaned up in the CRUD tests via DELETE; UI test projects remain but are named TEST UI* and safe to purge.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 5 (Projects + PDF) fully verified. New pytest file lives at /app/backend/tests/test_projects_and_pdf.py — run with `pytest backend/tests/ -v -n 0`. PDF bytes verified via response.headers['content-type']=='application/pdf' and content[:4]==b'%PDF'. Admin now has extra 'TEST UI*' projects — safe to delete. Only nit: /parede/nova select-project has a minor async render race when arriving via location.state.defaultProjectId (not user-visible)."
+}

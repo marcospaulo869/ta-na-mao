@@ -19,6 +19,11 @@ Suite completa (Marcenaria + Arquitetura + Documentação + Apresentação) que 
 1. **Marceneiro** — mede o ambiente do cliente no celular, salva as paredes, chega no escritório e o modelo 3D já está pronto no SketchUp.
 2. **Arquiteto/Projetista** — recebe medições da equipe de campo já digitalizadas e importa em 1 clique.
 
+## Dados fiscais do proprietário
+- **Cidade**: Torres — Rio Grande do Sul (RS)
+- **Regime**: MEI, emite NFS-e (serviço)
+- **NFS-e automática**: adiada — usuário vai emitir manual até validar produto. Quando escalar (~20 vendas/mês), integrar API (NFE.io recomendado, ~R$ 0,25/nota) com credenciais da prefeitura de Torres/RS + certificado digital.
+
 ## Requisitos estáticos (core)
 - Interface preto + dourado, aspecto high-tech, botões dourado-claro retangulares com texto preto
 - 100% responsivo (mobile-first para uso em obra)
@@ -56,12 +61,11 @@ Suite completa (Marcenaria + Arquitetura + Documentação + Apresentação) que 
 - `/paredes` — lista de paredes com export/editar/excluir
 
 ## Implementado até agora
-- **2026-01-25** — MVP Fase 1: backend CRUD + export mm, frontend com logo, formulário 24 campos, captura de foto, testado 100%
-- **2026-01-25** — MVP Fase 2: Plugin SketchUp Ruby (`tudo_mais_facil.rbz`), gera geometria 3D automática
-- **2026-01-25** — Fix bug: `PontoParede.tipo` -> Optional
-- **2026-01-25** — Fix tipografia: fonte Archivo Black + leading corrigido
-- **2026-01-25** — Fix logo: fundo branco removido, logo vertical natural, texto "APP · ARQUITETOS · PROJETISTAS · MARCENEIROS"
-- **2026-01-25** — **Autenticação + Assinatura**: JWT email/senha + Emergent Google OAuth (unified session_token cookie), Users model com plan/plan_expires_at, freemium 3 paredes, Stripe sandbox provisionado (R$ 39,90/mês, R$ 399/ano BRL), páginas Login/Cadastro/Preços/Pagamento com tema dourado, ProtectedRoute + user-bar com nome + tag PRO/GRÁTIS + botão upgrade + logout, isolamento por user_id, admin seed (admin@tudomaisfacil.com / admin123, pro_annual). Testing agent: 14/14 backend + 100% frontend PASS
+- **2026-01-25** — MVP Fase 1: backend CRUD, formulário 24 campos, captura de foto (100%)
+- **2026-01-25** — MVP Fase 2: Plugin SketchUp Ruby (`tudo_mais_facil.rbz`) — gera geometria 3D
+- **2026-01-25** — Fixes: PontoParede.tipo Optional, tipografia Archivo Black, logo vertical, textos revisados
+- **2026-01-25** — Auth + Freemium + Stripe (14/14 backend + 100% frontend)
+- **2026-01-25** — **Projetos + PDF**: Modelo Project com cliente/telefone/endereço, CRUD, attach/detach de paredes, PDF elegante gold/black via reportlab (por parede E por projeto), botão WhatsApp direto do detalhe do projeto (envia link do PDF), rota /projetos e /projeto/:id, select-project no CriarParede. **Testing agent: 15/15 backend novos + 14/14 regressão + 100% frontend**.
 
 ## Prioridade — Backlog
 

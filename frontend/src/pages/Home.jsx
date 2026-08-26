@@ -11,8 +11,9 @@ import {
   Crown,
   SignOut,
   User,
+  FolderSimple,
 } from "@phosphor-icons/react";
-import { listWalls } from "@/lib/api";
+import { listWalls, listProjects } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
 const HomeButton = ({ to, testid, icon: Icon, label, hint }) => (
@@ -36,11 +37,15 @@ export default function Home() {
   const navigate = useNavigate();
   const { user, limits, logout } = useAuth();
   const [wallsCount, setWallsCount] = useState(null);
+  const [projectsCount, setProjectsCount] = useState(0);
 
   useEffect(() => {
     listWalls()
       .then((w) => setWallsCount(w.length))
       .catch(() => setWallsCount(0));
+    listProjects()
+      .then((p) => setProjectsCount(p.length))
+      .catch(() => setProjectsCount(0));
   }, []);
 
   const isPro = limits?.is_pro;
@@ -166,38 +171,46 @@ export default function Home() {
         />
       </section>
 
-      {/* Saved walls quick access */}
-      <section className="max-w-xl mx-auto px-5 pb-16">
+      {/* Saved walls + Projects quick access */}
+      <section className="max-w-xl mx-auto px-5 pb-8">
         <div className="tmf-divider" />
-        <button
-          onClick={() => navigate("/paredes")}
-          data-testid="btn-paredes-salvas"
-          className="w-full flex items-center justify-between p-5 bg-transparent border border-[rgba(243,229,171,0.25)] hover:border-[#d4af37] hover:bg-[rgba(212,175,55,0.05)] transition-colors text-left"
-        >
-          <div className="flex items-center gap-3">
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => navigate("/paredes")}
+            data-testid="btn-paredes-salvas"
+            className="flex flex-col items-start p-4 bg-transparent border border-[rgba(243,229,171,0.25)] hover:border-[#d4af37] hover:bg-[rgba(212,175,55,0.05)] transition-colors text-left"
+          >
             <Stack size={22} weight="duotone" className="text-[#d4af37]" />
-            <div>
-              <div className="tmf-heading uppercase font-bold text-white tracking-wide">
-                Paredes salvas
-              </div>
-              <div className="tmf-mono text-[10px] tracking-widest text-[#a3a39a] mt-0.5">
-                {wallsCount === null
-                  ? "CARREGANDO..."
-                  : limits?.walls_limit
-                  ? `${wallsCount}/${limits.walls_limit} PAREDES · PLANO GRÁTIS`
-                  : `${wallsCount} PAREDE${wallsCount === 1 ? "" : "S"} ARMAZENADAS`}
-              </div>
+            <div className="tmf-heading uppercase font-bold text-white tracking-wide mt-2 text-sm">
+              Paredes
             </div>
-          </div>
-          <div className="flex items-center gap-2 text-[#f3e5ab]">
-            <Package size={18} weight="bold" />
-            <ArrowRight size={18} weight="bold" />
-          </div>
-        </button>
+            <div className="tmf-mono text-[9px] tracking-widest text-[#a3a39a] mt-1">
+              {wallsCount === null
+                ? "..."
+                : limits?.walls_limit
+                ? `${wallsCount}/${limits.walls_limit} · GRÁTIS`
+                : `${wallsCount} SALVAS`}
+            </div>
+          </button>
 
-        <footer className="mt-12 text-center">
+          <button
+            onClick={() => navigate("/projetos")}
+            data-testid="btn-projetos"
+            className="flex flex-col items-start p-4 bg-transparent border border-[rgba(243,229,171,0.25)] hover:border-[#d4af37] hover:bg-[rgba(212,175,55,0.05)] transition-colors text-left"
+          >
+            <FolderSimple size={22} weight="duotone" className="text-[#d4af37]" />
+            <div className="tmf-heading uppercase font-bold text-white tracking-wide mt-2 text-sm">
+              Projetos
+            </div>
+            <div className="tmf-mono text-[9px] tracking-widest text-[#a3a39a] mt-1">
+              {projectsCount} CADASTRADOS
+            </div>
+          </button>
+        </div>
+
+        <footer className="mt-8 text-center">
           <div className="tmf-mono text-[9px] tracking-[0.4em] text-[#a3a39a]">
-            v1.0 · MVP · FASE 1 DE 2
+            v1.2 · PROJETOS + PDF
           </div>
         </footer>
       </section>
