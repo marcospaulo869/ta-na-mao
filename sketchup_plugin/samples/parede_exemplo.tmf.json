@@ -16,6 +16,9 @@
     "vigas": [
       { "altura": 200, "largura": 150 }
     ],
+    "paredes_angulo": [
+      { "comprimento": 1500, "altura": 2800, "angulo": 135 }
+    ],
     "portas": [
       { "largura_vao": 800, "altura_vao": 2100, "largura_vista": 50, "espessura_vista": 15 }
     ],

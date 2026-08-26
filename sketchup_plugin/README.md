@@ -1,5 +1,5 @@
 # Tudo Mais Fácil — Plugin SketchUp
-## Madeira Forte Planejados · v1.0
+## Madeira Forte Planejados · v1.1
 
 Este plugin importa dentro do SketchUp as medições feitas no app **Tudo Mais Fácil** e gera automaticamente a parede 3D com todos os componentes: aberturas (portas e janelas), colunas, vigas, rodapé, tomadas, interruptores, pontos de água, esgoto, gás e registros.
 
@@ -67,6 +67,7 @@ Se quiser ver o plugin funcionando antes de conectar ao app, use o arquivo de ex
 | Janelas | Recorte a 1,10 m do piso (peitoril padrão) |
 | Colunas | Grupo "Coluna N" — extrusão retangular do piso ao teto |
 | Vigas | Grupo "Viga N" — extrusão no topo da parede |
+| Paredes em ângulo | Grupo "Parede ângulo N (°)" — segmento adicional dobrado no canto direito, respeitando o ângulo interno (ex: 135° = canto chanfrado, 90° = L, 180° = extensão reta) |
 | Rodapé | Grupo "Rodapé" — atrás da parede |
 | Tomadas | Marcadores azuis 6 cm × 6 cm na parede |
 | Interruptores | Marcadores amarelos 6 cm × 6 cm |

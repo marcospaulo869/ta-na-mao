@@ -34,6 +34,7 @@ module TudoMaisFacil
           build_baseboard(group, wall)
           build_columns(group, wall)
           build_beams(group, wall)
+          build_angled_walls(group, wall)
           build_markers(group, wall)
 
           model.commit_operation
@@ -212,6 +213,58 @@ module TudoMaisFacil
         end
       end
 
+      # --- ANGLED WALLS (Paredes em ângulo) --------------------------------
+      # Each angled wall attaches at the right corner of the main wall and
+      # folds inward according to the interior angle (in degrees).
+      #   angulo = 180° → straight extension  (collinear)
+      #   angulo = 135° → 45° cut corner (common bevel)
+      #   angulo = 90°  → perpendicular L-corner
+      # ---------------------------------------------------------------------
+
+      def build_angled_walls(group, wall)
+        angled = wall['paredes_angulo'] || []
+        return if angled.empty?
+
+        w_total   = mm(wall['largura_total'])
+        pe_direito = mm(wall['altura_pe_direito'])
+        t         = mm(WALL_THICKNESS_MM * 10) # 150 mm alvenaria
+
+        # anchor at the right corner of the main wall, at floor level
+        anchor = Geom::Point3d.new(w_total, 0, 0)
+
+        angled.each_with_index do |seg, i|
+          length = mm(seg['comprimento'])
+          height = mm(seg['altura'] || wall['altura_pe_direito'])
+          ang    = (seg['angulo'] || 135).to_f
+          theta  = (180.0 - ang) * Math::PI / 180.0
+          dir_x  = Math.cos(theta)
+          dir_y  = Math.sin(theta)
+
+          # Face plane vectors
+          dx = dir_x * length
+          dy = dir_y * length
+
+          seg_group = group.entities.add_group
+          seg_group.name = "Parede ângulo #{i + 1} (#{ang.to_i}°)"
+
+          p1 = Geom::Point3d.new(anchor.x,      anchor.y,      0)
+          p2 = Geom::Point3d.new(anchor.x + dx, anchor.y + dy, 0)
+          p3 = Geom::Point3d.new(anchor.x + dx, anchor.y + dy, height)
+          p4 = Geom::Point3d.new(anchor.x,      anchor.y,      height)
+
+          face = seg_group.entities.add_face([p1, p2, p3, p4])
+          # Perpendicular direction pointing inward (rotate direction -90° around Z)
+          normal_y_sign = face.normal.y
+          # Push toward interior (opposite of main wall's -Y push)
+          push_dir = -t
+          face.pushpull(push_dir)
+
+          # Move anchor to the end of this segment so the next angled wall
+          # continues from here (chaining segments)
+          anchor = Geom::Point3d.new(anchor.x + dx, anchor.y + dy, 0)
+        end
+      end
+
       # --- MARKERS (Tomadas, interruptores, água, esgoto, gás, registro) ---
 
       MARKER_CONFIG = {
@@ -303,6 +356,7 @@ module TudoMaisFacil
         "• Largura total: #{wall['largura_total']} mm\n" \
         "• Colunas: #{(wall['colunas'] || []).length}\n" \
         "• Vigas: #{(wall['vigas'] || []).length}\n" \
+        "• Paredes em ângulo: #{(wall['paredes_angulo'] || []).length}\n" \
         "• Aberturas (portas+janelas): #{aberturas}\n" \
         "• Instalações: #{instalacoes}"
       end
