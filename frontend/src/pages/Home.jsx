@@ -46,7 +46,7 @@ export default function Home() {
           <div className="inline-flex items-center gap-2 mb-6">
             <span className="w-8 h-px bg-[#d4af37]" />
             <span className="tmf-mono text-[10px] tracking-[0.4em] text-[#d4af37]">
-              APP · PROJETISTAS · MARCENEIROS
+              APP · ARQUITETOS · PROJETISTAS · MARCENEIROS
             </span>
             <span className="w-8 h-px bg-[#d4af37]" />
           </div>
@@ -54,60 +54,19 @@ export default function Home() {
           {/* Brand logo */}
           <div className="flex justify-center mb-4" data-testid="brand-logo-hero">
             <div className="relative">
-              {/* Gold aura behind */}
-              <div className="absolute inset-0 rounded-full bg-[#d4af37] opacity-30 blur-3xl scale-90" />
+              {/* Gold aura behind the logo */}
+              <div className="absolute inset-0 bg-[#d4af37] opacity-25 blur-3xl scale-90" />
 
-              {/* Oval-framed wood logo (vertical) */}
-              <div
-                className="relative w-52 h-64 md:w-60 md:h-72"
+              <img
+                src="/brand/logo.png"
+                alt="Madeira Forte - Móveis Planejados"
+                className="relative w-56 h-auto md:w-64 object-contain"
                 style={{
-                  filter: "drop-shadow(0 8px 32px rgba(212,175,55,0.45))",
+                  filter:
+                    "drop-shadow(0 0 24px rgba(212,175,55,0.45)) drop-shadow(0 6px 20px rgba(0,0,0,0.6))",
                 }}
-              >
-                <div
-                  className="w-full h-full overflow-hidden"
-                  style={{
-                    clipPath: "ellipse(50% 50% at 50% 50%)",
-                  }}
-                >
-                  <img
-                    src="/brand/logo.png"
-                    alt="Madeira Forte - Móveis Planejados"
-                    className="w-full h-full object-cover"
-                    data-testid="brand-logo-img"
-                    style={{ objectPosition: "center" }}
-                  />
-                </div>
-
-                {/* Elegant gold ring on top of the oval */}
-                <svg
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <ellipse
-                    cx="50"
-                    cy="50"
-                    rx="49.5"
-                    ry="49.5"
-                    fill="none"
-                    stroke="#d4af37"
-                    strokeWidth="0.6"
-                    opacity="0.85"
-                  />
-                  <ellipse
-                    cx="50"
-                    cy="50"
-                    rx="47"
-                    ry="47"
-                    fill="none"
-                    stroke="#f3e5ab"
-                    strokeWidth="0.25"
-                    opacity="0.6"
-                  />
-                </svg>
-              </div>
+                data-testid="brand-logo-img"
+              />
             </div>
           </div>
 

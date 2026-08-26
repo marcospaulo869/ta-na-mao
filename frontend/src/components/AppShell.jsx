@@ -21,7 +21,10 @@ export default function AppShell({ title, subtitle, back = "/", children, action
               <img
                 src="/brand/logo.png"
                 alt="Madeira Forte"
-                className="w-8 h-8 object-contain drop-shadow-[0_2px_8px_rgba(212,175,55,0.5)]"
+                className="w-9 h-9 object-contain"
+                style={{
+                  filter: "drop-shadow(0 0 6px rgba(212,175,55,0.5))",
+                }}
               />
               <span className="tmf-heading text-lg tmf-gold-text leading-none">
                 TUDO MAIS FÁCIL
