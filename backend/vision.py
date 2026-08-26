@@ -19,7 +19,7 @@ from auth import get_current_user
 
 router = APIRouter(prefix="/api/vision", tags=["vision"])
 
-VISION_MODEL = os.environ.get("VISION_MODEL", "gemini-2.5-pro")
+VISION_MODEL = os.environ.get("VISION_MODEL", "gemini-3.1-pro-preview")
 VISION_TIMEOUT_S = 60
 
 VISION_SYSTEM = """Você é um assistente de visão computacional especializado em análise de fotos de PAREDES INTERNAS para arquitetos, projetistas e marceneiros.
@@ -142,7 +142,7 @@ async def analyze_wall_photo(
 
         msg = UserMessage(
             text="Analise esta foto de parede e retorne o JSON conforme instruções.",
-            image_contents=[ImageContent(image_base64=b64)],
+            file_contents=[ImageContent(image_base64=b64)],
         )
 
         response = await asyncio.wait_for(

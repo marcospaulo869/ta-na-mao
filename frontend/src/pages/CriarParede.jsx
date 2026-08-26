@@ -5,6 +5,7 @@ import Section from "@/components/Section";
 import { Field, SideSelect, UnitToggle, UnitProvider } from "@/components/Field";
 import RepeatableGroup from "@/components/RepeatableGroup";
 import VoiceRecorder from "@/components/VoiceRecorder";
+import VisionCapture from "@/components/VisionCapture";
 import { toast } from "sonner";
 import { CheckCircle, FloppyDisk, Crown, FolderSimple } from "@phosphor-icons/react";
 import { createWall, getWall, listProjects, updateWall } from "@/lib/api";
@@ -179,6 +180,9 @@ export default function CriarParede() {
             </select>
           </div>
         </div>
+
+        {/* Vision AI — analyze wall photo */}
+        <VisionCapture onIdentified={mergeFromVoice} />
 
         {/* Voice AI dictation */}
         <VoiceRecorder onParsed={mergeFromVoice} currentWall={wall} />
