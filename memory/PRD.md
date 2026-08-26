@@ -67,6 +67,7 @@ Suite completa (Marcenaria + Arquitetura + Documentação + Apresentação) que 
 - **2026-01-25** — Auth + Freemium + Stripe (14/14 backend + 100% frontend)
 - **2026-01-25** — Projetos + PDF (15/15 backend + 100% frontend). Botão WhatsApp direto.
 - **2026-01-26** — **🎙️ Ditado por Voz**: MediaRecorder API + Whisper (whisper-1) para transcrição em pt-BR + GPT-5.4 para extração estruturada JSON. Testes reais confirmaram: "Pé direito 2,80m, largura 4,20m, porta 80×210, 3 tomadas..." → parsed corretamente (altura_pe_direito=280, largura=420, portas[1], tomadas[3]). Timeout 60s, session id único por request. Componente VoiceRecorder com botão dourado no CriarParede entre nome/projeto e Estrutura. **8/8 backend + regressão + frontend 100%**.
+- **2026-01-26** — **Landing + PWA + Play Store readiness**: Landing page comercial em `/lp` (hero, 6 features, fluxo em 3 passos, preços com dados reais do Stripe, testimonials placeholder, CTA final, footer com links legais). Root `/` mostra Landing para deslogado e Home para logado. Páginas `/privacidade` e `/termos` (LGPD-compliant, MEI Torres/RS). PWA completo: manifest.json v2 com 11 ícones (72-512 + maskable), apple-touch-icon, favicon, meta tags Open Graph pt-BR (WhatsApp share). Guia de publicação Play Store em `/app/PLAY_STORE_GUIDE.md` (custo total ~R$ 165, plano de 4 semanas).
 
 ## Prioridade — Backlog
 

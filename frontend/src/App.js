@@ -14,6 +14,24 @@ import Precos from "@/pages/Precos";
 import { PagamentoSucesso, PagamentoCancelado } from "@/pages/Pagamento";
 import Projetos from "@/pages/Projetos";
 import ProjetoDetalhe from "@/pages/ProjetoDetalhe";
+import Landing from "@/pages/Landing";
+import { Privacidade, Termos } from "@/pages/Legal";
+import { useAuth } from "@/context/AuthContext";
+
+// Root component: shows Landing for anonymous users, Home for authenticated
+function RootRoute() {
+  const { user } = useAuth();
+  if (user === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a08]">
+        <div className="tmf-mono text-[10px] tracking-[0.35em] text-[#d4af37]">
+          CARREGANDO...
+        </div>
+      </div>
+    );
+  }
+  return user ? <Home /> : <Landing />;
+}
 
 function AppRouter() {
   const location = useLocation();
@@ -29,14 +47,10 @@ function AppRouter() {
       <Route path="/pagamento/sucesso" element={<PagamentoSucesso />} />
       <Route path="/pagamento/cancelado" element={<PagamentoCancelado />} />
 
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Home />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/lp" element={<Landing />} />
+      <Route path="/privacidade" element={<Privacidade />} />
+      <Route path="/termos" element={<Termos />} />
+      <Route path="/" element={<RootRoute />} />
       <Route
         path="/foto/:tipo"
         element={
