@@ -225,13 +225,14 @@ export default function Home() {
                 Plugin SketchUp
               </div>
               <div className="tmf-mono text-[10px] tracking-widest text-[#d4af37] mt-0.5">
-                FASE 2 · PRONTO PARA INSTALAR
+                v1.2 · PAREDES + LASTRO + MÓDULOS
               </div>
             </div>
           </div>
           <p className="text-[#a3a39a] text-sm mb-4">
-            Instale o plugin no SketchUp e importe suas paredes direto da nuvem — a geometria
-            3D é gerada automaticamente com aberturas, colunas, vigas e pontos elétricos.
+            Instale o plugin no SketchUp e ganhe 3 ferramentas: importa paredes
+            (com portas, janelas, tomadas e ângulos), gera o <strong className="text-[#f3e5ab]">Lastro de Cozinha</strong> e
+            o <strong className="text-[#f3e5ab]">Construtor de Módulos</strong> parametrizado.
           </p>
 
           {/* Quick install steps — visible without opening the README */}

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Construtor de Módulos — Tudo Mais Fácil</title>
+<link rel="stylesheet" href="tmf.css">
+</head>
+<body>
+<div class="tmf-page">
+  <span class="tmf-tag">MARCENARIA · MÓDULO 2</span>
+  <h1 class="tmf-title">Construtor de Módulos</h1>
+  <p class="tmf-subtitle">
+    Crie qualquer módulo planejado (cozinha, banheiro, quarto…) parametrizando
+    dimensões, chapa, portas, gavetas e ferragens. Primeira versão — a usinagem
+    35 mm da dobradiça em DXF chega na próxima.
+  </p>
+
+  <!-- A) DIMENSÕES -->
+  <div class="tmf-card">
+    <h3>A · Dimensões do módulo</h3>
+    <div class="tmf-grid-2">
+      <div>
+        <label class="tmf-label">Altura</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-altura" value="70" step="1">
+          <div class="tmf-side"><div class="tmf-unit-toggle" data-target="altura"><button class="active" data-u="cm">CM</button><button data-u="mm">MM</button></div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="altura:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="altura:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+      <div>
+        <label class="tmf-label">Largura</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-largura" value="80" step="1">
+          <div class="tmf-side"><div class="tmf-unit-toggle" data-target="largura"><button class="active" data-u="cm">CM</button><button data-u="mm">MM</button></div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="largura:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="largura:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+      <div>
+        <label class="tmf-label">Profundidade</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-profundidade" value="55" step="1">
+          <div class="tmf-side"><div class="tmf-unit-toggle" data-target="profundidade"><button class="active" data-u="cm">CM</button><button data-u="mm">MM</button></div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="profundidade:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="profundidade:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+      <div>
+        <label class="tmf-label">Espessura chapa</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-espessura_chapa" value="15" step="0.5">
+          <div class="tmf-side"><div class="tmf-unit-toggle" data-target="espessura_chapa"><button data-u="cm">CM</button><button class="active" data-u="mm">MM</button></div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="espessura_chapa:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="espessura_chapa:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B) CHAPA -->
+  <div class="tmf-card">
+    <h3>B · Chapa</h3>
+    <div class="tmf-grid-2">
+      <div>
+        <label class="tmf-label">Cor da chapa</label>
+        <select class="tmf-select" id="f-cor_chapa">
+          <option value="branco_tx">Branco Texturizado</option>
+          <option value="preto_tx">Preto Texturizado</option>
+          <option value="carvalho">Carvalho Natural</option>
+          <option value="nogueira">Nogueira</option>
+          <option value="cinza_areia">Cinza Areia</option>
+        </select>
+      </div>
+      <div>
+        <label class="tmf-label">Valor da chapa (R$/m²)</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-valor_chapa" value="120" step="1">
+          <div class="tmf-side"><div class="tmf-fixed-unit">R$</div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="valor_chapa:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="valor_chapa:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C) PORTAS -->
+  <div class="tmf-card">
+    <h3>C · Portas e ferragens</h3>
+    <div class="tmf-grid-2">
+      <div>
+        <label class="tmf-label">Número de portas</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-numero_portas" value="2" step="1" min="0">
+          <div class="tmf-side"><div class="tmf-fixed-unit">un</div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="numero_portas:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="numero_portas:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+      <div>
+        <label class="tmf-label">Tipo de puxador</label>
+        <select class="tmf-select" id="f-tipo_puxador"></select>
+      </div>
+      <div>
+        <label class="tmf-label">Tipo de dobradiça</label>
+        <select class="tmf-select" id="f-tipo_dobradica"></select>
+      </div>
+      <div>
+        <label class="tmf-label">Posição usinagem dobradiça</label>
+        <select class="tmf-select" id="f-pos_usinagem_dobradica"></select>
+      </div>
+    </div>
+    <p class="tmf-hint">Furação Ø35mm será exportada em .DXF na próxima versão.</p>
+  </div>
+
+  <!-- D) PRATELEIRAS + DIVISÓRIAS -->
+  <div class="tmf-card">
+    <h3>D · Prateleiras e divisórias internas</h3>
+    <div class="tmf-grid-2">
+      <div>
+        <label class="tmf-label">Número de prateleiras</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-numero_prateleiras" value="1" step="1" min="0">
+          <div class="tmf-side"><div class="tmf-fixed-unit">un</div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="numero_prateleiras:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="numero_prateleiras:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+      <div>
+        <label class="tmf-label">Número de divisórias</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-numero_divisorias" value="0" step="1" min="0">
+          <div class="tmf-side"><div class="tmf-fixed-unit">un</div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="numero_divisorias:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="numero_divisorias:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- E) GAVETAS -->
+  <div class="tmf-card">
+    <h3>E · Gavetas e trilhos</h3>
+    <div class="tmf-grid-2">
+      <div>
+        <label class="tmf-label">Número de gavetas</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-numero_gavetas" value="0" step="1" min="0">
+          <div class="tmf-side"><div class="tmf-fixed-unit">un</div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="numero_gavetas:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="numero_gavetas:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+      <div>
+        <label class="tmf-label">Tipo de gaveta</label>
+        <select class="tmf-select" id="f-tipo_gaveta"></select>
+      </div>
+      <div>
+        <label class="tmf-label">Tipo de trilho</label>
+        <select class="tmf-select" id="f-tipo_trilho"></select>
+      </div>
+      <div>
+        <label class="tmf-label">Comprimento trilho</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-comprimento_trilho" value="500" step="10">
+          <div class="tmf-side"><div class="tmf-unit-toggle" data-target="comprimento_trilho"><button data-u="cm">CM</button><button class="active" data-u="mm">MM</button></div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="comprimento_trilho:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="comprimento_trilho:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+      <div>
+        <label class="tmf-label">Valor do trilho (R$/par)</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-valor_trilho" value="45" step="1">
+          <div class="tmf-side"><div class="tmf-fixed-unit">R$</div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="valor_trilho:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="valor_trilho:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+      <div>
+        <label class="tmf-label">Espessura estrutura gaveta</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-espessura_estrutura_gaveta" value="15" step="0.5">
+          <div class="tmf-side"><div class="tmf-unit-toggle" data-target="espessura_estrutura_gaveta"><button data-u="cm">CM</button><button class="active" data-u="mm">MM</button></div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="espessura_estrutura_gaveta:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="espessura_estrutura_gaveta:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+      <div>
+        <label class="tmf-label">Folga lateral gaveta</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-folga_gaveta" value="12" step="0.5">
+          <div class="tmf-side"><div class="tmf-unit-toggle" data-target="folga_gaveta"><button data-u="cm">CM</button><button class="active" data-u="mm">MM</button></div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="folga_gaveta:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="folga_gaveta:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+      <div>
+        <label class="tmf-label">Espessura fundo gaveta</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-espessura_fundo_gaveta" value="3" step="0.5">
+          <div class="tmf-side"><div class="tmf-unit-toggle" data-target="espessura_fundo_gaveta"><button data-u="cm">CM</button><button class="active" data-u="mm">MM</button></div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="espessura_fundo_gaveta:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="espessura_fundo_gaveta:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F) DETALHES FINAIS -->
+  <div class="tmf-card">
+    <h3>F · Detalhes construtivos</h3>
+    <div class="tmf-grid-2">
+      <div>
+        <label class="tmf-label">Espessura fundo módulo</label>
+        <div class="tmf-field">
+          <input class="tmf-input" type="number" id="f-espessura_fundo_modulo" value="3" step="0.5">
+          <div class="tmf-side"><div class="tmf-unit-toggle" data-target="espessura_fundo_modulo"><button data-u="cm">CM</button><button class="active" data-u="mm">MM</button></div><div class="tmf-triangles"><button type="button" class="tmf-tri" data-bump="espessura_fundo_modulo:-1"><svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg></button><button type="button" class="tmf-tri" data-bump="espessura_fundo_modulo:+1"><svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg></button></div></div>
+        </div>
+      </div>
+    </div>
+    <p class="tmf-hint">Estrutura superior frontal (topo do módulo) usa a largura total e a espessura da chapa por padrão.</p>
+  </div>
+
+  <div class="tmf-actions">
+    <button class="tmf-btn-secondary" onclick="sketchup.close()">Fechar</button>
+    <button class="tmf-btn" onclick="build()">Gerar módulo 3D no SketchUp</button>
+  </div>
+</div>
+
+<script>
+  // Track unit per field (cm by default for large dims, mm for thickness/hardware)
+  const units = {
+    altura: 'cm', largura: 'cm', profundidade: 'cm',
+    espessura_chapa: 'mm', comprimento_trilho: 'mm',
+    espessura_estrutura_gaveta: 'mm', folga_gaveta: 'mm',
+    espessura_fundo_gaveta: 'mm', espessura_fundo_modulo: 'mm'
+  };
+
+  // Unit toggle
+  document.querySelectorAll('.tmf-unit-toggle').forEach(t => {
+    const target = t.dataset.target;
+    t.querySelectorAll('button').forEach(b => {
+      b.addEventListener('click', () => {
+        const u = b.dataset.u;
+        if (units[target] === u) return;
+        const inp = document.getElementById('f-' + target);
+        const cur = parseFloat(inp.value || 0);
+        if (units[target] === 'cm' && u === 'mm') inp.value = (cur * 10).toFixed(0);
+        else if (units[target] === 'mm' && u === 'cm') inp.value = (cur / 10).toFixed(2);
+        units[target] = u;
+        t.querySelectorAll('button').forEach(bt => bt.classList.remove('active'));
+        b.classList.add('active');
+      });
+    });
+  });
+
+  // Triangle +/- bump
+  document.querySelectorAll('.tmf-tri').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const [target, delta] = btn.dataset.bump.split(':');
+      const inp = document.getElementById('f-' + target);
+      const step = parseFloat(inp.step || 1);
+      const cur = parseFloat(inp.value || 0);
+      const next = Math.max(0, cur + parseFloat(delta) * step);
+      inp.value = Number.isInteger(step) ? next.toFixed(0) : next.toFixed(1);
+    });
+  });
+
+  function toMM(id, unit) {
+    const v = parseFloat(document.getElementById(id).value || 0);
+    if (unit === 'cm') return v * 10;
+    return v;
+  }
+  function val(id) { return parseFloat(document.getElementById(id).value || 0); }
+  function sel(id) { return document.getElementById(id).value; }
+
+  function build() {
+    const payload = {
+      altura:                     toMM('f-altura', units.altura),
+      largura:                    toMM('f-largura', units.largura),
+      profundidade:               toMM('f-profundidade', units.profundidade),
+      espessura_chapa:            toMM('f-espessura_chapa', units.espessura_chapa),
+      cor_chapa:                  sel('f-cor_chapa'),
+      valor_chapa:                val('f-valor_chapa'),
+      numero_portas:              val('f-numero_portas'),
+      tipo_puxador:               sel('f-tipo_puxador'),
+      tipo_dobradica:             sel('f-tipo_dobradica'),
+      pos_usinagem_dobradica:     sel('f-pos_usinagem_dobradica'),
+      numero_prateleiras:         val('f-numero_prateleiras'),
+      numero_divisorias:          val('f-numero_divisorias'),
+      numero_gavetas:             val('f-numero_gavetas'),
+      tipo_gaveta:                sel('f-tipo_gaveta'),
+      tipo_trilho:                sel('f-tipo_trilho'),
+      comprimento_trilho:         toMM('f-comprimento_trilho', units.comprimento_trilho),
+      valor_trilho:               val('f-valor_trilho'),
+      espessura_estrutura_gaveta: toMM('f-espessura_estrutura_gaveta', units.espessura_estrutura_gaveta),
+      folga_gaveta:               toMM('f-folga_gaveta', units.folga_gaveta),
+      espessura_fundo_gaveta:     toMM('f-espessura_fundo_gaveta', units.espessura_fundo_gaveta),
+      espessura_fundo_modulo:     toMM('f-espessura_fundo_modulo', units.espessura_fundo_modulo)
+    };
+    sketchup.build(JSON.stringify(payload));
+  }
+
+  // Preset payloads pushed by Ruby (populate <select>s)
+  window.tmfModuloReady = function (data) {
+    const fill = (id, arr) => {
+      const el = document.getElementById(id);
+      if (!el || !arr) return;
+      el.innerHTML = arr.map(v => '<option value="' + v + '">' + v + '</option>').join('');
+    };
+    fill('f-tipo_puxador',           data.puxadores);
+    fill('f-tipo_dobradica',         data.dobradicas);
+    fill('f-pos_usinagem_dobradica', data.pos_usinagem);
+    fill('f-tipo_gaveta',            data.tipo_gaveta);
+    fill('f-tipo_trilho',            data.tipo_trilho);
+  };
+  if (window.sketchup) sketchup.ready();
+</script>
+</body>
+</html>

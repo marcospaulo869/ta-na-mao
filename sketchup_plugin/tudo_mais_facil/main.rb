@@ -8,6 +8,8 @@ require 'json'
 require File.join(File.dirname(__FILE__), 'generator')
 require File.join(File.dirname(__FILE__), 'loader')
 require File.join(File.dirname(__FILE__), 'dialog')
+require File.join(File.dirname(__FILE__), 'lastro')
+require File.join(File.dirname(__FILE__), 'modulo')
 
 module TudoMaisFacil
   module UI
@@ -20,6 +22,9 @@ module TudoMaisFacil
 
       menu.add_item('Importar Parede (arquivo local)…') { import_from_file }
       menu.add_item('Importar Parede (da nuvem)…')      { open_cloud_picker }
+      menu.add_separator
+      menu.add_item('🪵 Lastro de Cozinha…')             { TudoMaisFacil::Lastro.show_wizard }
+      menu.add_item('📦 Construtor de Módulos…')         { TudoMaisFacil::Modulo.show_wizard }
       menu.add_separator
       menu.add_item('Configurar URL do App…')           { configure_api }
       menu.add_item('Sobre')                            { show_about }
@@ -41,6 +46,18 @@ module TudoMaisFacil
       cmd_cloud.small_icon  = icon
       cmd_cloud.large_icon  = icon
       toolbar.add_item(cmd_cloud)
+
+      cmd_lastro = ::UI::Command.new('Lastro de Cozinha') { TudoMaisFacil::Lastro.show_wizard }
+      cmd_lastro.tooltip     = 'Gerar base de madeira (lastro) sob módulos de cozinha'
+      cmd_lastro.small_icon  = icon
+      cmd_lastro.large_icon  = icon
+      toolbar.add_item(cmd_lastro)
+
+      cmd_modulo = ::UI::Command.new('Construtor de Módulos') { TudoMaisFacil::Modulo.show_wizard }
+      cmd_modulo.tooltip     = 'Criar módulo planejado parametrizado'
+      cmd_modulo.small_icon  = icon
+      cmd_modulo.large_icon  = icon
+      toolbar.add_item(cmd_modulo)
 
       toolbar.show
     end

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Lastro de Cozinha — Tudo Mais Fácil</title>
+<link rel="stylesheet" href="tmf.css">
+</head>
+<body>
+<div class="tmf-page">
+  <span class="tmf-tag">MARCENARIA · MÓDULO 1</span>
+  <h1 class="tmf-title">Lastro de Cozinha</h1>
+  <p class="tmf-subtitle">
+    Base de madeira que fica no chão sob os módulos da cozinha. Informe as
+    dimensões e o tipo de madeira — o SketchUp gera a peça em 1 clique.
+  </p>
+
+  <div class="tmf-card">
+    <h3>Dimensões da madeira</h3>
+
+    <label class="tmf-label">Comprimento</label>
+    <div class="tmf-field">
+      <input class="tmf-input" type="number" id="f-comprimento" value="2400" min="0" step="10">
+      <div class="tmf-side">
+        <div class="tmf-unit-toggle" data-target="comprimento">
+          <button class="active" data-u="cm">CM</button>
+          <button data-u="mm">MM</button>
+        </div>
+        <div class="tmf-triangles">
+          <button type="button" class="tmf-tri" data-bump="comprimento:-1">
+            <svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg>
+          </button>
+          <button type="button" class="tmf-tri" data-bump="comprimento:+1">
+            <svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <label class="tmf-label" style="margin-top:14px;">Altura</label>
+    <div class="tmf-field">
+      <input class="tmf-input" type="number" id="f-altura" value="10" min="0" step="1">
+      <div class="tmf-side">
+        <div class="tmf-unit-toggle" data-target="altura">
+          <button class="active" data-u="cm">CM</button>
+          <button data-u="mm">MM</button>
+        </div>
+        <div class="tmf-triangles">
+          <button type="button" class="tmf-tri" data-bump="altura:-1">
+            <svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg>
+          </button>
+          <button type="button" class="tmf-tri" data-bump="altura:+1">
+            <svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <label class="tmf-label" style="margin-top:14px;">Espessura</label>
+    <div class="tmf-field">
+      <input class="tmf-input" type="number" id="f-espessura" value="2.5" min="0" step="0.5">
+      <div class="tmf-side">
+        <div class="tmf-unit-toggle" data-target="espessura">
+          <button class="active" data-u="cm">CM</button>
+          <button data-u="mm">MM</button>
+        </div>
+        <div class="tmf-triangles">
+          <button type="button" class="tmf-tri" data-bump="espessura:-1">
+            <svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg>
+          </button>
+          <button type="button" class="tmf-tri" data-bump="espessura:+1">
+            <svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tmf-card">
+    <h3>Tipo de madeira</h3>
+    <label class="tmf-label">Escolha</label>
+    <select class="tmf-select" id="f-madeira">
+      <option value="pinus_tratado">Pinus Tratado</option>
+      <option value="grapia">Grapia (madeira de lei)</option>
+    </select>
+
+    <label class="tmf-label" style="margin-top:14px;">Valor por metro linear (R$)</label>
+    <div class="tmf-field">
+      <input class="tmf-input" type="number" id="f-valor" value="45" min="0" step="0.5">
+      <div class="tmf-side">
+        <div class="tmf-fixed-unit">R$</div>
+        <div class="tmf-triangles">
+          <button type="button" class="tmf-tri" data-bump="valor:-1">
+            <svg viewBox="0 0 20 20"><path d="M5 7 L15 7 L10 15 Z"/></svg>
+          </button>
+          <button type="button" class="tmf-tri" data-bump="valor:+1">
+            <svg viewBox="0 0 20 20"><path d="M5 13 L15 13 L10 5 Z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <p class="tmf-hint">O valor por metro é apenas para estimar o custo — não afeta a geometria.</p>
+  </div>
+
+  <div class="tmf-actions">
+    <button class="tmf-btn-secondary" onclick="sketchup.close()">Fechar</button>
+    <button class="tmf-btn" onclick="build()">Gerar lastro no SketchUp</button>
+  </div>
+</div>
+
+<script>
+  // Per-field unit map (all stored in cm internally; converted on build)
+  const units = { comprimento: 'cm', altura: 'cm', espessura: 'cm', valor: 'BRL' };
+
+  // Unit toggle
+  document.querySelectorAll('.tmf-unit-toggle').forEach(t => {
+    const target = t.dataset.target;
+    t.querySelectorAll('button').forEach(b => {
+      b.addEventListener('click', () => {
+        const u = b.dataset.u;
+        if (units[target] === u) return;
+        const inp = document.getElementById('f-' + target);
+        const cur = parseFloat(inp.value || 0);
+        // convert
+        if (units[target] === 'cm' && u === 'mm') inp.value = (cur * 10).toFixed(0);
+        else if (units[target] === 'mm' && u === 'cm') inp.value = (cur / 10).toFixed(2);
+        units[target] = u;
+        t.querySelectorAll('button').forEach(bt => bt.classList.remove('active'));
+        b.classList.add('active');
+      });
+    });
+  });
+
+  // Triangle +/- bump
+  document.querySelectorAll('.tmf-tri').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const [target, delta] = btn.dataset.bump.split(':');
+      const inp = document.getElementById('f-' + target);
+      const step = parseFloat(inp.step || 1);
+      const cur = parseFloat(inp.value || 0);
+      const next = Math.max(0, cur + parseFloat(delta) * step);
+      inp.value = target === 'espessura' ? next.toFixed(1) : next.toFixed(2);
+    });
+  });
+
+  function build() {
+    // Convert everything to mm before sending
+    const toMM = (id, unit) => {
+      const v = parseFloat(document.getElementById(id).value || 0);
+      return unit === 'cm' ? v * 10 : v;
+    };
+    const payload = {
+      comprimento: toMM('f-comprimento', units.comprimento),
+      altura:      toMM('f-altura', units.altura),
+      espessura:   toMM('f-espessura', units.espessura),
+      tipo_madeira: document.getElementById('f-madeira').value,
+      valor_metro: parseFloat(document.getElementById('f-valor').value || 0)
+    };
+    sketchup.build(JSON.stringify(payload));
+  }
+
+  window.tmfLastroReady = function (data) { /* placeholder for future presets injection */ };
+  if (window.sketchup) sketchup.ready();
+</script>
+</body>
+</html>

@@ -106,7 +106,7 @@ class TestRbzContents:
         z = zipfile.ZipFile(io.BytesIO(self._fetch_rbz()))
         body = z.read("tudo_mais_facil.rb").decode("utf-8", "replace")
         m = re.search(r"PLUGIN_VERSION\s*=\s*['\"]([^'\"]+)['\"]", body)
-        assert m and m.group(1) == "1.1.1", f"expected 1.1.1, got {m and m.group(1)}"
+        assert m and m.group(1) == "1.2.0", f"expected 1.2.0, got {m and m.group(1)}"
 
     def test_generator_no_dig_no_sum(self):
         import io, zipfile, re
