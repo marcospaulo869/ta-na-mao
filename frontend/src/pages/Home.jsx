@@ -233,6 +233,32 @@ export default function Home() {
             Instale o plugin no SketchUp e importe suas paredes direto da nuvem — a geometria
             3D é gerada automaticamente com aberturas, colunas, vigas e pontos elétricos.
           </p>
+
+          {/* Quick install steps — visible without opening the README */}
+          <div
+            className="mb-4 border border-[rgba(212,175,55,0.25)] bg-[rgba(212,175,55,0.04)] p-3 space-y-2"
+            data-testid="plugin-install-steps"
+          >
+            <div className="tmf-mono text-[10px] tracking-[0.3em] text-[#d4af37]">
+              INSTALAR EM 4 PASSOS (SKETCHUP 2018 – 2026)
+            </div>
+            <ol className="text-[#f3e5ab] text-xs space-y-1.5 list-decimal pl-4">
+              <li>Baixe o arquivo <span className="tmf-mono text-[#d4af37]">.rbz</span> abaixo</li>
+              <li>
+                Abra o SketchUp → menu <strong className="text-white">Extensões</strong> →{" "}
+                <strong className="text-white">Gerenciador de Extensões</strong>
+              </li>
+              <li>
+                Clique em <strong className="text-white">Instalar Extensão</strong> (canto inferior) e escolha o arquivo baixado. Se pedir confirmação de "extensão não assinada", clique <strong className="text-white">Sim</strong>
+              </li>
+              <li>
+                Pronto! O plugin aparece em <strong className="text-white">Extensões → Tudo Mais Fácil</strong>
+              </li>
+            </ol>
+            <div className="tmf-mono text-[9px] tracking-wider text-[#a3a39a] pt-1 border-t border-[rgba(212,175,55,0.15)]">
+              NÃO ACHOU O GERENCIADOR? TOQUE EM "COMO INSTALAR" ABAIXO — TEM UM MÉTODO ALTERNATIVO
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <a
               href="/downloads/tudo_mais_facil.rbz"

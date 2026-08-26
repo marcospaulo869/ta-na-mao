@@ -68,7 +68,8 @@ module TudoMaisFacil
         face.reverse! if face.normal.y > 0
 
         # Apply wall color if provided
-        cor_hex = wall.dig('cores', 'parede_hex')
+        cores = wall['cores'] || {}
+        cor_hex = cores['parede_hex']
         if cor_hex && !cor_hex.empty?
           apply_material(face, "TMF Parede #{wall['numero']}", cor_hex)
         end
@@ -351,7 +352,7 @@ module TudoMaisFacil
         aberturas = (wall['portas'] || []).length + (wall['janelas'] || []).length
         p = wall['pontos'] || {}
         instalacoes = %w[tomadas interruptores saidas_agua saidas_esgoto saidas_gas registros_agua]
-                      .map { |k| (p[k] || []).length }.sum
+                      .map { |k| (p[k] || []).length }.inject(0) { |acc, n| acc + n }
         "• Pé direito: #{wall['altura_pe_direito']} mm\n" \
         "• Largura total: #{wall['largura_total']} mm\n" \
         "• Colunas: #{(wall['colunas'] || []).length}\n" \

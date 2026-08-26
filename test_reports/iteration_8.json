@@ -1,0 +1,32 @@
+{
+  "summary": "Iteration 8 (SketchUp 2018 compatibility fix) verified. Backend regression + static file + .rbz content + Home UI all pass. 7/7 pytest tests green.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_paredes_angulo_and_downloads.py",
+    "/app/test_reports/pytest/iter8_paredes.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "generator.rb: verified no .dig( and no .sum tokens (Ruby 2.2.4 safe). Backend & UI unchanged from iter7."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_paredes_angulo_and_downloads.py (added TestRbzContents class + relaxed README assertion to accept 'SketchUp 2018' + '2026')"
+  ],
+  "success_rate": {"backend": "100% (7/7)", "frontend": "100% (2/2 UI checks)"},
+  "test_credentials": "admin@tudomaisfacil.com / admin123 — worked",
+  "seed_data_creation": "One TEST_ wall created and deleted during paredes_angulo roundtrip.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Test suite /app/backend/tests/test_paredes_angulo_and_downloads.py now covers iter7 (paredes_angulo roundtrip, README, sample JSON, RBZ non-empty) and iter8 (RBZ size >8kB, PLUGIN_VERSION==1.1.1 in tudo_mais_facil.rb entry, generator.rb free of .dig( and .sum\\b). Home page install-steps header is exactly 'INSTALAR EM 4 PASSOS (SKETCHUP 2018 – 2026)' (en-dash U+2013) and [data-testid='btn-download-plugin'] href='/downloads/tudo_mais_facil.rbz'. Public URL: https://sketch-toolkit-1.preview.emergentagent.com. Admin cookie login via /api/auth/login works.",
+  "verification_details": {
+    "rbz_size_bytes": 11882,
+    "PLUGIN_VERSION_in_rbz": "1.1.1",
+    "generator_rb_dig_present": false,
+    "generator_rb_sum_present": false,
+    "readme_contains_sketchup_2018_and_2026": true,
+    "home_install_steps_header_seen": "INSTALAR EM 4 PASSOS (SKETCHUP 2018 – 2026)",
+    "download_button_href": "/downloads/tudo_mais_facil.rbz",
+    "paredes_angulo_export_mm": {"comprimento": 1500, "altura": 2800, "angulo": 135}
+  }
+}
