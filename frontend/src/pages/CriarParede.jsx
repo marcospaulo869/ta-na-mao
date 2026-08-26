@@ -223,14 +223,14 @@ export default function CriarParede() {
               emptyLabel="Nenhuma coluna."
               factory={() => ({ id: uid(), largura: 15, profundidade: 15 })}
               render={(item, upd) => (
-                <div className="grid grid-cols-2 gap-3">
-                  <Field unit={unit}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field
                     label="Largura"
                     value={item.largura}
                     onChange={(v) => upd({ largura: v })}
                     testid="input-coluna-largura"
                   />
-                  <Field unit={unit}
+                  <Field
                     label="Profundidade"
                     value={item.profundidade}
                     onChange={(v) => upd({ profundidade: v })}
@@ -251,14 +251,14 @@ export default function CriarParede() {
               emptyLabel="Nenhuma viga."
               factory={() => ({ id: uid(), altura: 20, largura: 15 })}
               render={(item, upd) => (
-                <div className="grid grid-cols-2 gap-3">
-                  <Field unit={unit}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field
                     label="Altura"
                     value={item.altura}
                     onChange={(v) => upd({ altura: v })}
                     testid="input-viga-altura"
                   />
-                  <Field unit={unit}
+                  <Field
                     label="Largura"
                     value={item.largura}
                     onChange={(v) => upd({ largura: v })}
@@ -282,26 +282,26 @@ export default function CriarParede() {
               emptyLabel="Nenhuma porta."
               factory={() => ({ id: uid(), largura_vao: 80, altura_vao: 210, largura_vista: 5, espessura_vista: 1.5 })}
               render={(item, upd) => (
-                <div className="grid grid-cols-2 gap-3">
-                  <Field unit={unit}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field
                     label="Largura interna vão"
                     value={item.largura_vao}
                     onChange={(v) => upd({ largura_vao: v })}
                     testid="input-porta-largura-vao"
                   />
-                  <Field unit={unit}
+                  <Field
                     label="Altura interna vão"
                     value={item.altura_vao}
                     onChange={(v) => upd({ altura_vao: v })}
                     testid="input-porta-altura-vao"
                   />
-                  <Field unit={unit}
+                  <Field
                     label="Largura vista"
                     value={item.largura_vista}
                     onChange={(v) => upd({ largura_vista: v })}
                     testid="input-porta-largura-vista"
                   />
-                  <Field unit={unit}
+                  <Field
                     label="Espessura vista"
                     value={item.espessura_vista}
                     onChange={(v) => upd({ espessura_vista: v })}
@@ -322,20 +322,20 @@ export default function CriarParede() {
               emptyLabel="Nenhuma janela."
               factory={() => ({ id: uid(), largura_vista: 5, largura_vao: 120, altura_vao: 100 })}
               render={(item, upd) => (
-                <div className="grid grid-cols-2 gap-3">
-                  <Field unit={unit}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field
                     label="Largura vista"
                     value={item.largura_vista}
                     onChange={(v) => upd({ largura_vista: v })}
                     testid="input-janela-largura-vista"
                   />
-                  <Field unit={unit}
+                  <Field
                     label="Largura interna vão"
                     value={item.largura_vao}
                     onChange={(v) => upd({ largura_vao: v })}
                     testid="input-janela-largura-vao"
                   />
-                  <Field unit={unit}
+                  <Field
                     label="Altura interna vão"
                     value={item.altura_vao}
                     onChange={(v) => upd({ altura_vao: v })}
@@ -445,14 +445,14 @@ function PontosParede({ label, items, onChange, testid, factoryAltura, showAltur
         render={(item, upd) => (
           <div className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field unit={unit}
+              <Field
                 label="Distância do centro"
                 value={item.distancia_centro}
                 onChange={(v) => upd({ distancia_centro: v })}
                 testid="input-ponto-distancia"
               />
               {showAltura && (
-                <Field unit={unit}
+                <Field
                   label="Altura em relação ao piso"
                   value={item.altura_piso}
                   onChange={(v) => upd({ altura_piso: v })}
