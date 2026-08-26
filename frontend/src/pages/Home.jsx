@@ -8,8 +8,12 @@ import {
   Package,
   DownloadSimple,
   Cube,
+  Crown,
+  SignOut,
+  User,
 } from "@phosphor-icons/react";
 import { listWalls } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 const HomeButton = ({ to, testid, icon: Icon, label, hint }) => (
   <Link to={to} data-testid={testid} className="tmf-btn group tmf-corner-marks">
@@ -30,6 +34,7 @@ const HomeButton = ({ to, testid, icon: Icon, label, hint }) => (
 
 export default function Home() {
   const navigate = useNavigate();
+  const { user, limits, logout } = useAuth();
   const [wallsCount, setWallsCount] = useState(null);
 
   useEffect(() => {
@@ -38,8 +43,55 @@ export default function Home() {
       .catch(() => setWallsCount(0));
   }, []);
 
+  const isPro = limits?.is_pro;
+
   return (
     <div className="min-h-screen tmf-grid-bg relative overflow-x-hidden" data-testid="home-page">
+      {/* User bar */}
+      <div className="max-w-3xl mx-auto px-5 pt-4 flex items-center justify-between" data-testid="user-bar">
+        <div className="flex items-center gap-2 text-[#a3a39a] text-sm">
+          {user?.picture ? (
+            <img src={user.picture} alt="" className="w-7 h-7 rounded-full border border-[#d4af37]" />
+          ) : (
+            <User size={18} weight="duotone" className="text-[#d4af37]" />
+          )}
+          <span className="truncate max-w-[160px]">{user?.name || user?.email}</span>
+          {isPro ? (
+            <span className="tmf-tag ml-1 flex items-center gap-1">
+              <Crown size={11} weight="fill" /> PRO
+            </span>
+          ) : (
+            <span className="tmf-tag ml-1">GRÁTIS</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {!isPro && (
+            <Link
+              to="/precos"
+              data-testid="btn-upgrade"
+              className="tmf-btn-secondary flex items-center gap-1"
+              style={{ padding: "0.4rem 0.7rem" }}
+            >
+              <Crown size={13} weight="fill" />
+              <span className="hidden sm:inline">Assinar PRO</span>
+              <span className="sm:hidden">PRO</span>
+            </Link>
+          )}
+          <button
+            onClick={async () => {
+              await logout();
+              navigate("/login");
+            }}
+            data-testid="btn-logout"
+            className="tmf-btn-secondary flex items-center gap-1"
+            style={{ padding: "0.4rem 0.7rem" }}
+            aria-label="Sair"
+            title="Sair"
+          >
+            <SignOut size={13} weight="bold" />
+          </button>
+        </div>
+      </div>
       {/* Hero brand */}
       <section className="relative pt-10 pb-8 px-5">
         <div className="max-w-3xl mx-auto text-center tmf-fade-in">
@@ -131,6 +183,8 @@ export default function Home() {
               <div className="tmf-mono text-[10px] tracking-widest text-[#a3a39a] mt-0.5">
                 {wallsCount === null
                   ? "CARREGANDO..."
+                  : limits?.walls_limit
+                  ? `${wallsCount}/${limits.walls_limit} PAREDES · PLANO GRÁTIS`
                   : `${wallsCount} PAREDE${wallsCount === 1 ? "" : "S"} ARMAZENADAS`}
               </div>
             </div>

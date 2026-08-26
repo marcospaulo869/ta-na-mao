@@ -5,7 +5,7 @@ import Section from "@/components/Section";
 import { Field, SideSelect } from "@/components/Field";
 import RepeatableGroup from "@/components/RepeatableGroup";
 import { toast } from "sonner";
-import { CheckCircle, FloppyDisk } from "@phosphor-icons/react";
+import { CheckCircle, FloppyDisk, Crown } from "@phosphor-icons/react";
 import { createWall, getWall, updateWall } from "@/lib/api";
 
 const uid = () =>
@@ -61,7 +61,17 @@ export default function CriarParede() {
       }
       navigate("/paredes");
     } catch (e) {
-      toast.error("Erro ao salvar", { description: e?.message || "" });
+      if (e.response?.status === 402) {
+        toast.error(e.response.data.detail, {
+          duration: 6000,
+          action: {
+            label: "Assinar PRO",
+            onClick: () => navigate("/precos"),
+          },
+        });
+      } else {
+        toast.error("Erro ao salvar", { description: e?.message || "" });
+      }
     } finally {
       setSaving(false);
     }

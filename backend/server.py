@@ -1,41 +1,41 @@
-from fastapi import FastAPI, APIRouter, HTTPException
-from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
+from pathlib import Path
+load_dotenv(Path(__file__).parent / ".env")
+
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request
+from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
-from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Literal
 import uuid
 from datetime import datetime, timezone
 
-
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+from auth import router as auth_router, get_current_user, ensure_indexes, seed_admin
+from payments import router as payments_router
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
 app = FastAPI(title="TUDO MAIS FÁCIL API")
+app.state.db = db
 
-# Create a router with the /api prefix
-api_router = APIRouter(prefix="/api")
+FREEMIUM_WALL_LIMIT = 3
+PRO_PLANS = {"pro_monthly", "pro_annual", "pro"}
 
 
 # ==================== MODELS ====================
 
 class RepeatableItem(BaseModel):
-    """Base for items that can be added multiple times to a wall."""
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
 
 
 class Coluna(RepeatableItem):
-    largura: float  # cm
+    largura: float
     profundidade: float
 
 
@@ -58,9 +58,6 @@ class Janela(RepeatableItem):
 
 
 class PontoParede(RepeatableItem):
-    """Ponto genérico com distância lateral e altura em relação ao piso.
-    O 'tipo' é opcional porque cada categoria já vive em seu próprio array
-    (tomadas, interruptores, saidas_agua, saidas_esgoto, saidas_gas, registros_agua)."""
     tipo: Optional[str] = None
     distancia_centro: float
     lado: Literal["direito", "esquerdo"] = "direito"
@@ -71,26 +68,23 @@ class Wall(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    nome: str  # "Parede 01", "Parede 02"...
+    user_id: Optional[str] = None
+    nome: str
     numero: int = 1
-    # Estrutura
-    altura_pe_direito: float = 280  # cm
+    altura_pe_direito: float = 280
     largura_total: float = 400
     espessura_rodape: float = 1.5
     altura_rodape: float = 8
     colunas: List[Coluna] = []
     vigas: List[Viga] = []
-    # Aberturas
     portas: List[Porta] = []
     janelas: List[Janela] = []
-    # Instalações
     tomadas: List[PontoParede] = []
     interruptores: List[PontoParede] = []
     saidas_agua: List[PontoParede] = []
     saidas_esgoto: List[PontoParede] = []
     saidas_gas: List[PontoParede] = []
     registros_agua: List[PontoParede] = []
-    # Referências de cor / material
     foto_parede_id: Optional[str] = None
     foto_piso_id: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -119,11 +113,11 @@ class WallCreate(BaseModel):
 
 class Photo(BaseModel):
     model_config = ConfigDict(extra="ignore")
-
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: Optional[str] = None
     tipo: Literal["parede", "piso"]
-    data_base64: str  # image data
-    cor_dominante_hex: str  # e.g. "#A38B6C"
+    data_base64: str
+    cor_dominante_hex: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -142,30 +136,63 @@ class PhotoSummary(BaseModel):
 
 # ==================== ROUTES ====================
 
+api_router = APIRouter(prefix="/api")
+
+
 @api_router.get("/")
 async def root():
-    return {"app": "TUDO MAIS FÁCIL", "version": "1.0.0", "status": "online"}
+    return {"app": "TUDO MAIS FÁCIL", "version": "1.1.0", "status": "online"}
+
+
+@api_router.get("/limits")
+async def get_limits(user=Depends(get_current_user)):
+    """Return the current user's wall usage vs. plan limits."""
+    walls_count = await db.walls.count_documents({"user_id": user["user_id"]})
+    is_pro = user.get("plan") in PRO_PLANS
+    return {
+        "plan": user.get("plan", "free"),
+        "is_pro": is_pro,
+        "walls_used": walls_count,
+        "walls_limit": None if is_pro else FREEMIUM_WALL_LIMIT,
+    }
 
 
 # ---------- Walls ----------
 
+def _sanitize_wall(doc: dict) -> dict:
+    for k in ("created_at", "updated_at"):
+        if isinstance(doc.get(k), str):
+            doc[k] = datetime.fromisoformat(doc[k])
+    return doc
+
+
 @api_router.get("/walls", response_model=List[Wall])
-async def list_walls():
-    docs = await db.walls.find({}, {"_id": 0}).sort("numero", 1).to_list(1000)
-    for d in docs:
-        for k in ("created_at", "updated_at"):
-            if isinstance(d.get(k), str):
-                d[k] = datetime.fromisoformat(d[k])
-    return docs
+async def list_walls(user=Depends(get_current_user)):
+    docs = await db.walls.find({"user_id": user["user_id"]}, {"_id": 0}).sort("numero", 1).to_list(1000)
+    return [_sanitize_wall(d) for d in docs]
 
 
 @api_router.post("/walls", response_model=Wall)
-async def create_wall(payload: WallCreate):
-    # Determine next numero
-    last = await db.walls.find({}, {"_id": 0, "numero": 1}).sort("numero", -1).limit(1).to_list(1)
+async def create_wall(payload: WallCreate, user=Depends(get_current_user)):
+    # Enforce freemium limit
+    if user.get("plan", "free") not in PRO_PLANS:
+        existing = await db.walls.count_documents({"user_id": user["user_id"]})
+        if existing >= FREEMIUM_WALL_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=(
+                    f"Limite gratuito de {FREEMIUM_WALL_LIMIT} paredes atingido. "
+                    "Assine o plano PRO para paredes ilimitadas."
+                ),
+            )
+
+    # Auto-number per user
+    last = await db.walls.find(
+        {"user_id": user["user_id"]}, {"_id": 0, "numero": 1}
+    ).sort("numero", -1).limit(1).to_list(1)
     next_num = (last[0]["numero"] + 1) if last else 1
     nome = payload.nome or f"Parede {next_num:02d}"
-    wall = Wall(**payload.model_dump(exclude={"nome"}), nome=nome, numero=next_num)
+    wall = Wall(**payload.model_dump(exclude={"nome"}), nome=nome, numero=next_num, user_id=user["user_id"])
     doc = wall.model_dump()
     doc["created_at"] = doc["created_at"].isoformat()
     doc["updated_at"] = doc["updated_at"].isoformat()
@@ -174,46 +201,49 @@ async def create_wall(payload: WallCreate):
 
 
 @api_router.get("/walls/{wall_id}", response_model=Wall)
-async def get_wall(wall_id: str):
-    doc = await db.walls.find_one({"id": wall_id}, {"_id": 0})
+async def get_wall(wall_id: str, user=Depends(get_current_user)):
+    doc = await db.walls.find_one({"id": wall_id, "user_id": user["user_id"]}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Parede não encontrada")
-    for k in ("created_at", "updated_at"):
-        if isinstance(doc.get(k), str):
-            doc[k] = datetime.fromisoformat(doc[k])
-    return doc
+    return _sanitize_wall(doc)
 
 
 @api_router.put("/walls/{wall_id}", response_model=Wall)
-async def update_wall(wall_id: str, payload: WallCreate):
-    existing = await db.walls.find_one({"id": wall_id}, {"_id": 0})
+async def update_wall(wall_id: str, payload: WallCreate, user=Depends(get_current_user)):
+    existing = await db.walls.find_one({"id": wall_id, "user_id": user["user_id"]}, {"_id": 0})
     if not existing:
         raise HTTPException(status_code=404, detail="Parede não encontrada")
     data = payload.model_dump(exclude_unset=True)
     if "nome" in data and not data["nome"]:
         data.pop("nome")
     data["updated_at"] = datetime.now(timezone.utc).isoformat()
-    await db.walls.update_one({"id": wall_id}, {"$set": data})
-    updated = await db.walls.find_one({"id": wall_id}, {"_id": 0})
-    for k in ("created_at", "updated_at"):
-        if isinstance(updated.get(k), str):
-            updated[k] = datetime.fromisoformat(updated[k])
-    return updated
+    await db.walls.update_one({"id": wall_id, "user_id": user["user_id"]}, {"$set": data})
+    updated = await db.walls.find_one({"id": wall_id, "user_id": user["user_id"]}, {"_id": 0})
+    return _sanitize_wall(updated)
 
 
 @api_router.delete("/walls/{wall_id}")
-async def delete_wall(wall_id: str):
-    res = await db.walls.delete_one({"id": wall_id})
+async def delete_wall(wall_id: str, user=Depends(get_current_user)):
+    res = await db.walls.delete_one({"id": wall_id, "user_id": user["user_id"]})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Parede não encontrada")
     return {"ok": True, "deleted": wall_id}
 
 
 @api_router.get("/walls/{wall_id}/export")
-async def export_wall_for_sketchup(wall_id: str):
-    """Exports the wall data in a SketchUp-plugin-friendly JSON format.
-    Units are converted to millimeters (SketchUp friendly)."""
-    doc = await db.walls.find_one({"id": wall_id}, {"_id": 0})
+async def export_wall_for_sketchup(wall_id: str, request: Request):
+    """Export endpoint: accepts either an authenticated user OR (for SketchUp plugin
+    running standalone) a valid session cookie/token. Users can only export their own walls."""
+    from auth import get_current_user_optional
+    user = await get_current_user_optional(request)
+    query = {"id": wall_id}
+    if user:
+        query["user_id"] = user["user_id"]
+    else:
+        # Without auth, allow export only if wall exists and has no user_id (legacy) — safer for MVP
+        query["user_id"] = None
+
+    doc = await db.walls.find_one(query, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Parede não encontrada")
 
@@ -223,7 +253,6 @@ async def export_wall_for_sketchup(wall_id: str):
         except Exception:
             return v
 
-    # Fetch color references
     cor_parede = None
     cor_piso = None
     if doc.get("foto_parede_id"):
@@ -288,8 +317,8 @@ def _export_ponto(p: dict) -> dict:
 # ---------- Photos ----------
 
 @api_router.post("/photos", response_model=PhotoSummary)
-async def create_photo(payload: PhotoCreate):
-    photo = Photo(**payload.model_dump())
+async def create_photo(payload: PhotoCreate, user=Depends(get_current_user)):
+    photo = Photo(**payload.model_dump(), user_id=user["user_id"])
     doc = photo.model_dump()
     doc["created_at"] = doc["created_at"].isoformat()
     await db.photos.insert_one(doc)
@@ -301,8 +330,8 @@ async def create_photo(payload: PhotoCreate):
 
 
 @api_router.get("/photos", response_model=List[PhotoSummary])
-async def list_photos(tipo: Optional[str] = None):
-    query = {}
+async def list_photos(user=Depends(get_current_user), tipo: Optional[str] = None):
+    query = {"user_id": user["user_id"]}
     if tipo:
         query["tipo"] = tipo
     docs = await db.photos.find(query, {"_id": 0, "data_base64": 0}).sort("created_at", -1).to_list(1000)
@@ -313,38 +342,57 @@ async def list_photos(tipo: Optional[str] = None):
 
 
 @api_router.get("/photos/{photo_id}")
-async def get_photo(photo_id: str):
-    doc = await db.photos.find_one({"id": photo_id}, {"_id": 0})
+async def get_photo(photo_id: str, user=Depends(get_current_user)):
+    doc = await db.photos.find_one({"id": photo_id, "user_id": user["user_id"]}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Foto não encontrada")
     return doc
 
 
 @api_router.delete("/photos/{photo_id}")
-async def delete_photo(photo_id: str):
-    res = await db.photos.delete_one({"id": photo_id})
+async def delete_photo(photo_id: str, user=Depends(get_current_user)):
+    res = await db.photos.delete_one({"id": photo_id, "user_id": user["user_id"]})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Foto não encontrada")
     return {"ok": True, "deleted": photo_id}
 
 
-# Include the router in the main app
+# Register routers
 app.include_router(api_router)
+app.include_router(auth_router)
+app.include_router(payments_router)
 
+
+# Stripe delivers to /api/stripe/webhook by convention — expose an alias
+@app.post("/api/stripe/webhook")
+async def stripe_webhook_alias(request: Request):
+    from payments import _process_webhook
+    return await _process_webhook(request)
+
+# CORS
+frontend_url = os.environ.get("FRONTEND_URL", "*")
+allow_origins = [frontend_url] if frontend_url != "*" else ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=allow_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Configure logging
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+@app.on_event("startup")
+async def startup():
+    await ensure_indexes(db)
+    await seed_admin(db)
+    logger.info("TUDO MAIS FÁCIL — startup complete")
 
 
 @app.on_event("shutdown")

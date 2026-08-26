@@ -56,14 +56,19 @@ Suite completa (Marcenaria + Arquitetura + Documentação + Apresentação) que 
 - `/paredes` — lista de paredes com export/editar/excluir
 
 ## Implementado até agora
-- **2026-01-25** — MVP Fase 1 completa: backend CRUD + export mm, frontend com brand identity dourado/preto, formulário 24 campos, captura de foto, integração da logomarca oficial da Madeira Forte, testado end-to-end pelo testing agent (100% pass após 1 fix)
-- **2026-01-25** — MVP Fase 2 completa: Plugin SketchUp Ruby (`tudo_mais_facil.rbz`) com menu + toolbar + HtmlDialog dourado/preto; importa via arquivo local (.tmf.json) OU direto da nuvem (Net::HTTP GET); gera geometria 3D automática: paredes com aberturas cortadas, colunas distribuídas, vigas, rodapé, marcadores coloridos para tomadas/interruptores/água/esgoto/gás/registro; aplica cores das fotos como materiais SketchUp; tudo em 1 undo. Download disponível na home do app (`/downloads/tudo_mais_facil.rbz`).
-- **Fix**: `PontoParede.tipo` tornou-se `Optional` para compatibilidade com frontend
+- **2026-01-25** — MVP Fase 1: backend CRUD + export mm, frontend com logo, formulário 24 campos, captura de foto, testado 100%
+- **2026-01-25** — MVP Fase 2: Plugin SketchUp Ruby (`tudo_mais_facil.rbz`), gera geometria 3D automática
+- **2026-01-25** — Fix bug: `PontoParede.tipo` -> Optional
+- **2026-01-25** — Fix tipografia: fonte Archivo Black + leading corrigido
+- **2026-01-25** — Fix logo: fundo branco removido, logo vertical natural, texto "APP · ARQUITETOS · PROJETISTAS · MARCENEIROS"
+- **2026-01-25** — **Autenticação + Assinatura**: JWT email/senha + Emergent Google OAuth (unified session_token cookie), Users model com plan/plan_expires_at, freemium 3 paredes, Stripe sandbox provisionado (R$ 39,90/mês, R$ 399/ano BRL), páginas Login/Cadastro/Preços/Pagamento com tema dourado, ProtectedRoute + user-bar com nome + tag PRO/GRÁTIS + botão upgrade + logout, isolamento por user_id, admin seed (admin@tudomaisfacil.com / admin123, pro_annual). Testing agent: 14/14 backend + 100% frontend PASS
 
 ## Prioridade — Backlog
 
 ### P0 (próxima sessão)
-- **Teste real** do plugin dentro do SketchUp (Windows/Mac) — validar geometria com dimensões reais
+- **📁 Agrupar paredes em Projetos**: modelo Project (nome, cliente, endereço, walls[]), CRUD, importar projeto inteiro no SketchUp
+- **📄 PDF do ambiente** com todas as medidas + fotos para WhatsApp
+- **🎙️ Ditado por voz** (Whisper + IA para preencher campos)
 
 ### P1
 - Autenticação (JWT ou Google Login) para separar clientes/assinantes
