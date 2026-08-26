@@ -49,6 +49,13 @@ class Viga(RepeatableItem):
     largura: float
 
 
+class ParedeAngulo(RepeatableItem):
+    """Wall segment attached at an angle (e.g. cut corner at 135°)."""
+    comprimento: float
+    altura: float
+    angulo: float = 135
+
+
 class Porta(RepeatableItem):
     largura_vao: float
     altura_vao: float
@@ -83,6 +90,7 @@ class Wall(BaseModel):
     altura_rodape: float = 8
     colunas: List[Coluna] = []
     vigas: List[Viga] = []
+    paredes_angulo: List[ParedeAngulo] = []
     portas: List[Porta] = []
     janelas: List[Janela] = []
     tomadas: List[PontoParede] = []
@@ -106,6 +114,7 @@ class WallCreate(BaseModel):
     altura_rodape: float = 8
     colunas: List[Coluna] = []
     vigas: List[Viga] = []
+    paredes_angulo: List[ParedeAngulo] = []
     portas: List[Porta] = []
     janelas: List[Janela] = []
     tomadas: List[PontoParede] = []
@@ -330,6 +339,7 @@ async def export_wall_for_sketchup(wall_id: str, request: Request):
             "espessura_rodape": cm_to_mm(doc["espessura_rodape"]),
             "colunas": [{"largura": cm_to_mm(c["largura"]), "profundidade": cm_to_mm(c["profundidade"])} for c in doc.get("colunas", [])],
             "vigas": [{"altura": cm_to_mm(v["altura"]), "largura": cm_to_mm(v["largura"])} for v in doc.get("vigas", [])],
+            "paredes_angulo": [{"comprimento": cm_to_mm(a["comprimento"]), "altura": cm_to_mm(a["altura"]), "angulo": a.get("angulo", 135)} for a in doc.get("paredes_angulo", [])],
             "portas": [{"largura_vao": cm_to_mm(p["largura_vao"]), "altura_vao": cm_to_mm(p["altura_vao"]), "largura_vista": cm_to_mm(p.get("largura_vista", 0)), "espessura_vista": cm_to_mm(p.get("espessura_vista", 0))} for p in doc.get("portas", [])],
             "janelas": [{"largura_vista": cm_to_mm(j["largura_vista"]), "largura_vao": cm_to_mm(j["largura_vao"]), "altura_vao": cm_to_mm(j["altura_vao"])} for j in doc.get("janelas", [])],
             "pontos": {

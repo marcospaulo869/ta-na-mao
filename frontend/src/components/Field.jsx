@@ -26,17 +26,20 @@ export function Field({
   value,
   onChange,
   unit = "cm",
+  fixedUnit,
   step,
   testid,
   placeholder,
 }) {
-  const factor = unit === "mm" ? 10 : 1;
-  const displayStep = step ?? (unit === "mm" ? 10 : 1);
+  const activeUnit = fixedUnit || unit;
+  const factor = fixedUnit ? 1 : activeUnit === "mm" ? 10 : 1;
+  const displayStep =
+    step ?? (fixedUnit ? 1 : activeUnit === "mm" ? 10 : 1);
 
   const display =
     value === "" || value == null || Number.isNaN(value)
       ? ""
-      : Number((Number(value) * factor).toFixed(unit === "mm" ? 0 : 2));
+      : Number((Number(value) * factor).toFixed(activeUnit === "mm" ? 0 : fixedUnit ? 0 : 2));
 
   const commitDisplay = (raw) => {
     if (raw === "" || raw == null || Number.isNaN(Number(raw))) {
@@ -69,7 +72,16 @@ export function Field({
           data-testid={testid}
         />
         <div className="flex flex-col items-center flex-shrink-0">
-          <InlineUnitToggle fallbackUnit={unit} testid={testid} />
+          {fixedUnit ? (
+            <span
+              className="tmf-mono text-[10px] text-[#d4af37] tracking-widest font-bold leading-none mb-1 h-[19px] flex items-center"
+              data-testid={testid ? `${testid}-unit` : undefined}
+            >
+              {fixedUnit}
+            </span>
+          ) : (
+            <InlineUnitToggle fallbackUnit={unit} testid={testid} />
+          )}
           <div className="flex gap-2">
             <TriangleButton
               direction="down"

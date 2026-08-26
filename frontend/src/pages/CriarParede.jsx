@@ -22,6 +22,7 @@ const emptyWall = () => ({
   espessura_rodape: 1.5,
   colunas: [],
   vigas: [],
+  paredes_angulo: [],
   portas: [],
   janelas: [],
   tomadas: [],
@@ -76,7 +77,7 @@ export default function CriarParede() {
       });
       // Array fields append (with a fresh id per item)
       const arrays = [
-        "colunas", "vigas", "portas", "janelas",
+        "colunas", "vigas", "paredes_angulo", "portas", "janelas",
         "tomadas", "interruptores", "saidas_agua",
         "saidas_esgoto", "saidas_gas", "registros_agua",
       ];
@@ -272,9 +273,46 @@ export default function CriarParede() {
               )}
             />
           </div>
-        </Section>
 
-        {/* Aberturas */}
+          <div className="pt-2">
+            <div className="tmf-label mb-2">Paredes em ângulo</div>
+            <div className="tmf-mono text-[10px] text-[#a3a39a] tracking-wider mb-2">
+              PARA CANTOS CHANFRADOS OU PAREDES QUE VIRAM COM ÂNGULO DIFERENTE DE 90°
+            </div>
+            <RepeatableGroup
+              items={wall.paredes_angulo}
+              onChange={bind("paredes_angulo")}
+              testid="grp-paredes-angulo"
+              addLabel="Adicionar parede em ângulo"
+              emptyLabel="Nenhuma parede em ângulo."
+              factory={() => ({ id: uid(), comprimento: 100, altura: 280, angulo: 135 })}
+              render={(item, upd) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field
+                    label="Comprimento"
+                    value={item.comprimento}
+                    onChange={(v) => upd({ comprimento: v })}
+                    testid="input-angulo-comprimento"
+                  />
+                  <Field
+                    label="Altura"
+                    value={item.altura}
+                    onChange={(v) => upd({ altura: v })}
+                    testid="input-angulo-altura"
+                  />
+                  <Field
+                    label="Ângulo"
+                    value={item.angulo}
+                    onChange={(v) => upd({ angulo: v })}
+                    fixedUnit="°"
+                    step={1}
+                    testid="input-angulo-graus"
+                  />
+                </div>
+              )}
+            />
+          </div>
+        </Section>
         <Section title="Aberturas — Portas e janelas" tag="Campos 7–13" testid="section-aberturas">
           <div>
             <div className="tmf-label mb-2">Portas</div>
