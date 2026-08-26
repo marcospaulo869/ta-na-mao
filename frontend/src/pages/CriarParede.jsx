@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import Section from "@/components/Section";
-import { Field, SideSelect } from "@/components/Field";
+import { Field, SideSelect, UnitToggle, UnitProvider } from "@/components/Field";
 import RepeatableGroup from "@/components/RepeatableGroup";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { toast } from "sonner";
@@ -43,7 +43,13 @@ export default function CriarParede() {
   }));
   const [saving, setSaving] = useState(false);
   const [projects, setProjects] = useState([]);
+  const [unit, setUnit] = useState(() => localStorage.getItem("tmf_unit") || "cm");
   const isEdit = Boolean(id);
+
+  const changeUnit = (u) => {
+    setUnit(u);
+    localStorage.setItem("tmf_unit", u);
+  };
 
   useEffect(() => {
     listProjects().then(setProjects).catch(() => {});
@@ -124,6 +130,7 @@ export default function CriarParede() {
       back={isEdit ? "/paredes" : "/"}
     >
       <div className="space-y-4 tmf-fade-in" data-testid="criar-parede-form">
+        <UnitProvider unit={unit} onChange={changeUnit}>
         {/* Nome opcional */}
         <div className="tmf-card">
           <label className="tmf-label">Nome do ambiente (opcional)</label>
@@ -176,27 +183,30 @@ export default function CriarParede() {
         {/* Voice AI dictation */}
         <VoiceRecorder onParsed={mergeFromVoice} currentWall={wall} />
 
+        {/* Unit toggle (cm/mm) */}
+        <UnitToggle unit={unit} onChange={changeUnit} />
+
         {/* Estrutura */}
         <Section title="Estrutura da parede" tag="Campos 1–6" defaultOpen testid="section-estrutura">
-          <Field
+          <Field unit={unit}
             label="Altura pé direito"
             value={wall.altura_pe_direito}
             onChange={bind("altura_pe_direito")}
             testid="input-altura-pe-direito"
           />
-          <Field
+          <Field unit={unit}
             label="Largura total da parede"
             value={wall.largura_total}
             onChange={bind("largura_total")}
             testid="input-largura-total"
           />
-          <Field
+          <Field unit={unit}
             label="Altura do rodapé"
             value={wall.altura_rodape}
             onChange={bind("altura_rodape")}
             testid="input-altura-rodape"
           />
-          <Field
+          <Field unit={unit}
             label="Espessura do rodapé"
             value={wall.espessura_rodape}
             onChange={bind("espessura_rodape")}
@@ -214,13 +224,13 @@ export default function CriarParede() {
               factory={() => ({ id: uid(), largura: 15, profundidade: 15 })}
               render={(item, upd) => (
                 <div className="grid grid-cols-2 gap-3">
-                  <Field
+                  <Field unit={unit}
                     label="Largura"
                     value={item.largura}
                     onChange={(v) => upd({ largura: v })}
                     testid="input-coluna-largura"
                   />
-                  <Field
+                  <Field unit={unit}
                     label="Profundidade"
                     value={item.profundidade}
                     onChange={(v) => upd({ profundidade: v })}
@@ -242,13 +252,13 @@ export default function CriarParede() {
               factory={() => ({ id: uid(), altura: 20, largura: 15 })}
               render={(item, upd) => (
                 <div className="grid grid-cols-2 gap-3">
-                  <Field
+                  <Field unit={unit}
                     label="Altura"
                     value={item.altura}
                     onChange={(v) => upd({ altura: v })}
                     testid="input-viga-altura"
                   />
-                  <Field
+                  <Field unit={unit}
                     label="Largura"
                     value={item.largura}
                     onChange={(v) => upd({ largura: v })}
@@ -273,25 +283,25 @@ export default function CriarParede() {
               factory={() => ({ id: uid(), largura_vao: 80, altura_vao: 210, largura_vista: 5, espessura_vista: 1.5 })}
               render={(item, upd) => (
                 <div className="grid grid-cols-2 gap-3">
-                  <Field
+                  <Field unit={unit}
                     label="Largura interna vão"
                     value={item.largura_vao}
                     onChange={(v) => upd({ largura_vao: v })}
                     testid="input-porta-largura-vao"
                   />
-                  <Field
+                  <Field unit={unit}
                     label="Altura interna vão"
                     value={item.altura_vao}
                     onChange={(v) => upd({ altura_vao: v })}
                     testid="input-porta-altura-vao"
                   />
-                  <Field
+                  <Field unit={unit}
                     label="Largura vista"
                     value={item.largura_vista}
                     onChange={(v) => upd({ largura_vista: v })}
                     testid="input-porta-largura-vista"
                   />
-                  <Field
+                  <Field unit={unit}
                     label="Espessura vista"
                     value={item.espessura_vista}
                     onChange={(v) => upd({ espessura_vista: v })}
@@ -313,19 +323,19 @@ export default function CriarParede() {
               factory={() => ({ id: uid(), largura_vista: 5, largura_vao: 120, altura_vao: 100 })}
               render={(item, upd) => (
                 <div className="grid grid-cols-2 gap-3">
-                  <Field
+                  <Field unit={unit}
                     label="Largura vista"
                     value={item.largura_vista}
                     onChange={(v) => upd({ largura_vista: v })}
                     testid="input-janela-largura-vista"
                   />
-                  <Field
+                  <Field unit={unit}
                     label="Largura interna vão"
                     value={item.largura_vao}
                     onChange={(v) => upd({ largura_vao: v })}
                     testid="input-janela-largura-vao"
                   />
-                  <Field
+                  <Field unit={unit}
                     label="Altura interna vão"
                     value={item.altura_vao}
                     onChange={(v) => upd({ altura_vao: v })}
@@ -410,6 +420,7 @@ export default function CriarParede() {
             </span>
           </button>
         </div>
+        </UnitProvider>
       </div>
     </AppShell>
   );
@@ -434,14 +445,14 @@ function PontosParede({ label, items, onChange, testid, factoryAltura, showAltur
         render={(item, upd) => (
           <div className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field
+              <Field unit={unit}
                 label="Distância do centro"
                 value={item.distancia_centro}
                 onChange={(v) => upd({ distancia_centro: v })}
                 testid="input-ponto-distancia"
               />
               {showAltura && (
-                <Field
+                <Field unit={unit}
                   label="Altura em relação ao piso"
                   value={item.altura_piso}
                   onChange={(v) => upd({ altura_piso: v })}
