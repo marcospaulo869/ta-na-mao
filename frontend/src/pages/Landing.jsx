@@ -101,11 +101,14 @@ export default function Landing() {
                 Arquitetos · Projetistas · Marceneiros
               </span>
             </div>
-            <h1 className="tmf-heading tmf-gold-text leading-[1.05] tracking-tight"
-                style={{ fontSize: "clamp(2.5rem, 6vw, 4.4rem)" }}
+            <h1 className="tmf-heading tmf-gold-text leading-[1.08] tracking-tight"
+                style={{ fontSize: "clamp(1.85rem, 4.5vw, 3.4rem)" }}
                 data-testid="hero-title">
-              Meça um ambiente<br />
-              <span className="text-white">em 3 minutos.</span>
+              Tire medidas de forma <span className="text-white">rápida e eficiente</span>.
+              <br />
+              <span className="text-[#f3e5ab]">Com o nosso app você economiza tempo e dinheiro.</span>
+              <br />
+              <span className="text-white">É só 3 minutinhos!!</span>
             </h1>
             <p className="text-[#c8c8be] mt-6 text-lg max-w-lg leading-relaxed">
               Colete medidas em obra pelo celular, envie um PDF elegante pro cliente no
