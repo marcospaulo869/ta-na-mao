@@ -7,16 +7,16 @@ export function BrandHeader({ subtitle }) {
     <div className="text-center mb-8">
       <Link to="/" className="inline-flex flex-col items-center gap-2">
         <img
-          src="/brand/logo.png"
-          alt="Madeira Forte"
-          className="w-24 h-auto"
+          src="/brand/logo.svg"
+          alt="Tá Na Mão"
+          className="w-20 h-auto"
           style={{ filter: "drop-shadow(0 0 12px rgba(212,175,55,0.4))" }}
         />
         <div className="tmf-heading text-2xl tmf-gold-text tracking-tight leading-none mt-1">
-          TUDO MAIS FÁCIL
+          TÁ NA MÃO
         </div>
         <div className="tmf-mono text-[9px] tracking-[0.35em] text-[#a3a39a]">
-          MADEIRA FORTE PLANEJADOS
+          MEDIDAS · 3D · MARCENARIA
         </div>
       </Link>
       {subtitle && (

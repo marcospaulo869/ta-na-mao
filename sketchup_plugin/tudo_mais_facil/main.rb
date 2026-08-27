@@ -18,7 +18,7 @@ module TudoMaisFacil
       return if @menus_loaded
       @menus_loaded = true
 
-      menu = ::UI.menu('Extensions').add_submenu('Tudo Mais Fácil — Madeira Forte')
+      menu = ::UI.menu('Extensions').add_submenu('Tá Na Mão')
 
       menu.add_item('Importar Parede (arquivo local)…') { import_from_file }
       menu.add_item('Importar Parede (da nuvem)…')      { open_cloud_picker }
@@ -30,7 +30,7 @@ module TudoMaisFacil
       menu.add_item('Sobre')                            { show_about }
 
       # Also add a toolbar for quick access
-      toolbar = ::UI::Toolbar.new('Tudo Mais Fácil')
+      toolbar = ::UI::Toolbar.new('Tá Na Mão')
 
       # Icons live next to this file — resolve relative to __FILE__ so the
       # path works regardless of what PLUGIN_ROOT was set to.
@@ -47,7 +47,7 @@ module TudoMaisFacil
 
       cmd_local = ::UI::Command.new('Importar Parede (arquivo)') { import_from_file }
       cmd_local.tooltip         = 'Importar arquivo .tmf.json'
-      cmd_local.status_bar_text = 'Selecione um arquivo .tmf.json exportado pelo app Tudo Mais Fácil'
+      cmd_local.status_bar_text = 'Selecione um arquivo .tmf.json exportado pelo app Tá Na Mão'
       cmd_local.small_icon      = icon_file_s
       cmd_local.large_icon      = icon_file
       toolbar.add_item(cmd_local)
@@ -80,7 +80,7 @@ module TudoMaisFacil
       path = ::UI.openpanel(
         'Selecione o arquivo exportado (.tmf.json)',
         '',
-        'JSON do Tudo Mais Fácil|*.tmf.json;*.json||'
+        'JSON do Tá Na Mão|*.tmf.json;*.json||'
       )
       return unless path && File.exist?(path)
 
@@ -114,8 +114,8 @@ module TudoMaisFacil
       msg = "#{TudoMaisFacil::PLUGIN_NAME}\n" \
             "Versão #{TudoMaisFacil::PLUGIN_VERSION}\n\n" \
             "#{TudoMaisFacil::PLUGIN_COPY}\n\n" \
-            "Importa medições do app Tudo Mais Fácil e gera modelos 3D " \
-            "automaticamente. Realizando Sonhos."
+            "Importa medições do app Tá Na Mão e gera modelos 3D " \
+            "automaticamente."
       ::UI.messagebox(msg)
     end
 

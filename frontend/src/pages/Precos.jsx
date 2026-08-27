@@ -6,7 +6,7 @@ import AppShell from "@/components/AppShell";
 import { useAuth } from "@/context/AuthContext";
 
 const FREE_FEATURES = [
-  { ok: true, text: "Até 3 paredes salvas" },
+  { ok: true, text: "Até 10 paredes salvas" },
   { ok: true, text: "Captura de fotos com detecção de cor" },
   { ok: true, text: "Todos os 24 campos de medidas" },
   { ok: true, text: "Export para plugin do SketchUp" },

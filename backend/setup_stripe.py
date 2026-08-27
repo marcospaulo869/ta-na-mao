@@ -1,4 +1,4 @@
-"""Setup Stripe catalog for TUDO MAIS FÁCIL. Run once (idempotent)."""
+"""Setup Stripe catalog for TÁ NA MÃO. Run once (idempotent)."""
 import os
 import stripe
 from dotenv import load_dotenv
@@ -10,7 +10,7 @@ stripe.api_key = os.environ["STRIPE_SECRET_KEY"]
 CATALOG = [
     {
         "emergent_product_id": "tmf_pro",
-        "name": "Tudo Mais Fácil PRO",
+        "name": "Tá Na Mão PRO",
         "tax_code": "txcd_10103001",  # SaaS
         "prices": [
             {"lookup_key": "tmf_pro_monthly", "amount": 3990, "currency": "brl", "interval": "month"},

@@ -120,7 +120,7 @@ export default function ProjetoDetalhe() {
     }
     const phone = project.cliente_telefone.replace(/\D/g, "");
     const msg =
-      `Olá ${project.cliente_nome || ""}, aqui é da Madeira Forte 🌳✨\n\n` +
+      `Olá ${project.cliente_nome || ""}, aqui é da equipe de projetos ✨\n\n` +
       `Já preparei o relatório completo do projeto "${project.nome}". ` +
       `Me avise quando puder que envio o PDF por aqui!`;
     const wa = `https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`;

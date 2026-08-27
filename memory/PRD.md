@@ -1,7 +1,10 @@
-# PRD — TUDO MAIS FÁCIL (Madeira Forte Planejados)
+# PRD — TÁ NA MÃO (anteriormente "Tudo Mais Fácil · Madeira Forte")
 
 ## Original problem statement
 Criar um app com ferramentas e plugins que funcione dentro do SketchUp — produto comercial para arquitetos, projetistas e marceneiros, com potencial de venda em assinatura no Brasil e depois internacional.
+
+## Rebrand Fev/2026 — Anonimato estratégico
+Todo o produto foi rebrandeado de "Tudo Mais Fácil · Madeira Forte Planejados" para **"TÁ NA MÃO"** (medidas · 3D · marcenaria) para desassociar do negócio pessoal do fundador e proteger a validação de mercado. Nova PJ operacional (sugerida: **Meridiano Digital LTDA** — ver `/app/memory/COMPANY_NAMES.md`). Migração fiscal para Paraguai planejada para ~2028 quando faturamento ultrapassar R$ 300k/ano (ver `/app/memory/PARAGUAY_CNPJ.md`). Plugin SketchUp também rebrandeado — nova .rbz em `/downloads/ta_na_mao.rbz` (a antiga permanece por retrocompatibilidade).
 
 ## Visão do produto
 Suite completa (Marcenaria + Arquitetura + Documentação + Apresentação) que reduz o tempo de captura de medidas em obra e gera automaticamente o modelo 3D dentro do SketchUp.

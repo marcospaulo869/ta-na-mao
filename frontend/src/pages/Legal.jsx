@@ -8,9 +8,9 @@ export function Privacidade() {
       <p><strong>Última atualização:</strong> 26 de janeiro de 2026</p>
 
       <p>
-        A <strong>Madeira Forte Planejados</strong>, MEI sediada em Torres/RS,
+        A operadora do <strong>Tá Na Mão</strong>, com sede fiscal em Torres/RS,
         respeita sua privacidade. Esta política explica como o aplicativo
-        <em> Tudo Mais Fácil</em> coleta, usa e protege seus dados.
+        <em> Tá Na Mão</em> coleta, usa e protege seus dados.
       </p>
 
       <h2>1. Dados que coletamos</h2>
@@ -52,7 +52,7 @@ export function Privacidade() {
       </ul>
       <p>
         Para exercer qualquer direito, entre em contato pelo e-mail
-        <strong> madeiraforte.torres@gmail.com</strong>.
+        <strong> contato@tanamao.app</strong>.
       </p>
 
       <h2>5. Segurança</h2>
@@ -88,9 +88,9 @@ export function Privacidade() {
 
       <h2>10. Contato</h2>
       <p>
-        Madeira Forte Planejados<br />
-        MEI · Torres/RS<br />
-        E-mail: <strong>madeiraforte.torres@gmail.com</strong>
+        Tá Na Mão<br />
+        Torres/RS<br />
+        E-mail: <strong>contato@tanamao.app</strong>
       </p>
     </LegalShell>
   );
@@ -102,8 +102,7 @@ export function Termos() {
       <p><strong>Última atualização:</strong> 26 de janeiro de 2026</p>
 
       <p>
-        Bem-vindo ao <strong>Tudo Mais Fácil</strong>, aplicativo da Madeira
-        Forte Planejados (MEI · Torres/RS). Ao criar uma conta e usar o serviço,
+        Bem-vindo ao <strong>Tá Na Mão</strong>. Ao criar uma conta e usar o serviço,
         você concorda com estes termos.
       </p>
 
@@ -122,11 +121,11 @@ export function Termos() {
 
       <h2>3. Planos e cobrança</h2>
       <ul>
-        <li><strong>Grátis:</strong> até 3 paredes salvas.</li>
+        <li><strong>Grátis:</strong> até 10 paredes salvas.</li>
         <li><strong>PRO Mensal:</strong> R$ 39,90/mês — paredes ilimitadas.</li>
         <li><strong>PRO Anual:</strong> R$ 399,00/ano — paredes ilimitadas + ~2 meses grátis.</li>
         <li>Cobrança automática via Stripe. Cancelamento a qualquer momento.</li>
-        <li>NF-e emitida pela Madeira Forte Planejados (MEI) conforme legislação.</li>
+        <li>NF emitida pela operadora do serviço conforme legislação vigente.</li>
       </ul>
 
       <h2>4. Uso aceitável</h2>
@@ -152,7 +151,7 @@ export function Termos() {
       <h2>6. Propriedade intelectual</h2>
       <p>
         O código, design, marca e conteúdo do aplicativo são propriedade da
-        Madeira Forte Planejados. Você mantém propriedade dos seus dados
+        operadora do Tá Na Mão. Você mantém propriedade dos seus dados
         (projetos, medidas, fotos).
       </p>
 
@@ -171,8 +170,8 @@ export function Termos() {
 
       <h2>9. Contato</h2>
       <p>
-        Madeira Forte Planejados<br />
-        E-mail: <strong>madeiraforte.torres@gmail.com</strong>
+        Tá Na Mão<br />
+        E-mail: <strong>contato@tanamao.app</strong>
       </p>
     </LegalShell>
   );
@@ -190,7 +189,7 @@ function LegalShell({ title, children, testid }) {
             <CaretLeft size={18} weight="bold" />
             <span className="tmf-mono text-xs uppercase tracking-widest">Voltar</span>
           </Link>
-          <div className="tmf-heading text-lg tmf-gold-text">TUDO MAIS FÁCIL</div>
+          <div className="tmf-heading text-lg tmf-gold-text">TÁ NA MÃO</div>
           <div className="w-16" />
         </div>
       </header>
@@ -222,7 +221,7 @@ function LegalShell({ title, children, testid }) {
         </div>
         <div className="mt-10 pt-6 border-t border-[rgba(243,229,171,0.15)] text-center">
           <div className="tmf-mono text-[9px] tracking-[0.35em] text-[#a3a39a]">
-            MADEIRA FORTE PLANEJADOS · TORRES/RS · REALIZANDO SONHOS
+            TÁ NA MÃO · MEDIDAS · 3D · MARCENARIA
           </div>
         </div>
       </main>

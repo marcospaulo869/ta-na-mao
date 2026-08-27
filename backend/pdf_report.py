@@ -82,7 +82,7 @@ def _draw_page_frame(canvas, doc):
     canvas.setFillColor(MUTED)
     canvas.setFont("Courier", 7)
     canvas.drawCentredString(A4[0] / 2, 10 * mm,
-                             "TUDO MAIS FÁCIL  ·  MADEIRA FORTE PLANEJADOS  ·  REALIZANDO SONHOS")
+                             "TÁ NA MÃO  ·  MEDIDAS EM UM TOQUE  ·  MEDIDAS · 3D · MARCENARIA")
     canvas.setFillColor(GOLD)
     canvas.setFont("Courier-Bold", 7)
     canvas.drawRightString(A4[0] - 15 * mm, 10 * mm, f"P. {doc.page:02d}")
@@ -261,8 +261,8 @@ def _wall_section(wall: dict, styles) -> list:
 
 def _header(title: str, subtitle: str, extra_lines: list, styles):
     els = [
-        Paragraph("TUDO MAIS FÁCIL", styles["brand"]),
-        Paragraph("MADEIRA FORTE PLANEJADOS · REALIZANDO SONHOS", styles["brand_sub"]),
+        Paragraph("TÁ NA MÃO", styles["brand"]),
+        Paragraph("MEDIDAS · 3D · MARCENARIA · EM UM TOQUE", styles["brand_sub"]),
         Spacer(1, 8),
         Paragraph(f"<b>{title}</b>", ParagraphStyle(
             "title2", fontName="Helvetica-Bold", fontSize=16, textColor=colors.white,
@@ -289,7 +289,7 @@ def build_wall_pdf(wall: dict) -> bytes:
         buf, pagesize=A4,
         leftMargin=18 * mm, rightMargin=18 * mm,
         topMargin=22 * mm, bottomMargin=20 * mm,
-        title=f"{wall.get('nome', 'Parede')} - Tudo Mais Fácil",
+        title=f"{wall.get('nome', 'Parede')} - Tá Na Mão",
     )
     styles = _styles()
     story = _header(
@@ -309,7 +309,7 @@ def build_project_pdf(project: dict, walls: list) -> bytes:
         buf, pagesize=A4,
         leftMargin=18 * mm, rightMargin=18 * mm,
         topMargin=22 * mm, bottomMargin=20 * mm,
-        title=f"{project.get('nome', 'Projeto')} - Tudo Mais Fácil",
+        title=f"{project.get('nome', 'Projeto')} - Tá Na Mão",
     )
     styles = _styles()
     extra = [f"GERADO EM {datetime.now().strftime('%d/%m/%Y · %H:%M')}"]

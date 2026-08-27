@@ -51,6 +51,17 @@ Campos disponíveis:
 Responda APENAS com JSON válido, sem comentários e sem markdown."""
 
 
+NUMBER_EXTRACTION_SYSTEM = """Você extrai UM ÚNICO número (medida em centímetros) de uma frase falada em português brasileiro.
+
+Regras:
+- Interprete metros como cm: "dois metros e sessenta" → 260; "um e cinquenta" → 150; "quatro vinte" (metros) → 420; "80 centímetros" → 80.
+- Se o usuário disser "graus" (para ângulos), retorne o valor inteiro sem conversão.
+- Se houver correção, use o VALOR MAIS RECENTE ("noventa, quer dizer, cem" → 100).
+- Se não conseguir extrair, retorne null.
+
+Responda APENAS com JSON no formato: {"value": <número ou null>}. Sem markdown."""
+
+
 def _clean_json_response(txt: str) -> str:
     """Strip markdown code fences if the model wrapped the JSON."""
     txt = txt.strip()

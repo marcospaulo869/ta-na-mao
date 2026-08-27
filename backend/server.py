@@ -26,10 +26,10 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-app = FastAPI(title="TUDO MAIS FÁCIL API")
+app = FastAPI(title="TÁ NA MÃO API")
 app.state.db = db
 
-FREEMIUM_WALL_LIMIT = 3
+FREEMIUM_WALL_LIMIT = 10
 PRO_PLANS = {"pro_monthly", "pro_annual", "pro"}
 
 
@@ -157,7 +157,7 @@ api_router = APIRouter(prefix="/api")
 
 @api_router.get("/")
 async def root():
-    return {"app": "TUDO MAIS FÁCIL", "version": "1.1.0", "status": "online"}
+    return {"app": "TÁ NA MÃO", "version": "1.1.0", "status": "online"}
 
 
 @api_router.get("/limits")
@@ -459,7 +459,7 @@ logger = logging.getLogger(__name__)
 async def startup():
     await ensure_indexes(db)
     await seed_admin(db)
-    logger.info("TUDO MAIS FÁCIL — startup complete")
+    logger.info("TÁ NA MÃO — startup complete")
 
 
 @app.on_event("shutdown")

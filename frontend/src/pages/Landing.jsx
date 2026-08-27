@@ -55,7 +55,7 @@ export default function Landing() {
             </div>
             <div>
               <div className="tmf-heading text-base tmf-gold-text leading-none">
-                TUDO MAIS FÁCIL
+                TÁ NA MÃO
               </div>
               <div className="tmf-mono text-[8px] tracking-[0.3em] text-[#a3a39a] mt-1">
                 MEDIDAS · 3D · MARCENARIA
@@ -144,7 +144,7 @@ export default function Landing() {
                 <span className="tmf-live-dot" aria-hidden="true">AO VIVO</span>
                 <img
                   src="/hero/arquiteta.png"
-                  alt="Arquiteta usando o app Tudo Mais Fácil no celular em um loft moderno"
+                  alt="Arquiteta usando o app Tá Na Mão no celular em um loft moderno"
                   className="w-full h-full object-cover"
                   loading="eager"
                   data-testid="hero-photo-arquiteta"
@@ -236,7 +236,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto px-5 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
           {[
             { n: "30 min", l: "Método antigo: papel, fita, retrabalho" },
-            { n: "3 min", l: "Com TUDO MAIS FÁCIL: fala, foto e pronto" },
+            { n: "3 min", l: "Com TÁ NA MÃO: fala, foto e pronto" },
             { n: "10× mais projetos", l: "É orçar mais, atrasar menos, ganhar mais" },
           ].map((x, i) => (
             <div key={i}>
@@ -361,7 +361,7 @@ export default function Landing() {
             Comece <span className="tmf-gold-text">grátis</span>
           </h2>
           <p className="text-[#a3a39a] mt-3">
-            Cadastre-se e ganhe até 3 paredes ilimitado. Assine só quando precisar de mais.
+            Cadastre-se e ganhe até 10 paredes ilimitado. Assine só quando precisar de mais.
           </p>
         </div>
 
@@ -371,7 +371,7 @@ export default function Landing() {
             <div className="tmf-heading text-3xl text-white mt-2">R$ 0</div>
             <div className="tmf-mono text-[10px] text-[#a3a39a] mt-1">SEMPRE</div>
             <div className="text-sm text-[#f3e5ab] mt-6 space-y-1">
-              <div>Até 3 paredes</div>
+              <div>Até 10 paredes</div>
               <div>Ditado por voz</div>
               <div>Export SketchUp</div>
             </div>
@@ -505,7 +505,7 @@ export default function Landing() {
             </div>
             <div>
               <div className="tmf-mono text-[10px] tmf-gold-text tracking-widest">
-                TUDO MAIS FÁCIL
+                TÁ NA MÃO
               </div>
               <div className="tmf-mono text-[8px] text-[#a3a39a] tracking-widest">
                 MEDIDAS · 3D · MARCENARIA
@@ -513,7 +513,7 @@ export default function Landing() {
             </div>
           </div>
           <div className="tmf-mono text-[9px] tracking-widest text-[#a3a39a] text-center flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-            <span>© 2026 · TUDO MAIS FÁCIL</span>
+            <span>© 2026 · TÁ NA MÃO</span>
             <span className="hidden sm:inline">·</span>
             <Link to="/privacidade" className="hover:text-[#d4af37]" data-testid="footer-privacy">
               PRIVACIDADE

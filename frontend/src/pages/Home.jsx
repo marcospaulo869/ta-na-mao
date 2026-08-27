@@ -115,9 +115,9 @@ export default function Home() {
               <div className="absolute inset-0 bg-[#d4af37] opacity-25 blur-3xl scale-90" />
 
               <img
-                src="/brand/logo.png"
-                alt="Madeira Forte - Móveis Planejados"
-                className="relative w-56 h-auto md:w-64 object-contain"
+                src="/brand/logo.svg"
+                alt="Tá Na Mão"
+                className="relative w-40 h-auto md:w-48 object-contain"
                 style={{
                   filter:
                     "drop-shadow(0 0 24px rgba(212,175,55,0.45)) drop-shadow(0 6px 20px rgba(0,0,0,0.6))",
@@ -132,12 +132,12 @@ export default function Home() {
             style={{ fontSize: "clamp(2.5rem, 9vw, 5rem)" }}
             data-testid="brand-title"
           >
-            TUDO MAIS
+            TÁ NA
             <br />
-            FÁCIL
+            MÃO
           </h1>
           <div className="tmf-mono text-[11px] tracking-[0.5em] text-[#f3e5ab] mt-3">
-            MADEIRA FORTE PLANEJADOS
+            MEDIDAS · 3D · MARCENARIA
           </div>
           <p className="text-[#a3a39a] mt-6 max-w-lg mx-auto text-sm md:text-base">
             Capture as medidas de qualquer ambiente em minutos. Salve suas paredes e envie direto para o plugin do
@@ -260,7 +260,7 @@ export default function Home() {
                 Clique em <strong className="text-white">Instalar Extensão</strong> (canto inferior) e escolha o arquivo baixado. Se pedir confirmação de "extensão não assinada", clique <strong className="text-white">Sim</strong>
               </li>
               <li>
-                Pronto! O plugin aparece em <strong className="text-white">Extensões → Tudo Mais Fácil</strong>
+                Pronto! O plugin aparece em <strong className="text-white">Extensões → Tá Na Mão</strong>
               </li>
             </ol>
             <div className="tmf-mono text-[9px] tracking-wider text-[#a3a39a] pt-1 border-t border-[rgba(212,175,55,0.15)]">
@@ -269,7 +269,7 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <a
-              href="/downloads/tudo_mais_facil.rbz"
+              href="/downloads/ta_na_mao.rbz"
               download
               data-testid="btn-download-plugin"
               className="tmf-btn-secondary flex items-center gap-2 justify-center"

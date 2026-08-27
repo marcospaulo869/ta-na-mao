@@ -48,7 +48,7 @@ export default function PluginMarcenaria() {
             </div>
             <div>
               <div className="tmf-heading text-base tmf-gold-text leading-none">
-                TUDO MAIS FÁCIL
+                TÁ NA MÃO
               </div>
               <div className="tmf-mono text-[8px] tracking-[0.3em] text-[#a3a39a] mt-1">
                 PLUGIN · MARCENARIA
@@ -178,7 +178,7 @@ export default function PluginMarcenaria() {
               >
                 <img
                   src="/preview_plugin/icon_main.png"
-                  alt="Ícone Tudo Mais Fácil"
+                  alt="Ícone Tá Na Mão"
                   className="w-24 h-24 object-contain drop-shadow-[0_0_16px_rgba(212,175,55,0.35)]"
                 />
               </div>
@@ -324,7 +324,7 @@ export default function PluginMarcenaria() {
           </div>
           <div className="text-center mt-8">
             <p className="tmf-mono text-[10px] tracking-[0.2em] text-[#a3a39a]">
-              JÁ É CLIENTE DO APP TUDO MAIS FÁCIL?{" "}
+              JÁ É CLIENTE DO APP TÁ NA MÃO?{" "}
               <span className="text-[#d4af37]">GANHE 20% DE DESCONTO NO PLUGIN.</span>
             </p>
           </div>
@@ -347,7 +347,7 @@ export default function PluginMarcenaria() {
         </div>
         <div className="space-y-3">
           <Faq
-            q="Preciso do app Tudo Mais Fácil pra usar o plugin?"
+            q="Preciso do app Tá Na Mão pra usar o plugin?"
             a="Não! O plugin funciona sozinho. O Lastro de Cozinha e o Construtor de Módulos são criados dentro do próprio SketchUp — sem precisar sair. Se você também usa o app, ganha o superpoder extra de importar paredes que já mediu na obra."
           />
           <Faq
@@ -356,7 +356,7 @@ export default function PluginMarcenaria() {
           />
           <Faq
             q="Como faço pra baixar depois que assinar?"
-            a="Assim que a assinatura for confirmada, o link do .rbz aparece no seu painel do app Tudo Mais Fácil. Você pode reinstalar quantas vezes quiser em quantos computadores usar."
+            a="Assim que a assinatura for confirmada, o link do .rbz aparece no seu painel do app Tá Na Mão. Você pode reinstalar quantas vezes quiser em quantos computadores usar."
           />
           <Faq
             q="Posso cancelar quando quiser?"
@@ -417,7 +417,7 @@ export default function PluginMarcenaria() {
             </div>
             <div>
               <div className="tmf-mono text-[10px] tmf-gold-text tracking-widest">
-                TUDO MAIS FÁCIL
+                TÁ NA MÃO
               </div>
               <div className="tmf-mono text-[8px] text-[#a3a39a] tracking-widest">
                 PLUGIN · MARCENARIA
@@ -425,7 +425,7 @@ export default function PluginMarcenaria() {
             </div>
           </Link>
           <div className="tmf-mono text-[9px] tracking-widest text-[#a3a39a] flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-            <span>© 2026 · TUDO MAIS FÁCIL</span>
+            <span>© 2026 · TÁ NA MÃO</span>
             <Link to="/privacidade" className="hover:text-[#f3e5ab]">
               PRIVACIDADE
             </Link>

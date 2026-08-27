@@ -19,19 +19,19 @@ export default function AppShell({ title, subtitle, back = "/", children, action
           <Link to="/" data-testid="brand-logo" className="flex flex-col items-center">
             <div className="flex items-center gap-2">
               <img
-                src="/brand/logo.png"
-                alt="Madeira Forte"
+                src="/brand/logo.svg"
+                alt="Tá Na Mão"
                 className="w-9 h-9 object-contain"
                 style={{
                   filter: "drop-shadow(0 0 6px rgba(212,175,55,0.5))",
                 }}
               />
               <span className="tmf-heading text-lg tmf-gold-text leading-none">
-                TUDO MAIS FÁCIL
+                TÁ NA MÃO
               </span>
             </div>
             <span className="tmf-mono text-[9px] tracking-[0.35em] text-[#a3a39a] mt-1">
-              MADEIRA FORTE PLANEJADOS
+              MEDIDAS · 3D · MARCENARIA
             </span>
           </Link>
           <div className="w-16" />

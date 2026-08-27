@@ -35,7 +35,7 @@ export default function Register() {
 
   return (
     <AuthShell>
-      <BrandHeader subtitle="CRIAR CONTA · GRÁTIS ATÉ 3 PAREDES" />
+      <BrandHeader subtitle="CRIAR CONTA · GRÁTIS ATÉ 10 PAREDES" />
       <div className="tmf-card tmf-corner-marks" data-testid="register-card">
         <GoogleSignInButton label="Cadastrar com Google" testid="btn-google-register" />
         <AuthDivider />

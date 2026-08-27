@@ -16,7 +16,7 @@ import {
   Crown,
 } from "@phosphor-icons/react";
 
-const PASSCODE = "madeiraforte2026";
+const PASSCODE = "tanamao2026";
 const STORAGE_KEY = "tmf.pitch.access";
 
 // --------- SLIDES ---------
@@ -25,13 +25,13 @@ const SLIDES = [
   ({ active }) => (
     <div className={`pitch-slide ${active ? "active" : ""}`}>
       <div className="pitch-logo-wrap">
-        <img src="/brand/logo.png" alt="Madeira Forte" />
+        <img src="/brand/logo.svg" alt="Tá Na Mão" />
       </div>
       <div className="pitch-pill">
         <span className="pitch-pulse" />
         Apresentação Confidencial
       </div>
-      <h1 className="pitch-h1">Tudo Mais Fácil</h1>
+      <h1 className="pitch-h1">Tá Na Mão</h1>
       <p className="pitch-lead" style={{ maxWidth: 640, marginTop: "1.5rem" }}>
         Uma oportunidade que existe <strong style={{ color: "#f3e5ab" }}>por poucos dias</strong>,
         para <strong style={{ color: "#f3e5ab" }}>uma única pessoa</strong>,
