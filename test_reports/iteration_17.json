@@ -1,0 +1,23 @@
+{
+  "summary": "Iteration 17 validated: rebrand to 'TÁ NA MÃO', new per-field mic button, freemium limit=10. Backend: 13/13 pytest passed in /app/backend/tests/test_iter17_rebrand_and_mic.py — GET /api/ returns app='TÁ NA MÃO'; /manifest.json name contains 'Tá Na Mão' and no legacy names; /brand/logo.svg served; /downloads/ta_na_mao.rbz + /downloads/tudo_mais_facil.rbz both served (retrocompat); README-plugin.md rebranded; GET /api/limits returns walls_limit=10 & is_pro=false for a fresh free user; the 11th POST /api/walls returns 402; /api/voice/parse-number returns 401 without auth, 422 without file, and 400 for >10MB payload. Frontend (Playwright, admin session): landing/login/home all render 'TÁ NA MÃO' and never 'Madeira Forte' or 'Tudo Mais Fácil'; document title is 'Tá Na Mão - Medidas em um toque'; Home links to /downloads/ta_na_mao.rbz and displays 'Extensões → Tá Na Mão'; /parede/nova renders the 4 top-level mic buttons (input-altura-pe-direito-mic, input-largura-total-mic, input-altura-rodape-mic, input-espessura-rodape-mic) with the required data-testid pattern {testid}-mic next to the cm/mm toggle; /apresentacao-privada accepts passcode 'tanamao2026' and shows the 'TÁ NA MÃO' confidential deck. Real audio upload against Whisper was NOT exercised (per instructions — costs money).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter17_rebrand_and_mic.py",
+    "/app/test_reports/pytest/iter17.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "voice.py parse-number: except (json.JSONDecodeError, Exception) is redundant since Exception already catches JSONDecodeError — harmless but a tuple with a broad Exception traps everything including HTTPException chains. Consider narrowing to (json.JSONDecodeError, ValueError, RuntimeError) so the timeout HTTPException path is preserved (currently it is, because TimeoutError is caught earlier, but a nested asyncio.TimeoutError from within send_message would be swallowed as 500).",
+    "FieldMicButton: recorded blob rejected when size<800 bytes prevents accidental empties — good; however the toast label always says 'cm' even when the field is a fixedUnit '°' angle if unit==='°' path is taken. Verified conditional handles this ('°' branch), OK.",
+    "server.py FREEMIUM_WALL_LIMIT=10 and /api/limits both consistent. Confirm the same constant is referenced in Register subtitle / Landing / Precos / Legal frontend strings (source grep shows only preview_plugin html still contains 'Tudo Mais Fácil' — internal SketchUp assets, acceptable).",
+    "preview_plugin/lastro.html and modulo.html still say 'Tudo Mais Fácil' in <title> — these are shipped inside the SketchUp plugin HtmlDialog UIs. Not user-facing on the PWA, but if strict anonymity is required, rebrand these too."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter17_rebrand_and_mic.py"],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "100% (rebrand + mic buttons + private passcode all validated)"},
+  "test_credentials": "admin@tudomaisfacil.com / admin123 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Two ephemeral TEST_iter17_* free users created via /api/auth/register for freemium limit tests (10 walls each). Walls prefixed TEST_iter17_ not cleaned up (belong to disposable users).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend regression file: /app/backend/tests/test_iter17_rebrand_and_mic.py. Real Whisper transcription was NOT exercised for /api/voice/parse-number — only auth/422/400 boundary tests. If real audio flow needs testing, reuse /tmp/voice_test.webm from test_voice.py. Per-field mic testids follow pattern `{fieldTestid}-mic`. When the Home page and /parede/nova need re-verification after future rebrand tweaks, grep for 'Madeira Forte' and 'Tudo Mais Fácil' in the rendered HTML (should be zero matches outside /preview_plugin/*.html)."
+}

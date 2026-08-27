@@ -1,5 +1,6 @@
 import React, { createContext, useContext } from "react";
 import { CaretUp, CaretDown } from "@phosphor-icons/react";
+import { FieldMicButton } from "@/components/FieldMicButton";
 
 /** Context so every Field can render its own tiny cm/mm toggle bound to the
  *  same global unit state managed by the parent form. */
@@ -80,14 +81,28 @@ export function Field({
         />
         <div className="flex flex-col items-center flex-shrink-0">
           {fixedUnit ? (
-            <span
-              className="tmf-mono text-[10px] text-[#d4af37] tracking-widest font-bold leading-none mb-1 h-[19px] flex items-center"
-              data-testid={testid ? `${testid}-unit` : undefined}
-            >
-              {fixedUnit}
-            </span>
+            <div className="flex items-center gap-1.5 mb-1 h-[19px]">
+              <span
+                className="tmf-mono text-[10px] text-[#d4af37] tracking-widest font-bold leading-none flex items-center"
+                data-testid={testid ? `${testid}-unit` : undefined}
+              >
+                {fixedUnit}
+              </span>
+              <FieldMicButton
+                onValue={(v) => onChange(v)}
+                unit={fixedUnit}
+                testid={testid}
+              />
+            </div>
           ) : (
-            <InlineUnitToggle fallbackUnit={unit} testid={testid} />
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <InlineUnitToggle fallbackUnit={unit} testid={testid} />
+              <FieldMicButton
+                onValue={(v) => onChange(v)}
+                unit={activeUnit}
+                testid={testid}
+              />
+            </div>
           )}
           <div className="flex gap-2">
             <TriangleButton

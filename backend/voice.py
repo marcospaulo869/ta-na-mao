@@ -51,6 +51,17 @@ Campos disponíveis:
 Responda APENAS com JSON válido, sem comentários e sem markdown."""
 
 
+NUMBER_EXTRACTION_SYSTEM = """Você extrai UM ÚNICO número (medida em centímetros ou graus) de uma frase falada em português brasileiro.
+
+Regras:
+- Interprete metros como cm: "dois metros e sessenta" → 260; "um e cinquenta" → 150; "quatro vinte" (contexto metros) → 420; "80 centímetros" → 80.
+- Para ângulos ("graus"), retorne o valor inteiro sem conversão.
+- Se houver correção, use o VALOR MAIS RECENTE ("noventa, quer dizer, cem" → 100).
+- Se não conseguir extrair um número claro, retorne null.
+
+Responda APENAS com JSON no formato: {"value": <número ou null>}. Sem markdown, sem comentários."""
+
+
 def _clean_json_response(txt: str) -> str:
     """Strip markdown code fences if the model wrapped the JSON."""
     txt = txt.strip()
@@ -165,3 +176,85 @@ async def parse_voice(
         "parsed": parsed,
         "fields_captured": len(parsed),
     }
+
+
+@router.post("/parse-number")
+async def parse_number(
+    request: Request,
+    audio: UploadFile = File(...),
+    context: Optional[str] = Form(None),
+    user=Depends(get_current_user),
+):
+    """Transcribe a short recording and return a SINGLE numeric value.
+    Used by the per-field mic button so the user can fill one measurement at a time.
+    """
+    api_key = os.environ["EMERGENT_LLM_KEY"]
+    audio_bytes = await audio.read()
+    if len(audio_bytes) > 10 * 1024 * 1024:
+        raise HTTPException(400, "Áudio muito longo. Fale só a medida do campo.")
+    ext = ".webm"
+    ct = (audio.content_type or "").lower()
+    if "wav" in ct:
+        ext = ".wav"
+    elif "mp3" in ct or "mpeg" in ct:
+        ext = ".mp3"
+    elif "m4a" in ct or "mp4" in ct:
+        ext = ".m4a"
+    audio_file = io.BytesIO(audio_bytes)
+    audio_file.name = f"voice{ext}"
+
+    # 1. Transcribe
+    try:
+        stt = OpenAISpeechToText(api_key=api_key)
+        result = await asyncio.wait_for(
+            stt.transcribe(
+                file=audio_file,
+                model="whisper-1",
+                language="pt",
+                response_format="json",
+                prompt=(
+                    "Marceneiro ditando UMA medida em centímetros, metros ou graus: "
+                    "\"dois metros e sessenta\", \"80\", \"cento e vinte centímetros\", \"45 graus\"."
+                ),
+                temperature=0.0,
+            ),
+            timeout=30,
+        )
+        transcription = getattr(result, "text", "") or ""
+    except asyncio.TimeoutError:
+        raise HTTPException(504, "Transcrição demorou demais.")
+    except Exception as e:
+        raise HTTPException(500, f"Falha na transcrição: {e}")
+
+    if not transcription.strip():
+        return {"transcription": "", "value": None}
+
+    # 2. Extract single number
+    try:
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"vnum-{user['user_id']}-{uuid.uuid4().hex[:8]}",
+            system_message=NUMBER_EXTRACTION_SYSTEM,
+        ).with_model("openai", VOICE_LLM_MODEL)
+        ctx_line = f"Contexto do campo: {context}\n" if context else ""
+        user_msg = f"{ctx_line}Transcrição:\n\"{transcription}\"\n\nRetorne o JSON com o único número."
+        response = await asyncio.wait_for(
+            chat.send_message(UserMessage(text=user_msg)),
+            timeout=30,
+        )
+        raw = _clean_json_response(response if isinstance(response, str) else str(response))
+        parsed = json.loads(raw)
+        value = parsed.get("value")
+        if value is not None:
+            try:
+                value = float(value)
+                if value <= 0 or value > 100000:
+                    value = None
+            except (ValueError, TypeError):
+                value = None
+    except asyncio.TimeoutError:
+        raise HTTPException(504, "Extração demorou demais.")
+    except (json.JSONDecodeError, Exception) as e:
+        raise HTTPException(500, f"Falha na extração: {e}")
+
+    return {"transcription": transcription, "value": value}
