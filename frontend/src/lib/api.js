@@ -18,6 +18,30 @@ export const deleteWall = (id) => api.delete(`/walls/${id}`).then((r) => r.data)
 export const exportWallUrl = (id) => `${API}/walls/${id}/export`;
 export const wallPdfUrl = (id) => `${API}/walls/${id}/pdf`;
 
+// Blob download: fetches a PDF using the axios session (cookies + headers)
+// and triggers a native download without leaving the PWA. This fixes the
+// "black screen" issue where <a href target=_blank> crashed on mobile PWAs.
+async function _downloadBlob(path, filenameFallback) {
+  const res = await api.get(path, { responseType: "blob" });
+  const blob = new Blob([res.data], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  // Try to extract filename from Content-Disposition
+  const cd = res.headers?.["content-disposition"] || "";
+  const match = cd.match(/filename="?([^"]+)"?/i);
+  a.download = match ? match[1] : filenameFallback;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+export const downloadWallPdf = (id, name = "parede") =>
+  _downloadBlob(`/walls/${id}/pdf`, `${name}.pdf`);
+export const downloadProjectPdf = (id, name = "projeto") =>
+  _downloadBlob(`/projects/${id}/pdf`, `${name}.pdf`);
+
 // ---------- Projects ----------
 export const listProjects = () => api.get("/projects").then((r) => r.data);
 export const getProject = (id) => api.get(`/projects/${id}`).then((r) => r.data);
