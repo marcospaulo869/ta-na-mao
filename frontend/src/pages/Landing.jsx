@@ -153,9 +153,10 @@ export default function Landing() {
             />
             <div className="relative grid grid-cols-2 gap-3 md:gap-4">
               <div
-                className="relative overflow-hidden border border-[rgba(212,175,55,0.35)] aspect-[3/4] transform md:-translate-y-6"
+                className="tmf-cinema tmf-cinema-a relative overflow-hidden border border-[rgba(212,175,55,0.35)] aspect-[3/4] transform md:-translate-y-6"
                 style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,175,55,0.08)" }}
               >
+                <span className="tmf-live-dot" aria-hidden="true">AO VIVO</span>
                 <img
                   src="/hero/arquiteta.png"
                   alt="Arquiteta usando o app Tudo Mais Fácil no celular em um loft moderno"
@@ -172,9 +173,10 @@ export default function Landing() {
                 </div>
               </div>
               <div
-                className="relative overflow-hidden border border-[rgba(212,175,55,0.35)] aspect-[3/4] transform md:translate-y-6"
+                className="tmf-cinema tmf-cinema-b relative overflow-hidden border border-[rgba(212,175,55,0.35)] aspect-[3/4] transform md:translate-y-6"
                 style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,175,55,0.08)" }}
               >
+                <span className="tmf-live-dot" aria-hidden="true">AO VIVO</span>
                 <img
                   src="/hero/marceneiro.png"
                   alt="Marceneiro usando o app em uma cobertura com vista pra cidade e praia"
@@ -193,13 +195,22 @@ export default function Landing() {
             </div>
             {/* floating spec chips */}
             <div className="hidden md:flex absolute -left-2 top-1/2 -translate-y-1/2 flex-col gap-2">
-              <span className="tmf-mono text-[9px] tracking-[0.3em] bg-[rgba(10,10,8,0.85)] border border-[rgba(212,175,55,0.35)] px-2 py-1 text-[#f3e5ab]">
+              <span
+                className="tmf-chip-float tmf-mono text-[9px] tracking-[0.3em] bg-[rgba(10,10,8,0.85)] border border-[rgba(212,175,55,0.35)] px-2 py-1 text-[#f3e5ab]"
+                style={{ animationDelay: "0.15s" }}
+              >
                 +25 CAMPOS
               </span>
-              <span className="tmf-mono text-[9px] tracking-[0.3em] bg-[rgba(10,10,8,0.85)] border border-[rgba(212,175,55,0.35)] px-2 py-1 text-[#f3e5ab]">
+              <span
+                className="tmf-chip-float tmf-mono text-[9px] tracking-[0.3em] bg-[rgba(10,10,8,0.85)] border border-[rgba(212,175,55,0.35)] px-2 py-1 text-[#f3e5ab]"
+                style={{ animationDelay: "0.3s" }}
+              >
                 IA · VOZ+FOTO
               </span>
-              <span className="tmf-mono text-[9px] tracking-[0.3em] bg-[rgba(10,10,8,0.85)] border border-[rgba(212,175,55,0.35)] px-2 py-1 text-[#f3e5ab]">
+              <span
+                className="tmf-chip-float tmf-mono text-[9px] tracking-[0.3em] bg-[rgba(10,10,8,0.85)] border border-[rgba(212,175,55,0.35)] px-2 py-1 text-[#f3e5ab]"
+                style={{ animationDelay: "0.45s" }}
+              >
                 SKETCHUP 1-CLIQUE
               </span>
             </div>
