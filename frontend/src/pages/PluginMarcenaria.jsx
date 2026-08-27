@@ -79,27 +79,28 @@ export default function PluginMarcenaria() {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
           <div className="tmf-fade-in">
-            <div className="inline-flex items-center gap-3 mb-5">
-              <span className="w-10 h-px bg-[#d4af37]" />
+            <div className="mb-5 flex flex-col items-start gap-2" data-testid="pluglp-hero-audience">
+              <span className="block w-14 h-px bg-[#d4af37]" aria-hidden="true" />
               <span
                 className="tmf-mono tracking-[0.28em] text-[#f3e5ab] font-bold uppercase"
-                style={{ fontSize: "clamp(0.8rem, 1.4vw, 0.95rem)" }}
+                style={{ fontSize: "clamp(0.72rem, 2vw, 0.95rem)" }}
               >
                 Marcenaria · SketchUp Plugin
               </span>
+              <span className="block w-14 h-px bg-[#d4af37]" aria-hidden="true" />
             </div>
             <h1
               className="tmf-heading tmf-gold-text leading-[1.08] tracking-tight"
-              style={{ fontSize: "clamp(1.85rem, 4.4vw, 3.4rem)" }}
+              style={{ fontSize: "clamp(1.7rem, 4vw, 3.2rem)" }}
               data-testid="pluglp-hero-title"
             >
-              Chega de <span className="text-white">montar módulo à mão</span> no SketchUp.
+              Chega de desenhar <span className="text-white">gaveta na mão</span>.
               <br />
-              <span className="text-[#f3e5ab]">Preencha os campos, aperte um botão,</span>
+              <span className="text-[#f3e5ab]">Preencha os campos.</span>
               <br />
-              <span className="text-white">e pronto: 3D em segundos.</span>
+              <span className="text-white">Aperte um botão. 3D pronto.</span>
             </h1>
-            <p className="text-[#c8c8be] mt-6 text-lg max-w-lg leading-relaxed">
+            <p className="text-[#c8c8be] mt-5 text-base md:text-lg max-w-lg leading-relaxed">
               O plugin faz o trabalho pesado da <span className="text-[#f3e5ab]">marcenaria planejada</span> —
               lastro de cozinha, gaveteiros, torres, aéreos, closets. Você escolhe as medidas,
               a chapa, as ferragens; o SketchUp <span className="text-[#d4af37]">desenha

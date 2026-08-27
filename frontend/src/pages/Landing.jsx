@@ -32,19 +32,19 @@ export default function Landing() {
       {/* Top nav */}
       <nav className="relative z-30 border-b border-[rgba(243,229,171,0.12)] bg-[rgba(10,10,8,0.85)] backdrop-blur-md sticky top-0">
         <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2" data-testid="nav-brand">
+          <Link to="/" className="flex items-center gap-2.5" data-testid="nav-brand">
             <div
-              className="w-10 h-10 flex items-center justify-center border border-[rgba(212,175,55,0.5)]"
+              className="w-12 h-12 flex items-center justify-center border border-[rgba(212,175,55,0.5)]"
               style={{
                 background: "linear-gradient(135deg, rgba(243,229,171,0.15), rgba(212,175,55,0.04))",
-                boxShadow: "0 0 12px rgba(212,175,55,0.35)",
+                boxShadow: "0 0 14px rgba(212,175,55,0.4)",
               }}
               aria-hidden="true"
             >
               <span
                 className="tmf-heading font-black leading-none"
                 style={{
-                  fontSize: "1.15rem",
+                  fontSize: "1.75rem",
                   background: "linear-gradient(180deg, #f3e5ab, #c99d24)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
@@ -468,13 +468,14 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div
-              className="w-8 h-8 flex items-center justify-center border border-[rgba(212,175,55,0.4)]"
+              className="w-10 h-10 flex items-center justify-center border border-[rgba(212,175,55,0.4)]"
               style={{ background: "linear-gradient(135deg, rgba(243,229,171,0.12), rgba(212,175,55,0.04))" }}
               aria-hidden="true"
             >
               <span
-                className="tmf-heading font-black leading-none text-[0.85rem]"
+                className="tmf-heading font-black leading-none"
                 style={{
+                  fontSize: "1.4rem",
                   background: "linear-gradient(180deg, #f3e5ab, #c99d24)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
