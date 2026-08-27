@@ -1,0 +1,23 @@
+{
+  "summary": "Validated all 3 fixes (P0 PDF black-screen, P1 password toggle + remember email, P1 Home button order). Backend PDF endpoints (/api/walls/{id}/pdf and /api/projects/{id}/pdf) return valid application/pdf with correct auth (401 unauth). Frontend Login/Register use PasswordInput with data-testid=input-password-toggle correctly toggling type=password<->text; 'Lembrar meu e-mail' checkbox defaults checked, persists email to localStorage 'tmf.rememberEmail' on successful login, pre-fills on subsequent visits, and clears when unchecked. Home button order matches spec (Novo projeto -> Nova parede -> Foto parede -> Foto piso) and quick-access shows Projetos before Paredes. Wall PDF button is a <button> triggering an in-place blob download (no new tab, no navigation away from /paredes) — download event fired with filename Parede_01.pdf. Project PDF button is a <button> triggering in-place blob download with filename TEST_UI2_1787710118.pdf, remained on project detail page. No black-screen behavior observed. All tests passed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_pdf_endpoints.py",
+    "/app/test_reports/pytest/iter16_pdf.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "downloadWallPdf/downloadProjectPdf in /app/frontend/src/lib/api.js correctly use axios responseType='blob' + createObjectURL + a.click(); URL.revokeObjectURL is scheduled with 4s timeout — sensible.",
+    "Consider adding aria-live or visible progress indicator beyond the sonner toast for slow networks; current pdfBusyId/pdfBusy state disables the button which is fine.",
+    "REMEMBER_KEY 'tmf.rememberEmail' is device-local; if two accounts share a device the prefilled email may be stale — acceptable UX for the intended use case."
+  ],
+  "updated_files": ["/app/backend/tests/test_pdf_endpoints.py"],
+  "success_rate": {"backend": "100% (4/4)", "frontend": "100% (all fixes validated)"},
+  "test_credentials": "admin@tudomaisfacil.com / admin123 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None — reused existing admin walls/projects.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "PDF download tests use page.expect_download() to verify Blob download (not new-tab). Backend tests in /app/backend/tests/test_pdf_endpoints.py cover both wall + project PDFs with auth check. Reuse admin session; walls exist for admin so no seeding needed.",
+  "rca of the issue": "Previous bug: <a href={pdfUrl} target=_blank> triggered a blank tab that, on mobile PWA (standalone display-mode), could not render server-generated PDF, resulting in black screen and PWA state loss. Fix uses axios+blob+createObjectURL so the browser handles the octet as a native download inside the PWA session. Verified via Playwright download event and post-click URL check — user remains on /paredes and /projetos/{id}. Backend endpoints unchanged, still return Content-Disposition attachment + application/pdf."
+}

@@ -21,10 +21,10 @@ import {
   attachWall,
   deleteWall,
   detachWall,
+  downloadProjectPdf,
   exportWallUrl,
   getProject,
   listWalls,
-  projectPdfUrl,
   updateProject,
 } from "@/lib/api";
 
@@ -38,6 +38,7 @@ export default function ProjetoDetalhe() {
   const [availableWalls, setAvailableWalls] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [meta, setMeta] = useState({});
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -118,12 +119,29 @@ export default function ProjetoDetalhe() {
       return;
     }
     const phone = project.cliente_telefone.replace(/\D/g, "");
-    const pdfLink = projectPdfUrl(id);
     const msg =
-      `Olá ${project.cliente_nome || ""}, segue o relatório do projeto "${project.nome}" ` +
-      `feito pela Madeira Forte 🌳✨\n\nAcesse o PDF: ${pdfLink}`;
+      `Olá ${project.cliente_nome || ""}, aqui é da Madeira Forte 🌳✨\n\n` +
+      `Já preparei o relatório completo do projeto "${project.nome}". ` +
+      `Me avise quando puder que envio o PDF por aqui!`;
     const wa = `https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`;
     window.open(wa, "_blank");
+  };
+
+  const handleDownloadPdf = async () => {
+    if (pdfBusy) return;
+    setPdfBusy(true);
+    const t = toast.loading(`Gerando PDF de ${project?.nome || "projeto"}...`);
+    try {
+      await downloadProjectPdf(id, project?.nome || "projeto");
+      toast.success("PDF baixado!", { id: t });
+    } catch (e) {
+      toast.error("Erro ao gerar PDF", {
+        id: t,
+        description: e?.response?.status === 401 ? "Faça login novamente" : e?.message,
+      });
+    } finally {
+      setPdfBusy(false);
+    }
   };
 
   if (loading) {
@@ -230,16 +248,16 @@ export default function ProjetoDetalhe() {
 
       {/* Action buttons */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6">
-        <a
-          href={projectPdfUrl(id)}
-          target="_blank"
-          rel="noreferrer"
+        <button
+          type="button"
+          onClick={handleDownloadPdf}
+          disabled={pdfBusy}
           className="tmf-btn-secondary flex items-center gap-2 justify-center"
           data-testid="btn-download-project-pdf"
         >
           <FilePdf size={14} weight="fill" />
-          Baixar PDF
-        </a>
+          {pdfBusy ? "Gerando..." : "Baixar PDF"}
+        </button>
         <button
           onClick={handleWhatsApp}
           className="tmf-btn-secondary flex items-center gap-2 justify-center"

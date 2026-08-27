@@ -9,6 +9,7 @@ import {
   GoogleSignInButton,
   AuthDivider,
 } from "@/components/AuthUI";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function Register() {
   const { register } = useAuth();
@@ -58,6 +59,7 @@ export default function Register() {
             <input
               type="email"
               required
+              autoComplete="username"
               className="tmf-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -67,15 +69,11 @@ export default function Register() {
           </div>
           <div>
             <label className="tmf-label">Senha (mínimo 6 caracteres)</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              className="tmf-input"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              data-testid="input-password"
+              autoComplete="new-password"
+              testid="input-password"
             />
           </div>
           <button

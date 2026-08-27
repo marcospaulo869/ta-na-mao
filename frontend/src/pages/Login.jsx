@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { SignIn } from "@phosphor-icons/react";
@@ -9,19 +9,38 @@ import {
   GoogleSignInButton,
   AuthDivider,
 } from "@/components/AuthUI";
+import { PasswordInput } from "@/components/PasswordInput";
+
+const REMEMBER_KEY = "tmf.rememberEmail";
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
+
+  // Pre-fill the email if user chose to remember it before
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(REMEMBER_KEY);
+      if (saved) {
+        setEmail(saved);
+        setRemember(true);
+      }
+    } catch {}
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setBusy(true);
     try {
       await login(email, password);
+      try {
+        if (remember) localStorage.setItem(REMEMBER_KEY, email);
+        else localStorage.removeItem(REMEMBER_KEY);
+      } catch {}
       toast.success("Bem-vindo(a) de volta!");
       navigate("/");
     } catch (err) {
@@ -44,6 +63,7 @@ export default function Login() {
               type="email"
               required
               autoFocus
+              autoComplete="username"
               className="tmf-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -53,17 +73,33 @@ export default function Login() {
           </div>
           <div>
             <label className="tmf-label">Senha</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              className="tmf-input"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              data-testid="input-password"
+              autoComplete="current-password"
+              testid="input-password"
             />
           </div>
+
+          <label
+            className="flex items-center gap-2 text-sm text-[#a3a39a] cursor-pointer select-none"
+            data-testid="label-remember"
+          >
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="w-4 h-4 accent-[#d4af37] cursor-pointer"
+              data-testid="checkbox-remember"
+            />
+            <span>
+              Lembrar meu e-mail neste celular
+              <span className="block text-[10px] tracking-widest text-[#7a7a70] uppercase">
+                Login mais rápido da próxima vez
+              </span>
+            </span>
+          </label>
+
           <button
             type="submit"
             disabled={busy}

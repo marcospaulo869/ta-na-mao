@@ -149,25 +149,32 @@ export default function Home() {
       {/* Main action buttons */}
       <section className="max-w-xl mx-auto px-5 pb-10 space-y-5 relative z-10">
         <HomeButton
-          to="/foto/parede"
-          testid="btn-foto-parede"
-          icon={Camera}
-          label="Tirar foto cor parede"
-          hint="01 · CAPTURA DE COR"
-        />
-        <HomeButton
-          to="/foto/piso"
-          testid="btn-foto-piso"
-          icon={Camera}
-          label="Tirar foto cor piso"
-          hint="02 · CAPTURA DE COR"
+          to="/projetos"
+          testid="btn-novo-projeto"
+          icon={FolderSimple}
+          label="Novo projeto"
+          hint="01 · CADASTRAR CLIENTE / OBRA"
         />
         <HomeButton
           to="/parede/nova"
           testid="btn-criar-parede"
           icon={Wall}
           label="Criar nova parede"
-          hint="03 · MEDIDAS DO AMBIENTE"
+          hint="02 · MEDIDAS DO AMBIENTE"
+        />
+        <HomeButton
+          to="/foto/parede"
+          testid="btn-foto-parede"
+          icon={Camera}
+          label="Tirar foto cor parede"
+          hint="03 · CAPTURA DE COR"
+        />
+        <HomeButton
+          to="/foto/piso"
+          testid="btn-foto-piso"
+          icon={Camera}
+          label="Tirar foto cor piso"
+          hint="04 · CAPTURA DE COR"
         />
       </section>
 
@@ -175,6 +182,20 @@ export default function Home() {
       <section className="max-w-xl mx-auto px-5 pb-8">
         <div className="tmf-divider" />
         <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => navigate("/projetos")}
+            data-testid="btn-projetos"
+            className="flex flex-col items-start p-4 bg-transparent border border-[rgba(243,229,171,0.25)] hover:border-[#d4af37] hover:bg-[rgba(212,175,55,0.05)] transition-colors text-left"
+          >
+            <FolderSimple size={22} weight="duotone" className="text-[#d4af37]" />
+            <div className="tmf-heading uppercase font-bold text-white tracking-wide mt-2 text-sm">
+              Projetos
+            </div>
+            <div className="tmf-mono text-[9px] tracking-widest text-[#a3a39a] mt-1">
+              {projectsCount} CADASTRADOS
+            </div>
+          </button>
+
           <button
             onClick={() => navigate("/paredes")}
             data-testid="btn-paredes-salvas"
@@ -190,20 +211,6 @@ export default function Home() {
                 : limits?.walls_limit
                 ? `${wallsCount}/${limits.walls_limit} · GRÁTIS`
                 : `${wallsCount} SALVAS`}
-            </div>
-          </button>
-
-          <button
-            onClick={() => navigate("/projetos")}
-            data-testid="btn-projetos"
-            className="flex flex-col items-start p-4 bg-transparent border border-[rgba(243,229,171,0.25)] hover:border-[#d4af37] hover:bg-[rgba(212,175,55,0.05)] transition-colors text-left"
-          >
-            <FolderSimple size={22} weight="duotone" className="text-[#d4af37]" />
-            <div className="tmf-heading uppercase font-bold text-white tracking-wide mt-2 text-sm">
-              Projetos
-            </div>
-            <div className="tmf-mono text-[9px] tracking-widest text-[#a3a39a] mt-1">
-              {projectsCount} CADASTRADOS
             </div>
           </button>
         </div>
