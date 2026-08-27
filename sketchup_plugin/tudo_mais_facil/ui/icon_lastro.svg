@@ -1,44 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <!-- Icon: Lastro de Cozinha — wooden base with kitchen module hint -->
+  <!-- Icon: Lastro de Cozinha — chão de madeira com módulo em cima -->
   <defs>
-    <linearGradient id="tmfGold2" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f3e5ab"/>
-      <stop offset="100%" stop-color="#c99d24"/>
+    <linearGradient id="cabinet1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f4ede0"/>
+      <stop offset="100%" stop-color="#c9b98a"/>
     </linearGradient>
-    <linearGradient id="tmfDark2" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#1e1e1a"/>
-      <stop offset="100%" stop-color="#0b0b09"/>
-    </linearGradient>
-    <linearGradient id="wood2" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#c9a26a"/>
-      <stop offset="100%" stop-color="#8b6b3e"/>
+    <linearGradient id="wood1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d9a76a"/>
+      <stop offset="100%" stop-color="#8b5a2b"/>
     </linearGradient>
   </defs>
-  <rect x="4" y="4" width="120" height="120" rx="24" fill="url(#tmfDark2)" stroke="url(#tmfGold2)" stroke-width="2.5"/>
+  <rect x="6" y="6" width="116" height="116" rx="20" fill="#fef7ea" stroke="#8b5a2b" stroke-width="2"/>
 
-  <!-- ghost cabinet on top -->
-  <g transform="translate(32 30)" opacity="0.55">
-    <rect x="0" y="0" width="30" height="34" fill="none" stroke="url(#tmfGold2)" stroke-width="2" stroke-dasharray="3 3"/>
-    <rect x="34" y="0" width="30" height="34" fill="none" stroke="url(#tmfGold2)" stroke-width="2" stroke-dasharray="3 3"/>
-    <circle cx="15" cy="17" r="2" fill="url(#tmfGold2)"/>
-    <circle cx="49" cy="17" r="2" fill="url(#tmfGold2)"/>
+  <!-- Kitchen cabinet on top -->
+  <g transform="translate(28 24)">
+    <rect x="0" y="0" width="72" height="52" fill="url(#cabinet1)" stroke="#7a5a2a" stroke-width="2" stroke-linejoin="round"/>
+    <!-- 2 doors -->
+    <line x1="36" y1="4" x2="36" y2="48" stroke="#7a5a2a" stroke-width="1.5"/>
+    <!-- handles -->
+    <rect x="28" y="26" width="6" height="2" fill="#4a3018"/>
+    <rect x="38" y="26" width="6" height="2" fill="#4a3018"/>
   </g>
 
-  <!-- solid wood base (lastro) -->
+  <!-- Wooden lastro (THE main subject — thick horizontal wood) -->
   <g transform="translate(20 78)">
-    <rect x="0" y="0" width="88" height="16" fill="url(#wood2)" stroke="url(#tmfGold2)" stroke-width="2"/>
-    <!-- wood grain lines -->
-    <path d="M6 4 Q22 6 44 4 T80 4" stroke="#6b4e2b" stroke-width="1" fill="none" opacity="0.7"/>
-    <path d="M6 9 Q22 12 44 9 T80 10" stroke="#6b4e2b" stroke-width="1" fill="none" opacity="0.5"/>
-    <path d="M6 13 Q22 15 44 13 T80 14" stroke="#6b4e2b" stroke-width="1" fill="none" opacity="0.6"/>
+    <rect x="0" y="0" width="88" height="18" fill="url(#wood1)" stroke="#5a3a1a" stroke-width="2"/>
+    <!-- wood grain -->
+    <path d="M4 6 Q22 8 44 6 T84 5" stroke="#5a3a1a" stroke-width="1" fill="none" opacity="0.7"/>
+    <path d="M4 11 Q22 13 44 11 T84 12" stroke="#5a3a1a" stroke-width="1" fill="none" opacity="0.55"/>
+    <path d="M4 15 Q22 17 44 15 T84 16" stroke="#5a3a1a" stroke-width="1" fill="none" opacity="0.5"/>
+    <!-- knots -->
+    <ellipse cx="18" cy="9" rx="2.5" ry="1.5" fill="#5a3a1a" opacity="0.6"/>
+    <ellipse cx="62" cy="12" rx="2" ry="1.2" fill="#5a3a1a" opacity="0.5"/>
   </g>
 
-  <!-- floor line -->
-  <line x1="14" y1="102" x2="114" y2="102" stroke="url(#tmfGold2)" stroke-width="1.5" opacity="0.5"/>
-
-  <!-- corner marks -->
-  <path d="M12 12 L20 12 M12 12 L12 20" stroke="url(#tmfGold2)" stroke-width="2" stroke-linecap="round"/>
-  <path d="M116 12 L108 12 M116 12 L116 20" stroke="url(#tmfGold2)" stroke-width="2" stroke-linecap="round"/>
-  <path d="M12 116 L20 116 M12 116 L12 108" stroke="url(#tmfGold2)" stroke-width="2" stroke-linecap="round"/>
-  <path d="M116 116 L108 116 M116 116 L116 108" stroke="url(#tmfGold2)" stroke-width="2" stroke-linecap="round"/>
+  <!-- Floor line -->
+  <line x1="14" y1="102" x2="114" y2="102" stroke="#5a3a1a" stroke-width="1.5" opacity="0.5"/>
 </svg>

@@ -32,33 +32,45 @@ module TudoMaisFacil
       # Also add a toolbar for quick access
       toolbar = ::UI::Toolbar.new('Tudo Mais Fácil')
 
-      icon = File.join(TudoMaisFacil::PLUGIN_ROOT, 'ui', 'icon.png')
-      icon_lastro = File.join(TudoMaisFacil::PLUGIN_ROOT, 'ui', 'icon_lastro.png')
-      icon_modulo = File.join(TudoMaisFacil::PLUGIN_ROOT, 'ui', 'icon_modulo.png')
+      # Icons live next to this file — resolve relative to __FILE__ so the
+      # path works regardless of what PLUGIN_ROOT was set to.
+      ui_dir = File.join(File.dirname(__FILE__), 'ui')
+      icon_file   = File.join(ui_dir, 'icon_import_file.png')
+      icon_cloud  = File.join(ui_dir, 'icon_import_cloud.png')
+      icon_lastro = File.join(ui_dir, 'icon_lastro.png')
+      icon_modulo = File.join(ui_dir, 'icon_modulo.png')
+      # 24×24 small versions (SketchUp uses these when toolbar is in small mode)
+      icon_file_s   = File.join(ui_dir, 'icon_import_file_24.png')
+      icon_cloud_s  = File.join(ui_dir, 'icon_import_cloud_24.png')
+      icon_lastro_s = File.join(ui_dir, 'icon_lastro_24.png')
+      icon_modulo_s = File.join(ui_dir, 'icon_modulo_24.png')
 
       cmd_local = ::UI::Command.new('Importar Parede (arquivo)') { import_from_file }
-      cmd_local.tooltip     = 'Importar arquivo .tmf.json'
+      cmd_local.tooltip         = 'Importar arquivo .tmf.json'
       cmd_local.status_bar_text = 'Selecione um arquivo .tmf.json exportado pelo app Tudo Mais Fácil'
-      cmd_local.small_icon  = icon
-      cmd_local.large_icon  = icon
+      cmd_local.small_icon      = icon_file_s
+      cmd_local.large_icon      = icon_file
       toolbar.add_item(cmd_local)
 
       cmd_cloud = ::UI::Command.new('Importar Parede (nuvem)') { open_cloud_picker }
-      cmd_cloud.tooltip     = 'Importar direto da sua conta na nuvem'
-      cmd_cloud.small_icon  = icon
-      cmd_cloud.large_icon  = icon
+      cmd_cloud.tooltip         = 'Importar direto da sua conta na nuvem'
+      cmd_cloud.status_bar_text = 'Lista suas paredes salvas na nuvem e importa'
+      cmd_cloud.small_icon      = icon_cloud_s
+      cmd_cloud.large_icon      = icon_cloud
       toolbar.add_item(cmd_cloud)
 
       cmd_lastro = ::UI::Command.new('Lastro de Cozinha') { TudoMaisFacil::Lastro.show_wizard }
-      cmd_lastro.tooltip     = 'Gerar base de madeira (lastro) sob módulos de cozinha'
-      cmd_lastro.small_icon  = icon_lastro
-      cmd_lastro.large_icon  = icon_lastro
+      cmd_lastro.tooltip         = 'Gerar base de madeira (lastro) sob módulos de cozinha'
+      cmd_lastro.status_bar_text = 'Abrir assistente do Lastro de Cozinha'
+      cmd_lastro.small_icon      = icon_lastro_s
+      cmd_lastro.large_icon      = icon_lastro
       toolbar.add_item(cmd_lastro)
 
       cmd_modulo = ::UI::Command.new('Construtor de Módulos') { TudoMaisFacil::Modulo.show_wizard }
-      cmd_modulo.tooltip     = 'Criar módulo planejado parametrizado'
-      cmd_modulo.small_icon  = icon_modulo
-      cmd_modulo.large_icon  = icon_modulo
+      cmd_modulo.tooltip         = 'Criar módulo planejado parametrizado'
+      cmd_modulo.status_bar_text = 'Abrir assistente do Construtor de Módulos'
+      cmd_modulo.small_icon      = icon_modulo_s
+      cmd_modulo.large_icon      = icon_modulo
       toolbar.add_item(cmd_modulo)
 
       toolbar.show
