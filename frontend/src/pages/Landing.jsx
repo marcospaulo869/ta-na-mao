@@ -158,7 +158,7 @@ export default function Landing() {
               >
                 <img
                   src="/hero/arquiteta.png"
-                  alt="Arquiteta usando o app Tudo Mais Fácil em uma cobertura moderna"
+                  alt="Arquiteta usando o app Tudo Mais Fácil no celular em um loft moderno"
                   className="w-full h-full object-cover"
                   loading="eager"
                   data-testid="hero-photo-arquiteta"
@@ -168,7 +168,7 @@ export default function Landing() {
                   aria-hidden="true"
                 >
                   <div className="tmf-mono text-[9px] tracking-[0.35em] text-[#f3e5ab]">ARQUITETA</div>
-                  <div className="text-white text-xs mt-1">Mede na obra pelo iPhone</div>
+                  <div className="text-white text-xs mt-1">Mede na obra pelo celular</div>
                 </div>
               </div>
               <div
@@ -177,7 +177,7 @@ export default function Landing() {
               >
                 <img
                   src="/hero/marceneiro.png"
-                  alt="Marceneiro usando o app em um ap de cobertura em obra"
+                  alt="Marceneiro usando o app em uma cobertura com vista pra cidade e praia"
                   className="w-full h-full object-cover"
                   loading="eager"
                   data-testid="hero-photo-marceneiro"

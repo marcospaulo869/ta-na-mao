@@ -23,25 +23,24 @@ API_KEY = os.environ["EMERGENT_LLM_KEY"].strip('"').strip("'")
 
 PROMPTS = [
     (
-        "arquiteta.png",
-        "Photorealistic portrait, warm cinematic light. A young Brazilian female architect "
-        "in her early 30s, natural beauty, subtle smile, wearing a light beige linen blazer, "
-        "holding a modern iPhone in one hand, standing in a bright open loft with floor-to-ceiling "
-        "windows, plants and a marble kitchen island in the background. On the iPhone screen "
-        "there is a construction measurement app UI with a dark theme and gold accents — barely "
-        "visible, just enough to feel real. Soft morning sunlight, shallow depth of field, "
-        "editorial lifestyle photography, high dynamic range. Aspect ratio 3:4 vertical portrait."
-    ),
-    (
         "marceneiro.png",
-        "Photorealistic portrait, warm golden hour light. A friendly Brazilian male craftsman "
-        "(marceneiro) in his early 40s, short salt-and-pepper beard, wearing a rolled-up denim "
-        "shirt and a leather apron. He is standing inside a luxury penthouse apartment under "
-        "renovation, holding a smartphone at eye level, looking at the screen with a soft smile. "
-        "The apartment has raw concrete walls, exposed wooden beams and floor-to-ceiling windows "
-        "with a city skyline view behind him. Wood planks, a tape measure and a wooden pencil "
-        "are on a nearby sawhorse. Cinematic warm sunlight, shallow depth of field, editorial "
-        "lifestyle photography, ultra-detailed. Aspect ratio 3:4 vertical portrait."
+        "Photorealistic editorial photograph shot from a HIGH ANGLE — camera positioned about "
+        "45 degrees above and slightly behind the subject's LEFT SHOULDER, looking down at the "
+        "phone in his hands. A friendly Brazilian male craftsman (marceneiro) in his early 40s, "
+        "short salt-and-pepper beard, wearing a rolled-up denim shirt and a leather apron. He is "
+        "standing on the terrace of a luxury penthouse under renovation, holding a common modern "
+        "ANDROID smartphone (Samsung Galaxy style, NOT an iPhone — no Apple logo, no rounded "
+        "iPhone silhouette) in both hands, focused on the app on the screen. On the phone screen "
+        "there is a construction measurement app UI with a dark theme and gold accents — barely "
+        "visible, just enough to feel real. \n\n"
+        "In the BACKGROUND, well visible from the high angle over his shoulder, we see the wide "
+        "open penthouse view: a beautiful Brazilian coastal city spread out below with white "
+        "buildings, and beyond the city a curved beach shoreline meeting the turquoise sea, on a "
+        "vibrant sunny summer day with a clear blue sky and a few soft clouds. On the terrace: "
+        "raw concrete floor, a wooden sawhorse with fresh planks, a yellow tape measure and a "
+        "pencil resting on the wood. Warm golden late-morning sunlight, cinematic depth of field "
+        "with the phone/hands in sharp focus and the city/beach softly blurred. Editorial "
+        "lifestyle photography. Aspect ratio 3:4 vertical portrait, ultra-detailed."
     ),
 ]
 
