@@ -226,20 +226,48 @@ export default function CriarParede() {
               testid="grp-colunas"
               addLabel="Adicionar coluna"
               emptyLabel="Nenhuma coluna."
-              factory={() => ({ id: uid(), largura: 15, profundidade: 15 })}
+              factory={() => ({
+                id: uid(),
+                largura: 15,
+                profundidade: 15,
+                distancia_centro: 50,
+                lado: "direito",
+                altura_piso: 0,
+              })}
               render={(item, upd) => (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Field
-                    label="Largura"
-                    value={item.largura}
-                    onChange={(v) => upd({ largura: v })}
-                    testid="input-coluna-largura"
-                  />
-                  <Field
-                    label="Profundidade"
-                    value={item.profundidade}
-                    onChange={(v) => upd({ profundidade: v })}
-                    testid="input-coluna-profundidade"
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field
+                      label="Largura"
+                      value={item.largura}
+                      onChange={(v) => upd({ largura: v })}
+                      testid="input-coluna-largura"
+                    />
+                    <Field
+                      label="Profundidade"
+                      value={item.profundidade}
+                      onChange={(v) => upd({ profundidade: v })}
+                      testid="input-coluna-profundidade"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field
+                      label="Distância do centro"
+                      value={item.distancia_centro}
+                      onChange={(v) => upd({ distancia_centro: v })}
+                      testid="input-coluna-distancia"
+                    />
+                    <Field
+                      label="Altura em relação ao piso"
+                      value={item.altura_piso}
+                      onChange={(v) => upd({ altura_piso: v })}
+                      testid="input-coluna-altura"
+                    />
+                  </div>
+                  <SideSelect
+                    value={item.lado}
+                    onChange={(v) => upd({ lado: v })}
+                    testid="btn-coluna-lado"
                   />
                 </div>
               )}
@@ -254,20 +282,48 @@ export default function CriarParede() {
               testid="grp-vigas"
               addLabel="Adicionar viga"
               emptyLabel="Nenhuma viga."
-              factory={() => ({ id: uid(), altura: 20, largura: 15 })}
+              factory={() => ({
+                id: uid(),
+                altura: 20,
+                largura: 15,
+                distancia_centro: 50,
+                lado: "direito",
+                altura_piso: 250,
+              })}
               render={(item, upd) => (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Field
-                    label="Altura"
-                    value={item.altura}
-                    onChange={(v) => upd({ altura: v })}
-                    testid="input-viga-altura"
-                  />
-                  <Field
-                    label="Largura"
-                    value={item.largura}
-                    onChange={(v) => upd({ largura: v })}
-                    testid="input-viga-largura"
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field
+                      label="Altura"
+                      value={item.altura}
+                      onChange={(v) => upd({ altura: v })}
+                      testid="input-viga-altura"
+                    />
+                    <Field
+                      label="Largura"
+                      value={item.largura}
+                      onChange={(v) => upd({ largura: v })}
+                      testid="input-viga-largura"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field
+                      label="Distância do centro"
+                      value={item.distancia_centro}
+                      onChange={(v) => upd({ distancia_centro: v })}
+                      testid="input-viga-distancia"
+                    />
+                    <Field
+                      label="Altura em relação ao piso"
+                      value={item.altura_piso}
+                      onChange={(v) => upd({ altura_piso: v })}
+                      testid="input-viga-altura-piso"
+                    />
+                  </div>
+                  <SideSelect
+                    value={item.lado}
+                    onChange={(v) => upd({ lado: v })}
+                    testid="btn-viga-lado"
                   />
                 </div>
               )}

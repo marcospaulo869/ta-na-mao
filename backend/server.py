@@ -42,11 +42,17 @@ class RepeatableItem(BaseModel):
 class Coluna(RepeatableItem):
     largura: float
     profundidade: float
+    distancia_centro: Optional[float] = None
+    lado: Literal["direito", "esquerdo"] = "direito"
+    altura_piso: Optional[float] = None
 
 
 class Viga(RepeatableItem):
     altura: float
     largura: float
+    distancia_centro: Optional[float] = None
+    lado: Literal["direito", "esquerdo"] = "direito"
+    altura_piso: Optional[float] = None
 
 
 class ParedeAngulo(RepeatableItem):
