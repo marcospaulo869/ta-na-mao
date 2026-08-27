@@ -156,25 +156,25 @@ export default function Home() {
           hint="01 · CADASTRAR CLIENTE / OBRA"
         />
         <HomeButton
-          to="/parede/nova"
-          testid="btn-criar-parede"
-          icon={Wall}
-          label="Criar nova parede"
-          hint="02 · MEDIDAS DO AMBIENTE"
-        />
-        <HomeButton
           to="/foto/parede"
           testid="btn-foto-parede"
           icon={Camera}
           label="Tirar foto cor parede"
-          hint="03 · CAPTURA DE COR"
+          hint="02 · CAPTURA DE COR"
         />
         <HomeButton
           to="/foto/piso"
           testid="btn-foto-piso"
           icon={Camera}
           label="Tirar foto cor piso"
-          hint="04 · CAPTURA DE COR"
+          hint="03 · CAPTURA DE COR"
+        />
+        <HomeButton
+          to="/parede/nova"
+          testid="btn-criar-parede"
+          icon={Wall}
+          label="Criar nova parede"
+          hint="04 · MEDIDAS DO AMBIENTE"
         />
       </section>
 
