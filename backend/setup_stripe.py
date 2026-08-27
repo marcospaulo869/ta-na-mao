@@ -17,6 +17,22 @@ CATALOG = [
             {"lookup_key": "tmf_pro_annual", "amount": 39900, "currency": "brl", "interval": "year"},
         ],
     },
+    {
+        "emergent_product_id": "plugin_basic",
+        "name": "Plugin Marcenaria BASIC",
+        "tax_code": "txcd_10103001",  # SaaS
+        "prices": [
+            {"lookup_key": "plugin_basic_monthly", "amount": 2900, "currency": "brl", "interval": "month"},
+        ],
+    },
+    {
+        "emergent_product_id": "plugin_pro",
+        "name": "Plugin Marcenaria PRO",
+        "tax_code": "txcd_10103001",  # SaaS
+        "prices": [
+            {"lookup_key": "plugin_pro_monthly", "amount": 4900, "currency": "brl", "interval": "month"},
+        ],
+    },
 ]
 
 

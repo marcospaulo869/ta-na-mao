@@ -229,13 +229,13 @@ async def parse_number(
     if not transcription.strip():
         return {"transcription": "", "value": None}
 
-    # 2. Extract single number
+    # 2. Extract single number — use the faster mini model since the task is trivial
     try:
         chat = LlmChat(
             api_key=api_key,
             session_id=f"vnum-{user['user_id']}-{uuid.uuid4().hex[:8]}",
             system_message=NUMBER_EXTRACTION_SYSTEM,
-        ).with_model("openai", VOICE_LLM_MODEL)
+        ).with_model("openai", "gpt-5.4-mini")
         ctx_line = f"Contexto do campo: {context}\n" if context else ""
         user_msg = f"{ctx_line}Transcrição:\n\"{transcription}\"\n\nRetorne o JSON com o único número."
         response = await asyncio.wait_for(

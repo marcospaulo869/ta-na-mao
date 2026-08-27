@@ -16,13 +16,20 @@ stripe.api_key = os.environ["STRIPE_SECRET_KEY"]
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
 PLAN_BY_LOOKUP = {
-    "tmf_pro_monthly": {"code": "pro_monthly", "days": 30},
-    "tmf_pro_annual":  {"code": "pro_annual", "days": 365},
+    "tmf_pro_monthly":     {"code": "pro_monthly", "days": 30},
+    "tmf_pro_annual":      {"code": "pro_annual", "days": 365},
+    "plugin_basic_monthly":{"code": "plugin_basic", "days": 30},
+    "plugin_pro_monthly":  {"code": "plugin_pro", "days": 30},
 }
 
 
 class CheckoutRequest(BaseModel):
-    lookup_key: Literal["tmf_pro_monthly", "tmf_pro_annual"]
+    lookup_key: Literal[
+        "tmf_pro_monthly",
+        "tmf_pro_annual",
+        "plugin_basic_monthly",
+        "plugin_pro_monthly",
+    ]
     origin_url: str = Field(min_length=8)
 
 

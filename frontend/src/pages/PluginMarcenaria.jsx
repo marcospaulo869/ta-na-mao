@@ -1,4 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
+import { api } from "@/lib/api";
 import {
   Cube,
   Wrench,
@@ -21,6 +25,33 @@ import {
  * pelo Google, redes sociais ou pelo banner de upsell dentro do app.
  */
 export default function PluginMarcenaria() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [busyPlan, setBusyPlan] = useState(null);
+
+  const handleSubscribe = async (lookupKey) => {
+    // If not logged in, send to register + memorize the desired plan
+    if (!user) {
+      try { sessionStorage.setItem("tmf.pendingPlan", lookupKey); } catch {}
+      toast.info("Crie sua conta para prosseguir com a assinatura");
+      navigate("/cadastro");
+      return;
+    }
+    setBusyPlan(lookupKey);
+    const t = toast.loading("Abrindo checkout seguro...");
+    try {
+      const { data } = await api.post("/payments/checkout", {
+        lookup_key: lookupKey,
+        origin_url: window.location.origin,
+      });
+      toast.success("Redirecionando para o pagamento", { id: t });
+      window.location.href = data.checkout_url;
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Erro ao abrir checkout", { id: t });
+      setBusyPlan(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a08] text-white tmf-bg-grid" data-testid="plugin-lp">
       {/* NAV */}
@@ -118,7 +149,7 @@ export default function PluginMarcenaria() {
                 </div>
               </a>
               <a
-                href="/downloads/tudo_mais_facil.rbz"
+                href="/downloads/ta_na_mao.rbz"
                 data-testid="pluglp-cta-download"
                 className="tmf-btn-secondary inline-flex items-center gap-2"
               >
@@ -304,6 +335,9 @@ export default function PluginMarcenaria() {
               ]}
               cta="Assinar Basic"
               testid="price-basic"
+              lookupKey="plugin_basic_monthly"
+              onSubscribe={handleSubscribe}
+              busy={busyPlan === "plugin_basic_monthly"}
             />
             <PriceCard
               label="PRO"
@@ -320,6 +354,9 @@ export default function PluginMarcenaria() {
               ]}
               cta="Assinar Pro"
               testid="price-pro"
+              lookupKey="plugin_pro_monthly"
+              onSubscribe={handleSubscribe}
+              busy={busyPlan === "plugin_pro_monthly"}
             />
           </div>
           <div className="text-center mt-8">
@@ -457,7 +494,7 @@ function FeatureCard({ icon, tag, title, desc }) {
   );
 }
 
-function PriceCard({ label, price, tagline, features, cta, featured, testid }) {
+function PriceCard({ label, price, tagline, features, cta, featured, testid, lookupKey, onSubscribe, busy }) {
   const border = featured
     ? "border-[#d4af37]"
     : "border-[rgba(212,175,55,0.25)]";
@@ -493,14 +530,19 @@ function PriceCard({ label, price, tagline, features, cta, featured, testid }) {
           </li>
         ))}
       </ul>
-      <Link
-        to="/cadastro"
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => onSubscribe && onSubscribe(lookupKey)}
         className={featured ? "tmf-btn w-full" : "tmf-btn-secondary w-full inline-flex items-center justify-center gap-2"}
         data-testid={`${testid}-cta`}
+        style={busy ? { opacity: 0.55, cursor: "wait" } : undefined}
       >
-        {featured && <Sparkle size={18} weight="fill" />}
-        {cta}
-      </Link>
+        <div className="flex items-center justify-center gap-2">
+          {featured && <Sparkle size={18} weight="fill" />}
+          {busy ? "Abrindo checkout..." : cta}
+        </div>
+      </button>
     </div>
   );
 }
