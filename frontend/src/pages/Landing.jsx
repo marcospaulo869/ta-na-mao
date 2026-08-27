@@ -85,30 +85,15 @@ export default function Landing() {
               </Link>
             </div>
             {/* Quick access row — mobile-only (desktop already has 'Entrar' in the top row) */}
-            <div className="flex items-center gap-2 sm:hidden" data-testid="nav-quick-access">
-              <Link
-                to="/cadastro"
-                data-testid="nav-signup-quick"
-                className="inline-flex items-center gap-1.5 border border-[#d4af37] text-[#f3e5ab] bg-[rgba(212,175,55,0.08)] hover:bg-[rgba(212,175,55,0.18)] transition-colors"
-                style={{
-                  padding: "0.4rem 0.95rem",
-                  fontSize: "0.72rem",
-                  letterSpacing: "0.15em",
-                  fontFamily: "'IBM Plex Mono', monospace",
-                  textTransform: "uppercase",
-                }}
-              >
-                <ArrowRight size={11} weight="bold" />
-                Cadastre-se
-              </Link>
+            <div className="flex items-center sm:hidden" data-testid="nav-quick-access">
               <Link
                 to="/login"
                 data-testid="nav-login-quick"
                 className="inline-flex items-center border border-[rgba(163,163,154,0.4)] text-[#a3a39a] hover:border-[#d4af37] hover:text-[#d4af37] transition-colors"
                 style={{
-                  padding: "0.4rem 0.7rem",
-                  fontSize: "0.65rem",
-                  letterSpacing: "0.15em",
+                  padding: "0.4rem 1rem",
+                  fontSize: "0.7rem",
+                  letterSpacing: "0.2em",
                   fontFamily: "'IBM Plex Mono', monospace",
                   textTransform: "uppercase",
                 }}
