@@ -12,12 +12,13 @@ import {
   Plus,
   FilePdf,
 } from "@phosphor-icons/react";
-import { deleteWall, exportWallUrl, listWalls, wallPdfUrl } from "@/lib/api";
+import { deleteWall, downloadWallPdf, exportWallUrl, listWalls } from "@/lib/api";
 
 export default function ParedesSalvas() {
   const navigate = useNavigate();
   const [walls, setWalls] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pdfBusyId, setPdfBusyId] = useState(null);
 
   const load = () => {
     setLoading(true);
@@ -42,11 +43,21 @@ export default function ParedesSalvas() {
     }
   };
 
-  const handleExport = (w) => {
-    window.open(exportWallUrl(w.id), "_blank");
-    toast.success("Exportando JSON", {
-      description: "Arquivo pronto para importar no plugin do SketchUp.",
-    });
+  const handleDownloadPdf = async (w) => {
+    if (pdfBusyId) return;
+    setPdfBusyId(w.id);
+    const t = toast.loading(`Gerando PDF de ${w.nome}...`);
+    try {
+      await downloadWallPdf(w.id, w.nome || "parede");
+      toast.success("PDF baixado!", { id: t });
+    } catch (e) {
+      toast.error("Erro ao gerar PDF", {
+        id: t,
+        description: e?.response?.status === 401 ? "Faça login novamente" : e?.message,
+      });
+    } finally {
+      setPdfBusyId(null);
+    }
   };
 
   return (
@@ -136,24 +147,27 @@ export default function ParedesSalvas() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <button
+              <a
+                href={exportWallUrl(w.id)}
+                target="_blank"
+                rel="noreferrer"
                 className="tmf-btn-secondary flex items-center gap-2 flex-1"
-                onClick={() => handleExport(w)}
+                onClick={() => toast.success("Exportando JSON")}
                 data-testid={`btn-export-${w.id}`}
               >
                 <DownloadSimple size={14} weight="bold" />
                 SketchUp
-              </button>
-              <a
-                href={wallPdfUrl(w.id)}
-                target="_blank"
-                rel="noreferrer"
+              </a>
+              <button
+                type="button"
+                onClick={() => handleDownloadPdf(w)}
+                disabled={pdfBusyId === w.id}
                 className="tmf-btn-secondary flex items-center gap-2 flex-1"
                 data-testid={`btn-pdf-${w.id}`}
               >
                 <FilePdf size={14} weight="fill" />
-                PDF
-              </a>
+                {pdfBusyId === w.id ? "..." : "PDF"}
+              </button>
               <button
                 className="tmf-btn-secondary flex items-center gap-2"
                 onClick={() => navigate(`/parede/${w.id}`)}
