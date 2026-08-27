@@ -111,8 +111,9 @@ export default function Landing() {
               <span className="text-white">É só 3 minutinhos!!</span>
             </h1>
             <p className="text-[#c8c8be] mt-6 text-lg max-w-lg leading-relaxed">
-              Colete medidas em obra pelo celular, envie um PDF elegante pro cliente no
-              WhatsApp e importe o modelo 3D no SketchUp <span className="text-[#d4af37]">automaticamente</span>.
+              Aqui seu celular se transforma no seu <span className="text-[#f3e5ab]">maior aliado</span>,
+              tudo na palma da mão. Mede a parede, manda o PDF elegante pro cliente aprovar no WhatsApp
+              e importa o 3D no SketchUp <span className="text-[#d4af37]">automaticamente</span>.
               Trabalho que levava 30 minutos, agora leva 3.
             </p>
             <div className="flex flex-wrap items-center gap-3 mt-8">
