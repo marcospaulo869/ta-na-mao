@@ -90,74 +90,36 @@ export default function Landing() {
       <section className="relative tmf-grid-bg overflow-hidden">
         <div className="absolute inset-0 pointer-events-none opacity-40"
              style={{ background: "radial-gradient(ellipse at 30% 20%, rgba(212,175,55,0.15), transparent 60%)" }} />
-        <div className="relative z-10 max-w-6xl mx-auto px-5 pt-14 pb-16 grid md:grid-cols-2 gap-10 items-center">
-          <div className="tmf-fade-in">
-            <div className="inline-flex items-center gap-3 mb-5" data-testid="hero-audience">
-              <span className="w-10 h-px bg-[#d4af37]" />
+        <div className="relative z-10 max-w-4xl mx-auto px-5 pt-10 pb-16">
+
+          {/* 1) Subtitle audience banner (small, gold, on top) */}
+          <div className="tmf-fade-in text-center">
+            <div
+              className="mb-5 flex flex-col items-center gap-3"
+              data-testid="hero-audience"
+            >
+              {/* Top decorative rule — visible on all sizes */}
+              <span className="block w-16 h-px bg-[#d4af37]" aria-hidden="true" />
               <span
-                className="tmf-mono tracking-[0.28em] text-[#f3e5ab] font-bold uppercase"
-                style={{ fontSize: "clamp(0.85rem, 1.6vw, 1.05rem)" }}
+                className="tmf-mono tracking-[0.28em] text-[#f3e5ab] font-bold uppercase text-center"
+                style={{ fontSize: "clamp(0.72rem, 2.6vw, 1.15rem)" }}
               >
                 Arquitetos · Projetistas · Marceneiros
               </span>
-            </div>
-            <h1 className="tmf-heading tmf-gold-text leading-[1.08] tracking-tight"
-                style={{ fontSize: "clamp(1.85rem, 4.5vw, 3.4rem)" }}
-                data-testid="hero-title">
-              Tire medidas de forma <span className="text-white">rápida e eficiente</span>.
-              <br />
-              <span className="text-[#f3e5ab]">Com o nosso app você economiza tempo e dinheiro.</span>
-              <br />
-              <span className="text-white">É só 3 minutinhos!!</span>
-            </h1>
-            <p className="text-[#c8c8be] mt-6 text-lg max-w-lg leading-relaxed">
-              Aqui seu celular se transforma no seu <span className="text-[#f3e5ab]">maior aliado</span>,
-              tudo na palma da mão. Mede a parede, manda o PDF elegante pro cliente aprovar no WhatsApp
-              e importa o 3D no SketchUp <span className="text-[#d4af37]">automaticamente</span>.
-              Trabalho que levava 30 minutos, agora leva 3.
-            </p>
-            <div className="flex flex-wrap items-center gap-3 mt-8">
-              <Link to="/cadastro" data-testid="hero-cta-signup" className="tmf-btn max-w-xs">
-                <div className="flex items-center gap-2">
-                  <Sparkle size={20} weight="fill" />
-                  <span>Começar grátis</span>
-                </div>
-              </Link>
-              <Link
-                to="/login"
-                data-testid="hero-cta-login"
-                className="tmf-btn-secondary inline-flex items-center gap-2"
-              >
-                Já tenho conta
-                <ArrowRight size={14} weight="bold" />
-              </Link>
-            </div>
-            <div className="mt-6 flex flex-wrap items-center gap-4 text-[#a3a39a] text-xs">
-              <span className="flex items-center gap-1.5">
-                <Check size={14} className="text-[#d4af37]" weight="bold" />
-                Grátis até 3 paredes
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Check size={14} className="text-[#d4af37]" weight="bold" />
-                Sem cartão pra testar
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Check size={14} className="text-[#d4af37]" weight="bold" />
-                Cancele quando quiser
-              </span>
+              <span className="block w-16 h-px bg-[#d4af37]" aria-hidden="true" />
             </div>
           </div>
 
-          {/* Hero showcase — real human photos */}
-          <div className="relative tmf-fade-in" data-testid="hero-photos">
+          {/* 2) Photos — STACKED vertically, larger, invite scroll */}
+          <div className="relative tmf-fade-in mb-12" data-testid="hero-photos">
             <div
               className="absolute inset-0 pointer-events-none blur-3xl opacity-40"
               style={{ background: "radial-gradient(ellipse at 60% 40%, rgba(212,175,55,0.35), transparent 70%)" }}
               aria-hidden="true"
             />
-            <div className="relative grid grid-cols-2 gap-3 md:gap-4">
+            <div className="relative flex flex-col gap-4 md:gap-5 max-w-2xl mx-auto">
               <div
-                className="tmf-cinema tmf-cinema-a relative overflow-hidden border border-[rgba(212,175,55,0.35)] aspect-[3/4] transform md:-translate-y-6"
+                className="tmf-cinema tmf-cinema-a relative overflow-hidden border border-[rgba(212,175,55,0.35)] aspect-[16/10]"
                 style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,175,55,0.08)" }}
               >
                 <span className="tmf-live-dot" aria-hidden="true">AO VIVO</span>
@@ -169,15 +131,15 @@ export default function Landing() {
                   data-testid="hero-photo-arquiteta"
                 />
                 <div
-                  className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/40 to-transparent"
+                  className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/90 via-black/45 to-transparent"
                   aria-hidden="true"
                 >
-                  <div className="tmf-mono text-[9px] tracking-[0.35em] text-[#f3e5ab]">ARQUITETA</div>
-                  <div className="text-white text-xs mt-1">Mede na obra pelo celular</div>
+                  <div className="tmf-mono text-[10px] tracking-[0.35em] text-[#f3e5ab]">ARQUITETA</div>
+                  <div className="text-white text-sm mt-1">Mede na obra pelo celular</div>
                 </div>
               </div>
               <div
-                className="tmf-cinema tmf-cinema-b relative overflow-hidden border border-[rgba(212,175,55,0.35)] aspect-[3/4] transform md:translate-y-6"
+                className="tmf-cinema tmf-cinema-b relative overflow-hidden border border-[rgba(212,175,55,0.35)] aspect-[16/10]"
                 style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,175,55,0.08)" }}
               >
                 <span className="tmf-live-dot" aria-hidden="true">AO VIVO</span>
@@ -189,33 +151,61 @@ export default function Landing() {
                   data-testid="hero-photo-marceneiro"
                 />
                 <div
-                  className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/40 to-transparent"
+                  className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/90 via-black/45 to-transparent"
                   aria-hidden="true"
                 >
-                  <div className="tmf-mono text-[9px] tracking-[0.35em] text-[#f3e5ab]">MARCENEIRO</div>
-                  <div className="text-white text-xs mt-1">Mede, envia PDF, gera 3D</div>
+                  <div className="tmf-mono text-[10px] tracking-[0.35em] text-[#f3e5ab]">MARCENEIRO</div>
+                  <div className="text-white text-sm mt-1">Mede, envia PDF, gera 3D</div>
                 </div>
               </div>
             </div>
-            {/* floating spec chips */}
-            <div className="hidden md:flex absolute -left-2 top-1/2 -translate-y-1/2 flex-col gap-2">
-              <span
-                className="tmf-chip-float tmf-mono text-[9px] tracking-[0.3em] bg-[rgba(10,10,8,0.85)] border border-[rgba(212,175,55,0.35)] px-2 py-1 text-[#f3e5ab]"
-                style={{ animationDelay: "0.15s" }}
-              >
-                +25 CAMPOS
+            {/* scroll hint */}
+            <div className="mt-4 flex justify-center">
+              <span className="tmf-mono text-[10px] tracking-[0.4em] text-[#a3a39a] animate-pulse">
+                ↓ CONTINUE ↓
               </span>
-              <span
-                className="tmf-chip-float tmf-mono text-[9px] tracking-[0.3em] bg-[rgba(10,10,8,0.85)] border border-[rgba(212,175,55,0.35)] px-2 py-1 text-[#f3e5ab]"
-                style={{ animationDelay: "0.3s" }}
-              >
-                IA · VOZ+FOTO
+            </div>
+          </div>
+
+          {/* 3) Headline + paragraph + CTAs BELOW the photos */}
+          <div className="tmf-fade-in text-center max-w-3xl mx-auto">
+            <h1 className="tmf-heading tmf-gold-text leading-[1.08] tracking-tight"
+                style={{ fontSize: "clamp(1.85rem, 4.5vw, 3.4rem)" }}
+                data-testid="hero-title">
+              Tire medidas de forma <span className="text-white">rápida e eficiente</span>.
+              <br />
+              <span className="text-[#f3e5ab]">Com o nosso app você economiza tempo e dinheiro.</span>
+              <br />
+              <span className="text-white">É só 3 minutinhos!!</span>
+            </h1>
+            <p className="text-[#c8c8be] mt-6 text-lg max-w-2xl mx-auto leading-relaxed">
+              Aqui seu celular se transforma no seu <span className="text-[#f3e5ab]">maior aliado</span>,
+              tudo na palma da mão. Mede a parede, manda o PDF elegante pro cliente aprovar no WhatsApp
+              e importa o 3D no SketchUp <span className="text-[#d4af37]">automaticamente</span>.
+              Trabalho que levava 30 minutos, agora leva 3.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
+              <Link to="/cadastro" data-testid="cta-primary" className="tmf-btn inline-flex items-center gap-2">
+                <Sparkle size={18} weight="fill" />
+                Começar grátis
+                <ArrowRight size={16} weight="bold" />
+              </Link>
+              <Link to="/precos" data-testid="cta-secondary" className="tmf-btn-secondary">
+                Ver planos
+              </Link>
+            </div>
+            <div className="flex flex-wrap gap-4 mt-6 justify-center text-xs text-[#a3a39a]">
+              <span className="flex items-center gap-1.5">
+                <Check size={14} className="text-[#d4af37]" weight="bold" />
+                7 dias grátis
               </span>
-              <span
-                className="tmf-chip-float tmf-mono text-[9px] tracking-[0.3em] bg-[rgba(10,10,8,0.85)] border border-[rgba(212,175,55,0.35)] px-2 py-1 text-[#f3e5ab]"
-                style={{ animationDelay: "0.45s" }}
-              >
-                SKETCHUP 1-CLIQUE
+              <span className="flex items-center gap-1.5">
+                <Check size={14} className="text-[#d4af37]" weight="bold" />
+                Sem cartão
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check size={14} className="text-[#d4af37]" weight="bold" />
+                Cancele quando quiser
               </span>
             </div>
           </div>

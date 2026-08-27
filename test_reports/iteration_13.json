@@ -1,0 +1,24 @@
+{
+  "summary": "Verified the Field.jsx cm/mm bump bug fix end-to-end on both desktop (1280x900) and mobile (430x900). The core numerical sequence works exactly as spec'd: altura pé direito starts at 280 (cm) → switching to MM shows 2800 → clicking ▲ once shows 2801 (previously 2810, THIS IS THE FIX) → 4 clicks shows 2804 → switching back to CM shows 280.4 → clicking ▲ in CM adds 1cm to 281.4. Also validated with largura_total (400→4000→4001) and the fixedUnit=° field ângulo (135→136). Backend regression: POSTed a wall and retrieved via /api/walls — altura_pe_direito stored as 280.4 (in cm, correct) and paredes_angulo[0].angulo=136. PLUGIN_VERSION=1.2.2 confirmed inside .rbz; download endpoint returns 200 (42909 bytes). LP page still renders. Mobile triangle buttons are 44x44px (good tap target).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/frontend/src/components/Field.jsx"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Field.jsx fix is clean, correct and well-commented. The formula `current + (delta * displayStep) / factor` handles cm, mm and degree modes uniformly. toFixed(4) preserves mm precision without over-storing.",
+    "Minor observation: input step='any' silences HTML5 validation but also disables native keyboard up/down step behavior — since custom triangles are the intended UX, this is acceptable.",
+    "Consider clamping display precision when user types a value with >1 mm digit in cm mode (e.g. 280.456) — currently allowed but harmless."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@tudomaisfacil.com / admin123 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Created wall 'Parede 17' via UI: altura_pe_direito=280.4cm, paredes_angulo[0].angulo=136° — proves backend still stores CM internally after MM UI bumps.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Bug fix in Field.jsx (cm/mm bump) is fully verified. Testids to remember: {testid}-unit-cm / -unit-mm / -plus / -minus for every Field. Save button is [data-testid='btn-salvar-tudo'] (NOT btn-salvar-parede as the review_request mentioned — that testid does not exist). Angulo field testid is 'input-angulo-graus'. Add-angulo button is 'grp-paredes-angulo-add'.",
+  "rca of the issue": "N/A — fix already applied and verified working. The original bug was `current + (delta/factor)*displayStep` with displayStep=10 in mm mode → +10mm per click. New formula `current + (delta*displayStep)/factor` with displayStep=1 → +1 displayed-unit per click regardless of mode."
+}

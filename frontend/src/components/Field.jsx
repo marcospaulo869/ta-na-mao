@@ -33,8 +33,10 @@ export function Field({
 }) {
   const activeUnit = fixedUnit || unit;
   const factor = fixedUnit ? 1 : activeUnit === "mm" ? 10 : 1;
-  const displayStep =
-    step ?? (fixedUnit ? 1 : activeUnit === "mm" ? 10 : 1);
+  // The +/- buttons and native number spinner always tick 1 unit in the
+  // CURRENTLY DISPLAYED unit. When user is in MM they expect 1 mm per click;
+  // when in CM they expect 1 cm per click. Callers can override via `step`.
+  const displayStep = step ?? 1;
 
   const display =
     value === "" || value == null || Number.isNaN(value)
@@ -52,8 +54,13 @@ export function Field({
   const bump = (delta) => {
     const current =
       value === "" || value == null || Number.isNaN(value) ? 0 : Number(value);
-    const next = Math.max(0, current + (delta / factor) * displayStep);
-    onChange(Number(next.toFixed(2)));
+    // delta is ±1, displayStep is in DISPLAYED units, factor converts to internal cm.
+    // Divide by factor so the internal value increments by (1 display unit ÷ factor).
+    //   MM: (±1 × 1) / 10 = ±0.1 cm  ⇒ shown as ±1 mm  ✅
+    //   CM: (±1 × 1) /  1 = ±1   cm  ⇒ shown as ±1 cm  ✅
+    //   °:  (±1 × 1) /  1 = ±1   °                       ✅
+    const next = Math.max(0, current + (delta * displayStep) / factor);
+    onChange(Number(next.toFixed(4)));
   };
 
   return (
@@ -63,7 +70,7 @@ export function Field({
         <input
           type="number"
           inputMode="decimal"
-          step={displayStep}
+          step="any"
           min="0"
           className="tmf-input no-spinner flex-1"
           value={display}

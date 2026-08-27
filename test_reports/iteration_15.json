@@ -1,0 +1,18 @@
+{
+  "summary": "Verified hero-audience symmetry fix on /lp. Refactored vertical flex-col (dash-top -> text -> dash-bottom) confirmed on 320x720, 375x800 and 430x900 viewports. Both golden dashes are exactly 64px wide and horizontally centered (centerX == parentCenterX within <2px). Text 'Arquitetos · Projetistas · Marceneiros' fits in ONE line at all three widths (offsetHeight 17.27px == lineHeight 17.28px, fontSize resolves to 11.52px via clamp on 320px). DOM order regression intact: hero-audience.y < hero-photos.y < hero-title.y. mm bump regression on /parede/nova NOT re-executed (Field.jsx unchanged per request; already validated in iter13).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Hero-audience is now a vertical stack with two 64px golden dashes above/below the text. Text uses clamp(0.72rem, 2.6vw, 1.15rem) fontSize and fits single-line down to 320px. Regression DOM order (audience/photos/title) confirmed."
+}

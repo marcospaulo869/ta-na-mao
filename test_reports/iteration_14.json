@@ -1,0 +1,36 @@
+{
+  "summary": "Frontend-only testing of /lp hero layout inversion (single-column: subtitle → stacked photos → headline+CTAs) and regressions (mm bump on /parede/nova, .rbz download). All requested checks passed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "lp_page_loads_200": "PASS (no page errors; 4 background 401s are for /api/auth/me while logged out — expected)",
+    "dom_order_audience_photos_title": "PASS (y=108 < y=156 < y=1095 on desktop, and identical order on mobile 430x900)",
+    "photos_present_with_testids_and_tmf_cinema": "PASS (hero-photo-arquiteta and hero-photo-marceneiro each wrapped by .tmf-cinema)",
+    "photos_stacked_vertically": "PASS (parent has classes 'relative flex flex-col gap-4 md:gap-5 max-w-2xl mx-auto'; marceneiro top=537 > arquiteta top=144; screenshot confirms clear vertical stack). Note: getBoundingClientRect overlap appears because tmf-cinema Ken Burns scale(1.15) transform inflates bbox — this is animation, not layout.",
+    "hero_title_text": "PASS (contains 'Tire medidas de forma', 'rápida e eficiente', 'É só 3 minutinhos')",
+    "no_duplicates": "PASS (counts: hero-audience=1, hero-photos=1, hero-title=1, hero-photo-arquiteta=1, hero-photo-marceneiro=1, cta-primary=1, cta-secondary=1)",
+    "continue_hint_between_photos_and_title": "PASS ('↓ CONTINUE ↓' bbox top is between hero-photos bottom and hero-title top)",
+    "ctas_below_h1": "PASS (cta-primary top=1591, cta-secondary top=1673, both > hero-title top=1095)",
+    "mm_bump_regression": "PASS (altura pé direito: mm toggle → 2800; click ▲ → 2801, exactly as expected)",
+    "rbz_download_regression": "PASS (HTTP 200, 42909 bytes, unzipped contains PLUGIN_VERSION = '1.2.2'.freeze)",
+    "mobile_hero_photo_size": "PASS (arquiteta container offsetHeight is ≈471px at viewport 430x900 → ~52% viewport height, well above 30% threshold)"
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Landing.jsx hero rewrite is clean — single occurrence of each testid, no orphan duplicate blocks left over from the sed cleanup.",
+    "Consider adding data-testid to the CONTINUE hint (e.g. hero-scroll-hint) for future-proof selection."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (not tested per request)", "frontend": "100%"},
+  "test_credentials": "admin@tudomaisfacil.com / admin123 (from /app/memory/test_credentials.md) — used for /parede/nova regression",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The /lp hero layout is now a single-column flow (audience subtitle → stacked photos → title → CTAs). If testing photo stacking via bbox, do NOT rely on getBoundingClientRect for horizontal alignment because .tmf-cinema uses scale(1.15) Ken Burns transform that shifts bbox; use parent's className ('flex flex-col') or offsetHeight/offsetTop of the container. TriangleButton testids on Field.jsx are `${testid}-plus` (up ▲) and `${testid}-minus` (down ▼), not `-up`/`-down`.",
+  "rca of the issue": "N/A — no bugs found."
+}
