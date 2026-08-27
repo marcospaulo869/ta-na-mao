@@ -62,26 +62,47 @@ export default function Landing() {
               </div>
             </div>
           </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              to="/login"
-              data-testid="nav-login"
-              className="tmf-btn-secondary hidden sm:inline-flex"
-              style={{ padding: "0.5rem 1rem" }}
-            >
-              Entrar
-            </Link>
-            <Link
-              to="/cadastro"
-              data-testid="nav-signup"
-              className="tmf-btn"
-              style={{ padding: "0.6rem 1rem", fontSize: "0.75rem" }}
-            >
-              <div className="flex items-center gap-2">
-                Criar conta
-                <ArrowRight size={14} weight="bold" />
-              </div>
-            </Link>
+          <div className="flex flex-col items-end gap-1.5">
+            <div className="flex items-center gap-2">
+              <Link
+                to="/login"
+                data-testid="nav-login"
+                className="tmf-btn-secondary hidden sm:inline-flex"
+                style={{ padding: "0.5rem 1rem" }}
+              >
+                Entrar
+              </Link>
+              <Link
+                to="/cadastro"
+                data-testid="nav-signup"
+                className="tmf-btn"
+                style={{ padding: "0.6rem 1rem", fontSize: "0.75rem" }}
+              >
+                <div className="flex items-center gap-2">
+                  Criar conta
+                  <ArrowRight size={14} weight="bold" />
+                </div>
+              </Link>
+            </div>
+            {/* Quick access row — always visible, especially useful for returning buyers on mobile */}
+            <div className="flex items-center gap-1.5" data-testid="nav-quick-access">
+              <Link
+                to="/cadastro"
+                data-testid="nav-signup-quick"
+                className="tmf-btn-secondary inline-flex"
+                style={{ padding: "0.35rem 0.75rem", fontSize: "0.7rem" }}
+              >
+                Cadastre-se
+              </Link>
+              <Link
+                to="/login"
+                data-testid="nav-login-quick"
+                className="tmf-btn-secondary inline-flex"
+                style={{ padding: "0.35rem 0.75rem", fontSize: "0.7rem" }}
+              >
+                Entrar
+              </Link>
+            </div>
           </div>
         </div>
       </nav>

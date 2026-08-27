@@ -1,0 +1,468 @@
+/* Private Pitch Presentation — cinematic slides for investor */
+
+.pitch-root {
+  min-height: 100vh;
+  background: #0a0a08;
+  color: #fff;
+  overflow: hidden;
+  position: relative;
+  font-family: "Outfit", sans-serif;
+}
+
+/* Grain overlay for texture */
+.pitch-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  z-index: 2;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/></svg>");
+}
+
+/* Gold aura background */
+.pitch-aura {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(ellipse at 20% 30%, rgba(212, 175, 55, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 70%, rgba(212, 175, 55, 0.05) 0%, transparent 55%);
+}
+
+/* Grid background */
+.pitch-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    linear-gradient(rgba(212, 175, 55, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.pitch-slide {
+  position: absolute;
+  inset: 0;
+  padding: 3.5rem 1.5rem 5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 700ms ease;
+}
+
+.pitch-slide.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.pitch-tag {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  color: #d4af37;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pitch-tag::before,
+.pitch-tag::after {
+  content: "";
+  width: 30px;
+  height: 1px;
+  background: #d4af37;
+  display: inline-block;
+}
+
+.pitch-h1 {
+  font-family: "Outfit", sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  line-height: 0.95;
+  background: linear-gradient(135deg, #f3e5ab 0%, #d4af37 45%, #a97b1e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-align: center;
+  margin: 0 0 1rem;
+  text-shadow: 0 0 40px rgba(212, 175, 55, 0.3);
+}
+
+.pitch-h2 {
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  color: #fff;
+  text-align: center;
+  max-width: 900px;
+  line-height: 1.2;
+  margin: 0 0 1.5rem;
+}
+
+.pitch-lead {
+  color: #a3a39a;
+  font-size: clamp(1rem, 2.2vw, 1.15rem);
+  text-align: center;
+  line-height: 1.55;
+  max-width: 720px;
+  margin: 0 auto 1.5rem;
+}
+
+.pitch-big-number {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 700;
+  color: #d4af37;
+  font-size: clamp(3.5rem, 12vw, 8rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 40px rgba(212, 175, 55, 0.4);
+}
+
+.pitch-big-number small {
+  display: block;
+  font-family: "Outfit", sans-serif;
+  font-weight: 400;
+  font-size: clamp(0.75rem, 1.5vw, 1rem);
+  letter-spacing: 0.35em;
+  color: #a3a39a;
+  margin-top: 1rem;
+  text-transform: uppercase;
+}
+
+.pitch-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  max-width: 900px;
+  margin: 1.5rem 0;
+}
+
+.pitch-metric {
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  padding: 1.1rem;
+  background: rgba(212, 175, 55, 0.03);
+  text-align: left;
+  position: relative;
+}
+
+.pitch-metric::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  border-top: 1px solid #d4af37;
+  border-left: 1px solid #d4af37;
+}
+
+.pitch-metric::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  border-bottom: 1px solid #d4af37;
+  border-right: 1px solid #d4af37;
+}
+
+.pitch-metric-value {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 700;
+  color: #f3e5ab;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1;
+}
+
+.pitch-metric-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: #a3a39a;
+  text-transform: uppercase;
+  margin-top: 0.5rem;
+}
+
+.pitch-metric-hint {
+  color: #7a7a70;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  line-height: 1.35;
+}
+
+.pitch-table {
+  width: 100%;
+  max-width: 800px;
+  border-collapse: collapse;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: clamp(0.75rem, 1.6vw, 0.9rem);
+}
+
+.pitch-table th,
+.pitch-table td {
+  padding: 0.7rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+.pitch-table th {
+  color: #d4af37;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-size: 0.7em;
+}
+
+.pitch-table td:first-child {
+  color: #a3a39a;
+}
+
+.pitch-table td.highlight {
+  color: #f3e5ab;
+  font-weight: 700;
+}
+
+/* Bottom controls */
+.pitch-nav {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  pointer-events: none;
+}
+
+.pitch-nav > * {
+  pointer-events: auto;
+}
+
+.pitch-nav-btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: rgba(10, 10, 8, 0.9);
+  color: #d4af37;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 999px;
+}
+
+.pitch-nav-btn:hover {
+  background: #d4af37;
+  color: #0a0a08;
+  transform: translateY(-2px);
+}
+
+.pitch-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pitch-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #d4af37, #f3e5ab);
+  z-index: 20;
+  transition: width 500ms ease;
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.6);
+}
+
+.pitch-slide-counter {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: #a3a39a;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* Corner marks (decorative) */
+.pitch-corners {
+  position: fixed;
+  inset: 1rem;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.pitch-corners::before,
+.pitch-corners::after,
+.pitch-corners > span::before,
+.pitch-corners > span::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+}
+
+.pitch-corners::before {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+}
+
+.pitch-corners::after {
+  top: 0;
+  right: 0;
+  border-left: none;
+  border-bottom: none;
+}
+
+.pitch-corners > span::before {
+  bottom: 0;
+  left: 0;
+  border-right: none;
+  border-top: none;
+}
+
+.pitch-corners > span::after {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+}
+
+/* Gate (passcode) */
+.pitch-gate {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #0a0a08;
+  color: #fff;
+}
+
+.pitch-gate input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.5);
+  color: #f3e5ab;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1.2rem;
+  letter-spacing: 0.2em;
+  text-align: center;
+  padding: 0.75rem;
+  width: 280px;
+  outline: none;
+  text-transform: lowercase;
+}
+
+.pitch-gate input:focus {
+  border-color: #d4af37;
+}
+
+.pitch-gate button {
+  margin-top: 1.5rem;
+  padding: 0.85rem 2.5rem;
+  background: linear-gradient(180deg, #d4af37, #a97b1e);
+  color: #0a0a08;
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pitch-gate button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(212, 175, 55, 0.4);
+}
+
+/* Reveal animation for slide content */
+.pitch-slide.active > * {
+  animation: pitch-rise 800ms ease both;
+}
+
+.pitch-slide.active > *:nth-child(1) { animation-delay: 100ms; }
+.pitch-slide.active > *:nth-child(2) { animation-delay: 250ms; }
+.pitch-slide.active > *:nth-child(3) { animation-delay: 400ms; }
+.pitch-slide.active > *:nth-child(4) { animation-delay: 550ms; }
+.pitch-slide.active > *:nth-child(5) { animation-delay: 700ms; }
+.pitch-slide.active > *:nth-child(6) { animation-delay: 850ms; }
+
+@keyframes pitch-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Full-bleed logo aura */
+.pitch-logo-wrap {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.pitch-logo-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -30px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.35) 0%, transparent 65%);
+  filter: blur(30px);
+  z-index: -1;
+}
+
+.pitch-logo-wrap img {
+  width: 160px;
+  height: auto;
+  filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.5));
+}
+
+/* Highlight pill */
+.pitch-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #d4af37;
+  background: rgba(212, 175, 55, 0.1);
+  color: #f3e5ab;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.pitch-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d4af37;
+  box-shadow: 0 0 12px #d4af37;
+  animation: pitch-pulse-anim 1.4s ease-in-out infinite;
+}
+
+@keyframes pitch-pulse-anim {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.6); }
+}
