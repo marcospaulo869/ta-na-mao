@@ -15,6 +15,7 @@ import { PagamentoSucesso, PagamentoCancelado } from "@/pages/Pagamento";
 import Projetos from "@/pages/Projetos";
 import ProjetoDetalhe from "@/pages/ProjetoDetalhe";
 import Landing from "@/pages/Landing";
+import PluginMarcenaria from "@/pages/PluginMarcenaria";
 import { Privacidade, Termos } from "@/pages/Legal";
 import { useAuth } from "@/context/AuthContext";
 
@@ -48,6 +49,7 @@ function AppRouter() {
       <Route path="/pagamento/cancelado" element={<PagamentoCancelado />} />
 
       <Route path="/lp" element={<Landing />} />
+      <Route path="/plugin-marcenaria" element={<PluginMarcenaria />} />
       <Route path="/privacidade" element={<Privacidade />} />
       <Route path="/termos" element={<Termos />} />
       <Route path="/" element={<RootRoute />} />
