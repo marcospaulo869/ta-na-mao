@@ -324,35 +324,36 @@ body::before {
   transform: translate3d(0, 0, 0);
 }
 .tmf-cinema-a img {
-  -webkit-animation: tmf-kenburns-a 14s ease-in-out infinite alternate;
-  animation:        tmf-kenburns-a 14s ease-in-out infinite alternate;
-  -webkit-transform-origin: 55% 40%;
-  transform-origin: 55% 40%;
+  -webkit-animation: tmf-kenburns-a 20s ease-in-out infinite;
+  animation:        tmf-kenburns-a 20s ease-in-out infinite;
+  -webkit-transform-origin: 60% 45%;   /* foco no rosto/celular da arquiteta */
+  transform-origin: 60% 45%;
 }
 .tmf-cinema-b img {
-  -webkit-animation: tmf-kenburns-b 16s ease-in-out infinite alternate;
-  animation:        tmf-kenburns-b 16s ease-in-out infinite alternate;
-  -webkit-transform-origin: 45% 45%;
-  transform-origin: 45% 45%;
-  -webkit-animation-delay: -3s;
-  animation-delay: -3s;
+  -webkit-animation: tmf-kenburns-b 22s ease-in-out infinite;
+  animation:        tmf-kenburns-b 22s ease-in-out infinite;
+  -webkit-transform-origin: 55% 60%;   /* foco na mão/celular do marceneiro */
+  transform-origin: 55% 60%;
+  -webkit-animation-delay: -8s;
+  animation-delay: -8s;
 }
 
+/* Zoom suave respirando — sem pan lateral (evita vertigem) */
 @-webkit-keyframes tmf-kenburns-a {
-  from { -webkit-transform: scale(1.05) translate3d(0, 0, 0); }
-  to   { -webkit-transform: scale(1.16) translate3d(-2%, -1.5%, 0); }
+  0%, 100% { -webkit-transform: scale(1.04); }
+  50%      { -webkit-transform: scale(1.22); }
 }
 @keyframes tmf-kenburns-a {
-  from { transform: scale(1.05) translate3d(0, 0, 0); }
-  to   { transform: scale(1.16) translate3d(-2%, -1.5%, 0); }
+  0%, 100% { transform: scale(1.04); }
+  50%      { transform: scale(1.22); }
 }
 @-webkit-keyframes tmf-kenburns-b {
-  from { -webkit-transform: scale(1.05) translate3d(0, 0, 0); }
-  to   { -webkit-transform: scale(1.17) translate3d(2%, -2%, 0); }
+  0%, 100% { -webkit-transform: scale(1.04); }
+  50%      { -webkit-transform: scale(1.24); }
 }
 @keyframes tmf-kenburns-b {
-  from { transform: scale(1.05) translate3d(0, 0, 0); }
-  to   { transform: scale(1.17) translate3d(2%, -2%, 0); }
+  0%, 100% { transform: scale(1.04); }
+  50%      { transform: scale(1.24); }
 }
 
 /* 2) On DESKTOP hover only (never on touch), snap-zoom to the person's
@@ -390,12 +391,12 @@ body::before {
   mix-blend-mode: screen;
 }
 @-webkit-keyframes tmf-glow {
-  0%, 100% { opacity: 0.55; }
-  50%      { opacity: 0.9; }
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.75; }
 }
 @keyframes tmf-glow {
-  0%, 100% { opacity: 0.55; }
-  50%      { opacity: 0.9; }
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.75; }
 }
 
 /* 4) "Live" indicator dot — top-right of each photo, pulses like a
