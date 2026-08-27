@@ -33,6 +33,8 @@ module TudoMaisFacil
       toolbar = ::UI::Toolbar.new('Tudo Mais Fácil')
 
       icon = File.join(TudoMaisFacil::PLUGIN_ROOT, 'ui', 'icon.png')
+      icon_lastro = File.join(TudoMaisFacil::PLUGIN_ROOT, 'ui', 'icon_lastro.png')
+      icon_modulo = File.join(TudoMaisFacil::PLUGIN_ROOT, 'ui', 'icon_modulo.png')
 
       cmd_local = ::UI::Command.new('Importar Parede (arquivo)') { import_from_file }
       cmd_local.tooltip     = 'Importar arquivo .tmf.json'
@@ -49,14 +51,14 @@ module TudoMaisFacil
 
       cmd_lastro = ::UI::Command.new('Lastro de Cozinha') { TudoMaisFacil::Lastro.show_wizard }
       cmd_lastro.tooltip     = 'Gerar base de madeira (lastro) sob módulos de cozinha'
-      cmd_lastro.small_icon  = icon
-      cmd_lastro.large_icon  = icon
+      cmd_lastro.small_icon  = icon_lastro
+      cmd_lastro.large_icon  = icon_lastro
       toolbar.add_item(cmd_lastro)
 
       cmd_modulo = ::UI::Command.new('Construtor de Módulos') { TudoMaisFacil::Modulo.show_wizard }
       cmd_modulo.tooltip     = 'Criar módulo planejado parametrizado'
-      cmd_modulo.small_icon  = icon
-      cmd_modulo.large_icon  = icon
+      cmd_modulo.small_icon  = icon_modulo
+      cmd_modulo.large_icon  = icon_modulo
       toolbar.add_item(cmd_modulo)
 
       toolbar.show

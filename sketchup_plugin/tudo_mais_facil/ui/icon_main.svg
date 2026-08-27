@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Tudo Mais Fácil — main plugin icon (Wall + gold "T" mark) -->
+  <defs>
+    <linearGradient id="tmfGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f3e5ab"/>
+      <stop offset="100%" stop-color="#c99d24"/>
+    </linearGradient>
+    <linearGradient id="tmfDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e1e1a"/>
+      <stop offset="100%" stop-color="#0b0b09"/>
+    </linearGradient>
+  </defs>
+  <!-- rounded square background -->
+  <rect x="4" y="4" width="120" height="120" rx="24" fill="url(#tmfDark)" stroke="url(#tmfGold)" stroke-width="2.5"/>
+  <!-- isometric wall mark -->
+  <g transform="translate(64 68)">
+    <!-- back wall face -->
+    <polygon points="-30,-24 30,-24 30,20 -30,20" fill="none" stroke="url(#tmfGold)" stroke-width="3" stroke-linejoin="round"/>
+    <!-- side wall (angled — reference to 'paredes em ângulo') -->
+    <polygon points="30,-24 46,-14 46,30 30,20" fill="url(#tmfGold)" fill-opacity="0.18" stroke="url(#tmfGold)" stroke-width="3" stroke-linejoin="round"/>
+    <!-- door opening -->
+    <rect x="-22" y="-4" width="14" height="24" fill="url(#tmfDark)" stroke="url(#tmfGold)" stroke-width="2"/>
+    <!-- window opening -->
+    <rect x="4" y="-14" width="18" height="10" fill="url(#tmfDark)" stroke="url(#tmfGold)" stroke-width="2"/>
+  </g>
+  <!-- corner marks -->
+  <path d="M12 12 L20 12 M12 12 L12 20" stroke="url(#tmfGold)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M116 12 L108 12 M116 12 L116 20" stroke="url(#tmfGold)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M12 116 L20 116 M12 116 L12 108" stroke="url(#tmfGold)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M116 116 L108 116 M116 116 L116 108" stroke="url(#tmfGold)" stroke-width="2" stroke-linecap="round"/>
+</svg>

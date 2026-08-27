@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Icon: Construtor de Módulos — cabinet w/ door + drawer + hinge dot -->
+  <defs>
+    <linearGradient id="tmfGold3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f3e5ab"/>
+      <stop offset="100%" stop-color="#c99d24"/>
+    </linearGradient>
+    <linearGradient id="tmfDark3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e1e1a"/>
+      <stop offset="100%" stop-color="#0b0b09"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="24" fill="url(#tmfDark3)" stroke="url(#tmfGold3)" stroke-width="2.5"/>
+
+  <!-- module body -->
+  <g transform="translate(28 22)">
+    <!-- outer box -->
+    <rect x="0" y="0" width="72" height="84" fill="none" stroke="url(#tmfGold3)" stroke-width="3" stroke-linejoin="round"/>
+
+    <!-- vertical divider -->
+    <line x1="36" y1="6" x2="36" y2="52" stroke="url(#tmfGold3)" stroke-width="2"/>
+
+    <!-- left door -->
+    <rect x="4" y="4" width="28" height="48" fill="url(#tmfGold3)" fill-opacity="0.08" stroke="url(#tmfGold3)" stroke-width="1.5"/>
+    <!-- hinge cutout dots (35mm marks) -->
+    <circle cx="8" cy="12" r="2" fill="url(#tmfGold3)"/>
+    <circle cx="8" cy="44" r="2" fill="url(#tmfGold3)"/>
+    <!-- handle line -->
+    <line x1="24" y1="24" x2="28" y2="24" stroke="url(#tmfGold3)" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- right door -->
+    <rect x="40" y="4" width="28" height="48" fill="url(#tmfGold3)" fill-opacity="0.08" stroke="url(#tmfGold3)" stroke-width="1.5"/>
+    <circle cx="64" cy="12" r="2" fill="url(#tmfGold3)"/>
+    <circle cx="64" cy="44" r="2" fill="url(#tmfGold3)"/>
+    <line x1="44" y1="24" x2="48" y2="24" stroke="url(#tmfGold3)" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- drawer face -->
+    <rect x="4" y="56" width="64" height="24" fill="url(#tmfGold3)" fill-opacity="0.15" stroke="url(#tmfGold3)" stroke-width="1.5"/>
+    <!-- drawer handle -->
+    <rect x="28" y="65" width="16" height="4" fill="none" stroke="url(#tmfGold3)" stroke-width="1.5" rx="1"/>
+  </g>
+
+  <!-- corner marks -->
+  <path d="M12 12 L20 12 M12 12 L12 20" stroke="url(#tmfGold3)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M116 12 L108 12 M116 12 L116 20" stroke="url(#tmfGold3)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M12 116 L20 116 M12 116 L12 108" stroke="url(#tmfGold3)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M116 116 L108 116 M116 116 L116 108" stroke="url(#tmfGold3)" stroke-width="2" stroke-linecap="round"/>
+</svg>

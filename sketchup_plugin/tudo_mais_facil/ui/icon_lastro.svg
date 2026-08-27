@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Icon: Lastro de Cozinha — wooden base with kitchen module hint -->
+  <defs>
+    <linearGradient id="tmfGold2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f3e5ab"/>
+      <stop offset="100%" stop-color="#c99d24"/>
+    </linearGradient>
+    <linearGradient id="tmfDark2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e1e1a"/>
+      <stop offset="100%" stop-color="#0b0b09"/>
+    </linearGradient>
+    <linearGradient id="wood2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c9a26a"/>
+      <stop offset="100%" stop-color="#8b6b3e"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="24" fill="url(#tmfDark2)" stroke="url(#tmfGold2)" stroke-width="2.5"/>
+
+  <!-- ghost cabinet on top -->
+  <g transform="translate(32 30)" opacity="0.55">
+    <rect x="0" y="0" width="30" height="34" fill="none" stroke="url(#tmfGold2)" stroke-width="2" stroke-dasharray="3 3"/>
+    <rect x="34" y="0" width="30" height="34" fill="none" stroke="url(#tmfGold2)" stroke-width="2" stroke-dasharray="3 3"/>
+    <circle cx="15" cy="17" r="2" fill="url(#tmfGold2)"/>
+    <circle cx="49" cy="17" r="2" fill="url(#tmfGold2)"/>
+  </g>
+
+  <!-- solid wood base (lastro) -->
+  <g transform="translate(20 78)">
+    <rect x="0" y="0" width="88" height="16" fill="url(#wood2)" stroke="url(#tmfGold2)" stroke-width="2"/>
+    <!-- wood grain lines -->
+    <path d="M6 4 Q22 6 44 4 T80 4" stroke="#6b4e2b" stroke-width="1" fill="none" opacity="0.7"/>
+    <path d="M6 9 Q22 12 44 9 T80 10" stroke="#6b4e2b" stroke-width="1" fill="none" opacity="0.5"/>
+    <path d="M6 13 Q22 15 44 13 T80 14" stroke="#6b4e2b" stroke-width="1" fill="none" opacity="0.6"/>
+  </g>
+
+  <!-- floor line -->
+  <line x1="14" y1="102" x2="114" y2="102" stroke="url(#tmfGold2)" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- corner marks -->
+  <path d="M12 12 L20 12 M12 12 L12 20" stroke="url(#tmfGold2)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M116 12 L108 12 M116 12 L116 20" stroke="url(#tmfGold2)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M12 116 L20 116 M12 116 L12 108" stroke="url(#tmfGold2)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M116 116 L108 116 M116 116 L116 108" stroke="url(#tmfGold2)" stroke-width="2" stroke-linecap="round"/>
+</svg>

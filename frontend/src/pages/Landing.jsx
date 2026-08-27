@@ -33,18 +33,32 @@ export default function Landing() {
       <nav className="relative z-30 border-b border-[rgba(243,229,171,0.12)] bg-[rgba(10,10,8,0.85)] backdrop-blur-md sticky top-0">
         <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2" data-testid="nav-brand">
-            <img
-              src="/brand/logo.png"
-              alt="Madeira Forte"
-              className="w-10 h-10 object-contain"
-              style={{ filter: "drop-shadow(0 0 6px rgba(212,175,55,0.5))" }}
-            />
+            <div
+              className="w-10 h-10 flex items-center justify-center border border-[rgba(212,175,55,0.5)]"
+              style={{
+                background: "linear-gradient(135deg, rgba(243,229,171,0.15), rgba(212,175,55,0.04))",
+                boxShadow: "0 0 12px rgba(212,175,55,0.35)",
+              }}
+              aria-hidden="true"
+            >
+              <span
+                className="tmf-heading font-black leading-none"
+                style={{
+                  fontSize: "1.15rem",
+                  background: "linear-gradient(180deg, #f3e5ab, #c99d24)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                T
+              </span>
+            </div>
             <div>
               <div className="tmf-heading text-base tmf-gold-text leading-none">
                 TUDO MAIS FÁCIL
               </div>
               <div className="tmf-mono text-[8px] tracking-[0.3em] text-[#a3a39a] mt-1">
-                MADEIRA FORTE PLANEJADOS
+                MEDIDAS · 3D · MARCENARIA
               </div>
             </div>
           </Link>
@@ -78,10 +92,13 @@ export default function Landing() {
              style={{ background: "radial-gradient(ellipse at 30% 20%, rgba(212,175,55,0.15), transparent 60%)" }} />
         <div className="relative z-10 max-w-6xl mx-auto px-5 pt-14 pb-16 grid md:grid-cols-2 gap-10 items-center">
           <div className="tmf-fade-in">
-            <div className="inline-flex items-center gap-2 mb-5">
-              <span className="w-8 h-px bg-[#d4af37]" />
-              <span className="tmf-mono text-[10px] tracking-[0.35em] text-[#d4af37]">
-                ARQUITETOS · PROJETISTAS · MARCENEIROS
+            <div className="inline-flex items-center gap-3 mb-5" data-testid="hero-audience">
+              <span className="w-10 h-px bg-[#d4af37]" />
+              <span
+                className="tmf-mono tracking-[0.28em] text-[#f3e5ab] font-bold uppercase"
+                style={{ fontSize: "clamp(0.85rem, 1.6vw, 1.05rem)" }}
+              >
+                Arquitetos · Projetistas · Marceneiros
               </span>
             </div>
             <h1 className="tmf-heading tmf-gold-text leading-[1.05] tracking-tight"
@@ -127,19 +144,64 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Logo showcase */}
-          <div className="flex justify-center md:justify-end tmf-fade-in">
-            <div className="relative">
-              <div className="absolute inset-0 bg-[#d4af37] opacity-25 blur-3xl scale-90" />
-              <img
-                src="/brand/logo.png"
-                alt="Madeira Forte - Móveis Planejados"
-                className="relative w-64 h-auto md:w-80 object-contain"
-                style={{
-                  filter:
-                    "drop-shadow(0 0 32px rgba(212,175,55,0.5)) drop-shadow(0 8px 24px rgba(0,0,0,0.6))",
-                }}
-              />
+          {/* Hero showcase — real human photos */}
+          <div className="relative tmf-fade-in" data-testid="hero-photos">
+            <div
+              className="absolute inset-0 pointer-events-none blur-3xl opacity-40"
+              style={{ background: "radial-gradient(ellipse at 60% 40%, rgba(212,175,55,0.35), transparent 70%)" }}
+              aria-hidden="true"
+            />
+            <div className="relative grid grid-cols-2 gap-3 md:gap-4">
+              <div
+                className="relative overflow-hidden border border-[rgba(212,175,55,0.35)] aspect-[3/4] transform md:-translate-y-6"
+                style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,175,55,0.08)" }}
+              >
+                <img
+                  src="/hero/arquiteta.png"
+                  alt="Arquiteta usando o app Tudo Mais Fácil em uma cobertura moderna"
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                  data-testid="hero-photo-arquiteta"
+                />
+                <div
+                  className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/40 to-transparent"
+                  aria-hidden="true"
+                >
+                  <div className="tmf-mono text-[9px] tracking-[0.35em] text-[#f3e5ab]">ARQUITETA</div>
+                  <div className="text-white text-xs mt-1">Mede na obra pelo iPhone</div>
+                </div>
+              </div>
+              <div
+                className="relative overflow-hidden border border-[rgba(212,175,55,0.35)] aspect-[3/4] transform md:translate-y-6"
+                style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,175,55,0.08)" }}
+              >
+                <img
+                  src="/hero/marceneiro.png"
+                  alt="Marceneiro usando o app em um ap de cobertura em obra"
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                  data-testid="hero-photo-marceneiro"
+                />
+                <div
+                  className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/40 to-transparent"
+                  aria-hidden="true"
+                >
+                  <div className="tmf-mono text-[9px] tracking-[0.35em] text-[#f3e5ab]">MARCENEIRO</div>
+                  <div className="text-white text-xs mt-1">Mede, envia PDF, gera 3D</div>
+                </div>
+              </div>
+            </div>
+            {/* floating spec chips */}
+            <div className="hidden md:flex absolute -left-2 top-1/2 -translate-y-1/2 flex-col gap-2">
+              <span className="tmf-mono text-[9px] tracking-[0.3em] bg-[rgba(10,10,8,0.85)] border border-[rgba(212,175,55,0.35)] px-2 py-1 text-[#f3e5ab]">
+                +25 CAMPOS
+              </span>
+              <span className="tmf-mono text-[9px] tracking-[0.3em] bg-[rgba(10,10,8,0.85)] border border-[rgba(212,175,55,0.35)] px-2 py-1 text-[#f3e5ab]">
+                IA · VOZ+FOTO
+              </span>
+              <span className="tmf-mono text-[9px] tracking-[0.3em] bg-[rgba(10,10,8,0.85)] border border-[rgba(212,175,55,0.35)] px-2 py-1 text-[#f3e5ab]">
+                SKETCHUP 1-CLIQUE
+              </span>
             </div>
           </div>
         </div>
@@ -400,18 +462,33 @@ export default function Landing() {
       <footer className="border-t border-[rgba(243,229,171,0.1)] py-8 bg-[#08080a]">
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <img src="/brand/logo.png" alt="" className="w-8 h-8 object-contain" />
+            <div
+              className="w-8 h-8 flex items-center justify-center border border-[rgba(212,175,55,0.4)]"
+              style={{ background: "linear-gradient(135deg, rgba(243,229,171,0.12), rgba(212,175,55,0.04))" }}
+              aria-hidden="true"
+            >
+              <span
+                className="tmf-heading font-black leading-none text-[0.85rem]"
+                style={{
+                  background: "linear-gradient(180deg, #f3e5ab, #c99d24)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                T
+              </span>
+            </div>
             <div>
               <div className="tmf-mono text-[10px] tmf-gold-text tracking-widest">
                 TUDO MAIS FÁCIL
               </div>
               <div className="tmf-mono text-[8px] text-[#a3a39a] tracking-widest">
-                MADEIRA FORTE PLANEJADOS · TORRES/RS
+                MEDIDAS · 3D · MARCENARIA
               </div>
             </div>
           </div>
           <div className="tmf-mono text-[9px] tracking-widest text-[#a3a39a] text-center flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-            <span>© 2026 MADEIRA FORTE · REALIZANDO SONHOS</span>
+            <span>© 2026 · TUDO MAIS FÁCIL</span>
             <span className="hidden sm:inline">·</span>
             <Link to="/privacidade" className="hover:text-[#d4af37]" data-testid="footer-privacy">
               PRIVACIDADE

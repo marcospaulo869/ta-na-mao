@@ -10,7 +10,7 @@ require 'extensions.rb'
 module TudoMaisFacil
   PLUGIN_ID       = 'tudo_mais_facil'.freeze
   PLUGIN_NAME     = 'Tudo Mais Fácil — Madeira Forte'.freeze
-  PLUGIN_VERSION  = '1.2.0'.freeze
+  PLUGIN_VERSION  = '1.2.1'.freeze
   PLUGIN_CREATOR  = 'Madeira Forte Planejados'.freeze
   PLUGIN_COPY     = '© 2026 Madeira Forte — Realizando Sonhos'.freeze
   PLUGIN_ROOT     = File.dirname(__FILE__).freeze

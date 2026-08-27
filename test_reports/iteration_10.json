@@ -1,0 +1,25 @@
+{
+  "summary": "Iteration 10 — verified landing page rebrand (removed MADEIRA FORTE branding), hero AI photos (arquiteta/marceneiro), enlarged hero subtitle, plugin RBZ v1.2.1 with new modern toolbar icons, and paredes_angulo backend regression. 19/19 backend pytest cases pass. Mobile viewport (430x900) UI verified: nav shows T-mark + 'TUDO MAIS FÁCIL / MEDIDAS · 3D · MARCENARIA', hero-audience computed font-size = 16px (was 10px, requirement >=13px), both hero PNGs load (naturalWidth=896), footer shows '© 2026 · TUDO MAIS FÁCIL' with none of the old strings.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_rebrand_and_plugin_v1_2_1.py",
+    "/app/backend/tests/test_paredes_angulo_and_downloads.py",
+    "/app/test_reports/pytest/iter10.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Landing.jsx is now ~500 lines; if it keeps growing consider extracting Hero, Features, Footer into separate components.",
+    "Class-scoped pytest fixture-as-instance-method emits a PytestRemovedIn10 deprecation warning (2 occurrences) — non-blocking but should migrate to @classmethod or module-level fixture in a future pass."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_paredes_angulo_and_downloads.py (bumped assertion 1.2.0 → 1.2.1)",
+    "/app/backend/tests/test_rebrand_and_plugin_v1_2_1.py (new suite)"
+  ],
+  "success_rate": {"backend": "100% (19/19)", "frontend": "100% (all landing assertions pass)"},
+  "test_credentials": "admin@tudomaisfacil.com / admin123 (used only in paredes_angulo regression)",
+  "seed_data_creation": "Created + deleted a temporary wall 'TEST_iter10_angulo' as part of regression; cleaned up in teardown.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Landing.jsx now uses div-based T-mark for nav-brand (no /brand/logo.png in nav). Hero photos at /hero/arquiteta.png and /hero/marceneiro.png (~775-800 KB PNG). Plugin bumped to 1.2.1 with icon_main/icon_lastro/icon_modulo (~5KB each) referenced in main.rb toolbar commands. Any test asserting PLUGIN_VERSION must expect '1.2.1'. Ruby 2.2.4 compat is still enforced (no .dig(, .sum, &., transform_)."
+}
