@@ -134,3 +134,70 @@ async def detach_wall(project_id: str, wall_id: str, request: Request, user=Depe
     if res.matched_count == 0:
         raise HTTPException(404, "Parede não encontrada no projeto")
     return {"ok": True}
+
+
+# ---------- Client References (visual inspiration attached to the project) ----------
+
+
+class ClientReference(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    project_id: str
+    user_id: str
+    kind: str  # "image" | "url"
+    data: str  # base64 (image) or url (url)
+    mime: Optional[str] = None
+    caption: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ClientReferenceCreate(BaseModel):
+    kind: str  # "image" | "url"
+    data: str
+    mime: Optional[str] = None
+    caption: Optional[str] = None
+
+
+@router.get("/{project_id}/references", response_model=List[dict])
+async def list_references(project_id: str, request: Request, user=Depends(get_current_user)):
+    db: AsyncIOMotorDatabase = request.app.state.db
+    proj = await db.projects.find_one({"id": project_id, "user_id": user["user_id"]}, {"_id": 0, "id": 1})
+    if not proj:
+        raise HTTPException(404, "Projeto não encontrado")
+    docs = await db.client_references.find(
+        {"project_id": project_id, "user_id": user["user_id"]},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(200)
+    return docs
+
+
+@router.post("/{project_id}/references", response_model=dict)
+async def create_reference(project_id: str, payload: ClientReferenceCreate, request: Request, user=Depends(get_current_user)):
+    if payload.kind not in ("image", "url"):
+        raise HTTPException(400, "kind precisa ser 'image' ou 'url'")
+    if payload.kind == "image" and len(payload.data) > 8 * 1024 * 1024:
+        raise HTTPException(400, "Imagem muito grande (máx ~6MB reais).")
+    db: AsyncIOMotorDatabase = request.app.state.db
+    proj = await db.projects.find_one({"id": project_id, "user_id": user["user_id"]}, {"_id": 0, "id": 1})
+    if not proj:
+        raise HTTPException(404, "Projeto não encontrado")
+    ref = ClientReference(
+        project_id=project_id,
+        user_id=user["user_id"],
+        **payload.model_dump(),
+    )
+    doc = ref.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    await db.client_references.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@router.delete("/{project_id}/references/{ref_id}")
+async def delete_reference(project_id: str, ref_id: str, request: Request, user=Depends(get_current_user)):
+    db: AsyncIOMotorDatabase = request.app.state.db
+    res = await db.client_references.delete_one(
+        {"id": ref_id, "project_id": project_id, "user_id": user["user_id"]},
+    )
+    if res.deleted_count == 0:
+        raise HTTPException(404, "Referência não encontrada")
+    return {"ok": True, "deleted": ref_id}

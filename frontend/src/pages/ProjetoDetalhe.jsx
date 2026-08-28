@@ -17,6 +17,7 @@ import {
   FloppyDisk,
 } from "@phosphor-icons/react";
 import AppShell from "@/components/AppShell";
+import ClientReferences from "@/components/ClientReferences";
 import {
   attachWall,
   deleteWall,
@@ -291,6 +292,11 @@ export default function ProjetoDetalhe() {
           <LinkIcon size={12} weight="bold" />
           Vincular existente
         </button>
+      </div>
+
+      {/* Client References — visual moodboard the client sent */}
+      <div className="mt-6">
+        <ClientReferences projectId={id} />
       </div>
 
       {walls.length === 0 ? (

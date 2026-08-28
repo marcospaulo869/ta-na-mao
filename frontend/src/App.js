@@ -17,6 +17,7 @@ import ProjetoDetalhe from "@/pages/ProjetoDetalhe";
 import Landing from "@/pages/Landing";
 import PluginMarcenaria from "@/pages/PluginMarcenaria";
 import ApresentacaoPrivada from "@/pages/ApresentacaoPrivada";
+import OrcamentoRapido from "@/pages/OrcamentoRapido";
 import { Privacidade, Termos } from "@/pages/Legal";
 import { useAuth } from "@/context/AuthContext";
 
@@ -68,6 +69,14 @@ function AppRouter() {
         element={
           <ProtectedRoute>
             <CriarParede />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/orcamento-rapido"
+        element={
+          <ProtectedRoute>
+            <OrcamentoRapido />
           </ProtectedRoute>
         }
       />

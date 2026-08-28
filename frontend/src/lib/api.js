@@ -42,6 +42,18 @@ export const downloadWallPdf = (id, name = "parede") =>
 export const downloadProjectPdf = (id, name = "projeto") =>
   _downloadBlob(`/projects/${id}/pdf`, `${name}.pdf`);
 
+// Quick Estimator
+export const estimateCatalog = () => api.get("/estimate/catalog").then((r) => r.data);
+export const estimateCalc = (payload) => api.post("/estimate", payload).then((r) => r.data);
+
+// Client References (moodboard attached to project)
+export const listClientRefs = (projectId) =>
+  api.get(`/projects/${projectId}/references`).then((r) => r.data);
+export const createClientRef = (projectId, payload) =>
+  api.post(`/projects/${projectId}/references`, payload).then((r) => r.data);
+export const deleteClientRef = (projectId, refId) =>
+  api.delete(`/projects/${projectId}/references/${refId}`).then((r) => r.data);
+
 // ---------- Projects ----------
 export const listProjects = () => api.get("/projects").then((r) => r.data);
 export const getProject = (id) => api.get(`/projects/${id}`).then((r) => r.data);

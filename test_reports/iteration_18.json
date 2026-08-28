@@ -1,0 +1,35 @@
+{
+  "summary": "Iter 18 — Tested Quick Estimator + Client References. Backend: 18/19 pytest tests passed (test_iter18_estimate_and_references.py). Frontend: full flow verified end-to-end via Playwright — login → Home button 'btn-orcamento-rapido' → /orcamento-rapido page → fill Léo/balcao_portas_correr/medio/270×90×50 → prices EXACTLY match spec (min R$5.057,57 / avg R$5.619,52 / max R$6.743,42) → whatsapp text personalizado com 'Olá Léo' → btn-copy copiou 412 chars → btn-whatsapp abriu wa.me. ClientReferences: section-references, btn-add-image, btn-add-url visíveis em /projeto/:id; adição de URL funciona (input-ref-url + input-ref-caption + btn-save-url) e card aparece na grid. Nenhum bug crítico.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/estimate/catalog", "issue": "Não exige autenticação (retorna 200 sem cookie). O spec do review pedia 401. Frontend protege a rota, mas o endpoint em si é público. Baixa criticidade — apenas expõe metadados de catálogo."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter18_estimate_and_references.py",
+    "/app/test_reports/pytest/iter18.xml"
+  ],
+  "action_items": [
+    "Opcional: adicionar Depends(get_current_user) em GET /api/estimate/catalog se a intenção era exigir auth (spec do review pedia 401 sem cookie). Caso contrário, atualizar spec."
+  ],
+  "critical_code_review_comments": [
+    "Route path inconsistência de nomenclatura: App.js usa '/projeto/:id' (singular) mas review request menciona '/projetos/{id}' (plural). Não é bug, mas alinhar naming ajuda.",
+    "estimate.py catalog() endpoint público — considerar proteger (ver ação acima).",
+    "ClientReferences.jsx: base64 dataURL vai direto ao Mongo — cada referência de imagem pode custar ~500KB-1MB. OK para MVP, mas planejar migração para storage/GridFS quando volume crescer."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter18_estimate_and_references.py (created)"
+  ],
+  "success_rate": {"backend": "94.7% (18/19)", "frontend": "100%"},
+  "test_credentials": "admin@tudomaisfacil.com / admin123",
+  "seed_data_creation": "Criei alguns projects/references com prefix TEST_ e 'UI Test Ref' via admin — não bloqueiam produção.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter 18 entregou 2 features P0 (estimador rápido + referências do cliente) 100% funcionais no frontend e backend. Preços do estimador batem exatamente com a spec para o caso Léo. Único desvio: /api/estimate/catalog não requer auth (esperado 401 pelo spec, retorna 200). Frontend routes: /orcamento-rapido (protegida) OK, ProjetoDetalhe em /projeto/:id (singular)."
+}

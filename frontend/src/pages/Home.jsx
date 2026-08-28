@@ -4,6 +4,8 @@ import {
   Camera,
   Wall,
   Stack,
+  FolderSimple,
+  Lightning,
   ArrowRight,
   Package,
   DownloadSimple,
@@ -11,7 +13,6 @@ import {
   Crown,
   SignOut,
   User,
-  FolderSimple,
 } from "@phosphor-icons/react";
 import { listWalls, listProjects } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -148,6 +149,13 @@ export default function Home() {
 
       {/* Main action buttons */}
       <section className="max-w-xl mx-auto px-5 pb-10 space-y-5 relative z-10">
+        <HomeButton
+          to="/orcamento-rapido"
+          testid="btn-orcamento-rapido"
+          icon={Lightning}
+          label="Orçamento rápido"
+          hint="0 · ESTIMATIVA EM 30 SEGUNDOS"
+        />
         <HomeButton
           to="/projetos"
           testid="btn-novo-projeto"

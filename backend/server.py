@@ -18,6 +18,7 @@ from payments import router as payments_router
 from projects import router as projects_router
 from voice import router as voice_router
 from vision import router as vision_router
+from estimate import router as estimate_router
 from pdf_report import build_wall_pdf, build_project_pdf
 from fastapi.responses import Response as FastResponse
 
@@ -428,6 +429,7 @@ async def delete_photo(photo_id: str, user=Depends(get_current_user)):
 
 
 # Register routers
+api_router.include_router(estimate_router)
 app.include_router(api_router)
 app.include_router(auth_router)
 app.include_router(payments_router)
