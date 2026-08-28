@@ -1,8 +1,13 @@
 # Diagnóstico — Conversa Marcos ↔ Léo (Ago/2026)
 
-> Cliente prospect: **Léo (+ parceiro)** · sala pequena em Torres · orçamento apertado · prazo outubro (30 dias)
+> **⚠️ CONTEXTO CRÍTICO REVELADO PELA IMAGEM:**
+> Léo NÃO é dona-de-casa comprando móveis. É profissional inaugurando um **consultório de "Psicologia Neuropsicopedagogia Infanto Juvenil"** em Torres, compartilhado com uma amiga (sócia). O prazo de "início de outubro" é a **data fixa de inauguração**. O "balcão 2,70m" é o **balcão de recepção com painel iluminado do logo da clínica**. O "parceiro" que virá conversar é o **sócio de negócio**, não companheiro romântico.
+>
+> Ela começou pelas 2 peças pra "testar" o marceneiro. Se Marcos entrega bem, fecha o consultório inteiro (ticket 3–5× maior).
+>
+> Cliente prospect: **Léo (+ sócia)** · consultório em Torres · orçamento apertado · **prazo INEGOCIÁVEL: inauguração outubro**
 > Status final: **conversa esfriou** — ela pediu 2× o valor das peças, saiu para "conversar com o parceiro"
-> Fonte: 3 áudios do Marcos + 3 áudios da cliente + 4 mensagens de texto
+> Fonte: 3 áudios do Marcos + 3 áudios da cliente + 4 mensagens de texto + 1 imagem de referência (GPT Image)
 
 ## 📅 Timeline
 
@@ -72,6 +77,12 @@ Ela saiu "conversar com o parceiro" — em vendas de móveis planejados isso é 
 - **P0** — Marcos repete o mesmo áudio de 7min pra cada cliente novo
 - **P1** — Sem material pronto explicando "por que sou diferente"
 
+### 🎨 Referência Visual do Cliente (dimensão nova descoberta pela imagem)
+- **P0** — Léo mandou foto do GPT que revelava CONSULTÓRIO PROFISSIONAL, não sala residencial. Sem esse contexto Marcos perde 3× o ticket
+- **P0** — App não tem lugar para anexar/exibir referência visual do cliente
+- **P1** — App não pergunta "É residencial ou comercial?" — muda tudo no fluxo comercial
+- **P2** — PDF de orçamento não inclui a referência do cliente (perde emoção "isso é exatamente o que eu quero")
+
 ---
 
 ## 🚀 Plano de ação priorizado
@@ -105,6 +116,11 @@ Ela saiu "conversar com o parceiro" — em vendas de móveis planejados isso é 
 8. CRM interno mínimo (status por cliente)
 9. Contador automático dos 20% desistência com alerta em 90 dias
 10. Rastreamento de indicações (quem indicou, saldo acumulado)
+
+### 🔴 P0 (extra descoberto pela imagem — vale mudar prioridade!)
+
+11. **Aba "Referências do Cliente"** em cada projeto — recebe fotos/imagens IA/PDFs. Entram automaticamente no PDF de orçamento.
+12. **Fluxo "É residencial ou comercial?"** logo no início do projeto — se comercial, ativa campos de CNPJ + data de inauguração + sócios, e sugere templates de ambiente comercial (consultório, escritório, loja).
 
 ---
 
