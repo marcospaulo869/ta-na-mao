@@ -19,7 +19,18 @@ export default function Projetos() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ nome: "", cliente_nome: "", cliente_telefone: "", endereco: "" });
+  const [form, setForm] = useState({
+    nome: "",
+    tipo: "residencial",
+    cliente_nome: "",
+    cliente_telefone: "",
+    endereco: "",
+    empresa_nome: "",
+    cnpj: "",
+    ramo: "",
+    socios: "",
+    data_inauguracao: "",
+  });
   const [saving, setSaving] = useState(false);
 
   const load = () => {

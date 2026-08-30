@@ -19,20 +19,33 @@ class Project(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     nome: str
+    tipo: str = "residencial"  # "residencial" | "comercial"
     cliente_nome: Optional[str] = None
     cliente_telefone: Optional[str] = None
     endereco: Optional[str] = None
     observacoes: Optional[str] = None
+    # Campos B2B (só preenchidos se tipo == "comercial")
+    empresa_nome: Optional[str] = None
+    cnpj: Optional[str] = None
+    ramo: Optional[str] = None  # ex: "Consultório", "Escritório", "Loja", "Restaurante"
+    socios: Optional[str] = None
+    data_inauguracao: Optional[str] = None  # ISO date "YYYY-MM-DD"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ProjectCreate(BaseModel):
     nome: str
+    tipo: Optional[str] = "residencial"
     cliente_nome: Optional[str] = None
     cliente_telefone: Optional[str] = None
     endereco: Optional[str] = None
     observacoes: Optional[str] = None
+    empresa_nome: Optional[str] = None
+    cnpj: Optional[str] = None
+    ramo: Optional[str] = None
+    socios: Optional[str] = None
+    data_inauguracao: Optional[str] = None
 
 
 class ProjectDetail(BaseModel):
