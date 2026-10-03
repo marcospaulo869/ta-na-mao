@@ -147,6 +147,23 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .trust { display: flex; gap: 8px 16px; flex-wrap: wrap; color: var(--muted); font-size: 0.88rem; }
 .trust span::before { content: "✓ "; color: var(--accent); font-weight: 700; }
 .gate-hero { min-height: 210px; }
+.welcome-hero { min-height: 420px; }
+.welcome-hero img { object-position: 50% 30%; }
+@media (min-width: 720px) { .welcome-hero img { object-position: 35% 25%; } }
+.benefits { display: grid; gap: 10px; }
+.benefit { display: grid; grid-template-columns: 48px 1fr; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.benefit b { font: 700 1.02rem var(--font-display); display: block; }
+.benefit small { color: var(--muted); font-size: 0.92rem; }
+.bic { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; }
+.bic svg { width: 24px; height: 24px; }
+.bic.quote { background: var(--accent-soft); color: var(--accent); }
+.bic.receipt, .bic.voice { background: var(--warm-soft); color: var(--warm); }
+.steps ol { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; }
+.steps li::marker { font-weight: 700; color: var(--accent); }
+.cta { display: grid; gap: 6px; justify-items: center; text-align: center; padding-bottom: 24px; }
+.gate.welcome { max-width: 900px; }
+@media (min-width: 720px) { .benefits { grid-template-columns: repeat(3, 1fr); } .benefit { grid-template-columns: 1fr; align-content: start; } }
+.btn.big { font-size: 1.1rem; padding: 14px 28px; border-radius: 12px; width: 100%; max-width: 360px; }
 .amount-big { font: 700 1.6rem var(--font-display); font-variant-numeric: tabular-nums; }
 .extenso { color: var(--muted); font-size: 0.95rem; font-style: italic; }
 .linkinfo { background: var(--accent-soft); color: var(--accent); border-radius: 8px; padding: 8px 12px; font-size: 0.92rem; font-weight: 600; }
@@ -207,7 +224,37 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
   <div id="view-loading" class="gate"><p class="hint">Carregando…</p></div>
 
   <!-- CADASTRO (primeiro acesso) -->
+  <!-- BOAS-VINDAS (antes do cadastro) -->
+  <div id="view-welcome" class="stack gate welcome" hidden>
+    <div class="hero welcome-hero">
+      <img src="img/arquiteta.jpg" alt="Profissional sorrindo com o celular na mão">
+      <div class="txt">
+        <span class="eyebrow">Orçamento e Recibo</span>
+        <h2>Feche mais serviços com orçamentos que passam confiança.</h2>
+        <p>Monte o orçamento no celular, envie em PDF com a sua marca e registre cada pagamento com recibo assinado.</p>
+      </div>
+    </div>
+    <div class="benefits">
+      <div class="benefit"><span class="bic quote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg></span><div><b>Orçamento profissional</b><small>Materiais, validade, pré-contrato e sua logomarca num PDF pronto para o WhatsApp.</small></div></div>
+      <div class="benefit"><span class="bic receipt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/><path d="M9.5 16c1-1 2-1 2.5 0s1.5 1 2.5 0"/></svg></span><div><b>Recibo assinado na tela</b><small>Valor por extenso, forma de pagamento e o saldo que falta receber.</small></div></div>
+      <div class="benefit"><span class="bic voice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><div><b>Dite os itens</b><small>Fale o material, a quantidade e o valor. O app preenche a linha.</small></div></div>
+    </div>
+    <section class="card steps">
+      <h2>Como funciona</h2>
+      <ol>
+        <li><b>Cadastre sua empresa</b> com logomarca e assinatura, uma vez só.</li>
+        <li><b>Monte o orçamento</b> e envie o PDF para o cliente.</li>
+        <li><b>Recebeu?</b> Gere o recibo a partir do orçamento e colha a assinatura.</li>
+      </ol>
+    </section>
+    <div class="cta">
+      <button class="btn warm big" id="btn-start">Começar cadastro</button>
+      <p class="hint">Leva cerca de 2 minutos.</p>
+    </div>
+  </div>
+
   <div id="view-signup" class="stack gate" hidden>
+    <button class="back" id="btn-signup-back">‹ Voltar</button>
     <div class="hero gate-hero"><img src="img/arquiteta.jpg" alt="Profissional sorrindo com o celular na mão"><div class="txt"><span class="eyebrow">Primeiro acesso</span><h2>Sua empresa organizada na palma da mão.</h2></div></div>
     <div class="intro">
       <h1>Bem-vindo ao Orçamento e Recibo</h1>
@@ -1190,6 +1237,8 @@ async function doLogin() {
 $("btn-login").onclick = doLogin;
 $("l-pass").onkeydown = (e) => { if (e.key === "Enter") doLogin(); };
 $("btn-forgot").onclick = () => { $("l-forgot").hidden = false; };
+$("btn-start").onclick = () => gate("signup");
+$("btn-signup-back").onclick = () => gate("welcome");
 // Apagar tudo pede dois toques: o primeiro troca o texto do botão para confirmar
 function confirmReset(btn) {
   if (btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.dataset.label = btn.textContent; btn.textContent = "Toque de novo para apagar tudo"; return; }
@@ -1200,7 +1249,7 @@ function confirmReset(btn) {
     renderEditor(); renderReceipt();
     session.set(false);
     btn.disabled = false; btn.dataset.confirm = ""; btn.textContent = btn.dataset.label;
-    gate("signup"); toast("Tudo apagado. Faça um cadastro novo.");
+    gate("welcome"); toast("Tudo apagado. Faça um cadastro novo.");
   });
 }
 $("btn-reset").onclick = (e) => confirmReset(e.currentTarget);
@@ -1437,7 +1486,7 @@ $("tab-profile").onclick = () => show("profile");
 /* ---------- Telas ---------- */
 const APP_VIEWS = ["home", "editor", "saved", "receipt", "receipts", "profile"];
 function gate(which) {
-  for (const v of [...APP_VIEWS, "loading", "signup", "login"]) $("view-" + v).hidden = v !== which;
+  for (const v of [...APP_VIEWS, "loading", "welcome", "signup", "login"]) $("view-" + v).hidden = v !== which;
   $("topbar").hidden = true; $("subnav").hidden = true; $("bar").hidden = true; $("rbar").hidden = true;
   if (which === "signup") { $("signup-slot").appendChild($("company-card")); renderProfile(); }
   if (which === "login") {
@@ -1451,7 +1500,7 @@ function gate(which) {
 }
 function enterApp() {
   $("profile-slot").appendChild($("company-card"));
-  for (const v of ["loading", "signup", "login"]) $("view-" + v).hidden = true;
+  for (const v of ["loading", "welcome", "signup", "login"]) $("view-" + v).hidden = true;
   $("topbar").hidden = false;
   renderBrand();
   show("home");
@@ -1481,7 +1530,7 @@ renderEditor();
   receipts = await store.listReceipts().catch(() => []);
   if (quotes.length && quote.sample) newQuote();
   receipt = blankReceipt(); renderReceipt();
-  if (!profile.registered || !profile.pwHash) gate("signup");
+  if (!profile.registered || !profile.pwHash) gate("welcome");
   else if (session.get()) enterApp();
   else gate("login");
 })();
