@@ -41,8 +41,17 @@ Você disse que quer **vender o app depois**, então:
 - **Limite atual:** a senha protege o app neste navegador, mas ainda não é uma conta de verdade num servidor. Para vender, cada cliente precisa de uma conta própria, com recuperação de senha por e-mail e cobrança. O backend do ta-na-mao já tem cadastro com senha, planos e pagamento pelo Stripe, e pode servir de base para isso.
 - Sua última mensagem terminou em "E logo abaixo...". Falta você dizer o que vai abaixo dos dados.
 
+## Atualização (03/10/2026, noite): um app com duas funções
+
+Decidimos fazer **um app só**, com Orçamento e Recibo juntos (mesmo cadastro, logomarca e senha; o recibo nasce do orçamento).
+- **Tela inicial:** foto real de um profissional (imagens do próprio ta-na-mao, em `img/`), uma chamada que passa confiança e dois botões grandes, **Orçamento** (azul-petróleo, para passar confiança) e **Recibo** (laranja, para chamar a ação). Embaixo aparecem os números: orçamentos feitos, recebido no mês e quanto falta receber.
+- **Recibo:** data, tipo (total, entrada, parcela ou saldo), quem pagou, valor com **valor por extenso** automático, forma de pagamento (Pix, dinheiro, cartão etc.), "referente a" e as assinaturas na tela de quem recebeu e de quem pagou. O PDF tem o texto "Recebi(emos) de..." e a quitação.
+- **Gerar recibo** a partir de um orçamento salvo: preenche o cliente e o valor. Se já houver pagamentos, sugere o saldo e mostra no PDF o total, o que já foi recebido e o que falta.
+- O cabeçalho do app mostra sua logomarca e o nome da empresa (ao tocar, volta para o início).
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.
-- Fazer a parte de **recibo**, que ainda não foi feita.
+- Ajustes de dentro do Orçamento e do Recibo que você for pedindo.
+- Para vender: contas de verdade no servidor (o backend do ta-na-mao já tem cadastro, planos e Stripe).
 - Revisar o texto padrão do pré-contrato (forma de pagamento, prazo e garantia).

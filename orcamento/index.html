@@ -16,6 +16,10 @@
   --danger: #A8321F;
   --sample: #8A5A00;
   --sample-soft: #FBF1DC;
+  --warm: #E2892B;
+  --warm-ink: #2A1704;
+  --warm-soft: #FCEBD8;
+  --hero-ink: #FFFFFF;
   --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --font-body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
   --radius: 10px;
@@ -24,13 +28,13 @@
   :root:not([data-theme="light"]) {
     --bg: #0E1417; --surface: #162026; --ink: #E4EDEF; --muted: #93A5AB; --line: #2A3940;
     --accent: #6FBDBE; --accent-ink: #0E1417; --accent-soft: #1D3337; --danger: #F08A76;
-    --sample: #F2C26B; --sample-soft: #3A2E15; color-scheme: dark;
+    --sample: #F2C26B; --sample-soft: #3A2E15; --warm: #F0A04B; --warm-ink: #2A1704; --warm-soft: #3B2914; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0E1417; --surface: #162026; --ink: #E4EDEF; --muted: #93A5AB; --line: #2A3940;
   --accent: #6FBDBE; --accent-ink: #0E1417; --accent-soft: #1D3337; --danger: #F08A76;
-  --sample: #F2C26B; --sample-soft: #3A2E15; color-scheme: dark;
+  --sample: #F2C26B; --sample-soft: #3A2E15; --warm: #F0A04B; --warm-ink: #2A1704; --warm-soft: #3B2914; color-scheme: dark;
 }
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -89,19 +93,98 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .intro { display: grid; gap: 6px; }
 .login { justify-items: start; }
 .login label { width: 100%; }
+.btn.warm { background: var(--warm); border-color: var(--warm); color: var(--warm-ink); }
+.brand { display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 0; cursor: pointer; color: var(--ink); min-width: 0; }
+.brand img { height: 40px; width: auto; max-width: 90px; border-radius: 6px; object-fit: contain; }
+.brand span { font: 700 1.15rem var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.subnav { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.back { border: 0; background: none; color: var(--accent); font: 600 0.95rem var(--font-body); cursor: pointer; padding: 6px 0; }
+/* Início: foto real + chamada + dois botões grandes */
+.hero { position: relative; border-radius: 18px; overflow: hidden; min-height: 300px; display: flex; align-items: flex-end; background: #0F2A30; }
+.hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 30% 22%; }
+.hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,24,28,0) 25%, rgba(10,24,28,0.55) 55%, rgba(10,24,28,0.92) 100%); }
+.hero .txt { position: relative; z-index: 1; padding: 22px 20px; color: var(--hero-ink); display: grid; gap: 6px; max-width: 34ch; }
+.hero .txt { text-shadow: 0 1px 12px rgba(0,0,0,0.35); }
+@media (min-width: 720px) {
+  .hero { min-height: 340px; align-items: center; }
+  .hero img { left: 42%; width: 58%; object-position: 35% 20%; }
+  .hero::after { background: linear-gradient(90deg, #0F2A30 40%, rgba(15,42,48,0.75) 50%, rgba(15,42,48,0) 68%); }
+  .hero .txt { max-width: 44%; padding: 28px 32px; }
+}
+.hero .eyebrow { font: 700 0.75rem var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: #FFD7A6; }
+.hero h2 { font-size: clamp(1.5rem, 5.5vw, 2.1rem); line-height: 1.12; letter-spacing: -0.015em; }
+.hero p { margin: 0; color: rgba(255,255,255,0.88); font-size: 0.98rem; }
+.actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.action { display: grid; grid-template-columns: 56px 1fr auto; gap: 14px; align-items: center; text-align: left; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 16px; padding: 18px 16px; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+.action:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -14px rgba(22,36,42,0.45); }
+.action .ic { width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; }
+.action .ic svg { width: 28px; height: 28px; }
+.action.quote .ic { background: var(--accent-soft); color: var(--accent); }
+.action.receipt .ic { background: var(--warm-soft); color: var(--warm); }
+.action b { font: 700 1.2rem var(--font-display); display: block; }
+.action small { color: var(--muted); font-size: 0.92rem; }
+.action .go { color: var(--muted); font-size: 1.4rem; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.stat .k { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+.stat .v { font: 700 1.05rem var(--font-display); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.trust { display: flex; gap: 8px 16px; flex-wrap: wrap; color: var(--muted); font-size: 0.88rem; }
+.trust span::before { content: "✓ "; color: var(--accent); font-weight: 700; }
+.gate-hero { min-height: 210px; }
+.amount-big { font: 700 1.6rem var(--font-display); font-variant-numeric: tabular-nums; }
+.extenso { color: var(--muted); font-size: 0.95rem; font-style: italic; }
+.linkinfo { background: var(--accent-soft); color: var(--accent); border-radius: 8px; padding: 8px 12px; font-size: 0.92rem; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .action { transition: none; } .action:hover { transform: none; } }
 </style>
 
 <div class="wrap">
   <div class="top" id="topbar" hidden>
-    <h1>Orçamento e Recibo</h1>
+    <button class="brand" id="btn-home" title="Início"><img id="tb-logo" alt="" hidden><span id="tb-name">Orçamento e Recibo</span></button>
     <div class="row">
-    <div class="tabs" role="tablist">
-      <button role="tab" id="tab-editor" aria-selected="true" data-view="editor">Orçamento</button>
-      <button role="tab" id="tab-saved" aria-selected="false" data-view="saved">Salvos</button>
-      <button role="tab" id="tab-profile" aria-selected="false" data-view="profile">Meus dados</button>
+      <button class="btn small" id="tab-profile">Meus dados</button>
+      <button class="btn small" id="btn-logout">Sair</button>
     </div>
-    <button class="btn small" id="btn-logout">Sair</button>
+  </div>
+  <div class="subnav" id="subnav" hidden>
+    <button class="back" id="btn-back">‹ Início</button>
+    <div class="tabs" role="tablist" id="tabs-quote" hidden>
+      <button role="tab" id="tab-editor" data-view="editor">Orçamento</button>
+      <button role="tab" id="tab-saved" data-view="saved">Salvos</button>
     </div>
+    <div class="tabs" role="tablist" id="tabs-receipt" hidden>
+      <button role="tab" id="tab-receipt" data-view="receipt">Recibo</button>
+      <button role="tab" id="tab-receipts" data-view="receipts">Salvos</button>
+    </div>
+  </div>
+
+  <!-- INÍCIO -->
+  <div id="view-home" class="stack" hidden>
+    <div class="hero">
+      <img src="img/marceneiro.jpg" alt="Profissional consultando o orçamento no celular durante a obra">
+      <div class="txt">
+        <span class="eyebrow" id="home-hello">Bem-vindo</span>
+        <h2>Orçamento enviado na hora. Pagamento com recibo assinado.</h2>
+        <p>Seu cliente recebe tudo organizado, com a sua marca. Você passa confiança e fecha mais serviços.</p>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="action quote" id="go-quote">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg></span>
+        <span><b>Orçamento</b><small>Materiais, prazos e pré-contrato em PDF</small></span>
+        <span class="go">›</span>
+      </button>
+      <button class="action receipt" id="go-receipt">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/><path d="M9.5 16c1-1 2-1 2.5 0s1.5 1 2.5 0"/></svg></span>
+        <span><b>Recibo</b><small>Comprove o pagamento com assinatura na tela</small></span>
+        <span class="go">›</span>
+      </button>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">Orçamentos</div><div class="v" id="st-quotes">0</div></div>
+      <div class="stat"><div class="k">Recebido no mês</div><div class="v" id="st-month">R$ 0,00</div></div>
+      <div class="stat"><div class="k">A receber</div><div class="v" id="st-open">R$ 0,00</div></div>
+    </div>
+    <div class="trust"><span>PDF com sua logomarca</span><span>Assinatura digital na tela</span><span>Envio pelo WhatsApp</span></div>
   </div>
 
   <!-- CARREGANDO -->
@@ -109,6 +192,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 
   <!-- CADASTRO (primeiro acesso) -->
   <div id="view-signup" class="stack gate" hidden>
+    <div class="hero gate-hero"><img src="img/arquiteta.jpg" alt="Profissional sorrindo com o celular na mão"><div class="txt"><span class="eyebrow">Primeiro acesso</span><h2>Sua empresa organizada na palma da mão.</h2></div></div>
     <div class="intro">
       <h1>Bem-vindo ao Orçamento e Recibo</h1>
       <p class="hint">Primeiro acesso: cadastre seus dados e crie uma senha. Seus dados e sua logomarca vão aparecer em todos os orçamentos.</p>
@@ -128,6 +212,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 
   <!-- ENTRAR -->
   <div id="view-login" class="stack gate" hidden>
+    <div class="hero gate-hero"><img src="img/marceneiro.jpg" alt="Profissional consultando o orçamento no celular durante a obra"><div class="txt"><span class="eyebrow">Orçamento e Recibo</span><h2>Bom te ver de novo.</h2></div></div>
     <section class="card login">
       <img id="l-logo" class="logo-prev" alt="Logomarca" hidden>
       <h2 id="l-name">Entrar</h2>
@@ -203,6 +288,70 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
   <div id="view-saved" class="stack" hidden>
     <p class="hint" id="saved-where"></p>
     <div class="list" id="saved-list"></div>
+  </div>
+
+  <!-- RECIBO -->
+  <div id="view-receipt" class="stack" hidden>
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2 id="r-title">Novo recibo</h2>
+        <button class="btn small" id="btn-r-new">Novo</button>
+      </div>
+      <p class="linkinfo" id="r-link" hidden></p>
+      <div class="grid2">
+        <label>Data do pagamento<input type="date" id="r-date"></label>
+        <label>Tipo<select id="r-kind">
+          <option value="total">Pagamento total</option>
+          <option value="entrada">Entrada</option>
+          <option value="parcela">Parcela</option>
+          <option value="saldo">Saldo final</option>
+        </select></label>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Quem pagou</h2>
+      <div class="grid2">
+        <label>Nome<input id="r-name" autocomplete="off"></label>
+        <label>CPF ou CNPJ<input id="r-doc" autocomplete="off"></label>
+        <label>Telefone / WhatsApp<input id="r-phone" inputmode="tel" autocomplete="off"></label>
+        <label>E-mail<input id="r-email" type="email" autocomplete="off"></label>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Pagamento</h2>
+      <div class="grid2">
+        <label>Valor recebido (R$)<input id="r-amount" class="num" inputmode="decimal"></label>
+        <label>Forma de pagamento<select id="r-method">
+          <option>Pix</option><option>Dinheiro</option><option>Cartão de crédito</option><option>Cartão de débito</option><option>Transferência bancária</option><option>Boleto</option><option>Cheque</option>
+        </select></label>
+      </div>
+      <div><div class="amount-big" id="r-amount-show">R$ 0,00</div><div class="extenso" id="r-extenso"></div></div>
+      <label>Referente a<textarea id="r-desc" style="min-height:90px" placeholder="Ex.: entrada do serviço de marcenaria da cozinha planejada"></textarea></label>
+    </section>
+    <section class="card">
+      <h2>Assinaturas</h2>
+      <p class="hint">Quem recebeu assina o recibo. Sua assinatura salva em Meus dados entra sozinha; desenhe aqui só se quiser trocar neste recibo.</p>
+      <div class="sig">
+        <label>Assinatura de quem recebeu</label>
+        <canvas id="sig-r-me" aria-label="Assinatura de quem recebeu"></canvas>
+        <div class="row"><button class="btn small" id="sig-r-me-clear">Limpar</button><button class="btn small" id="sig-r-me-mine">Usar minha assinatura salva</button></div>
+      </div>
+      <div class="sig">
+        <label>Assinatura de quem pagou (opcional)</label>
+        <canvas id="sig-r-payer" aria-label="Assinatura de quem pagou"></canvas>
+        <div class="row"><button class="btn small" id="sig-r-payer-clear">Limpar</button></div>
+      </div>
+    </section>
+    <section class="card" id="r-send-card" hidden>
+      <h2>Mensagem para o cliente</h2>
+      <div class="msgbox" id="r-send-msg"></div>
+      <div class="row"><button class="btn small" id="btn-r-copy">Copiar mensagem</button></div>
+    </section>
+  </div>
+
+  <div id="view-receipts" class="stack" hidden>
+    <p class="hint" id="receipts-where"></p>
+    <div class="list" id="receipts-list"></div>
   </div>
 
   <!-- MEUS DADOS -->
@@ -286,6 +435,15 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
     </div>
   </div>
 </div>
+<div class="bar" id="rbar" hidden>
+  <div class="in">
+    <div><div class="hint">Valor do recibo</div><div class="total" id="rbar-total">R$ 0,00</div></div>
+    <div class="row">
+      <button class="btn" id="btn-r-save">Salvar</button>
+      <button class="btn warm" id="btn-r-pdf">Gerar recibo em PDF</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -323,7 +481,7 @@ const DEFAULT_OBS = `PRÉ-CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 7. Mudanças no projeto depois da aprovação podem gerar um novo orçamento.
 8. Ao assinar este documento, o cliente aprova o orçamento e as condições acima, firmadas com {EMPRESA}.`;
 
-const blankProfile = () => ({ owner: "", name: "", doc: "", ie: "", instagram: "", qr: "whatsapp", role: "", phone: "", email: "", cep: "", street: "", district: "", city: "", uf: "", address: "", days: 15, next: 1, logo: "", signature: "", obs: DEFAULT_OBS, registered: false, pwHash: "", pwSalt: "" });
+const blankProfile = () => ({ owner: "", name: "", doc: "", ie: "", instagram: "", qr: "whatsapp", role: "", phone: "", email: "", cep: "", street: "", district: "", city: "", uf: "", address: "", days: 15, next: 1, nextReceipt: 1, logo: "", signature: "", obs: DEFAULT_OBS, registered: false, pwHash: "", pwSalt: "" });
 const PROFILE_FIELDS = ["owner", "name", "doc", "ie", "role", "instagram", "qr", "phone", "email", "cep", "street", "district", "city", "uf"];
 const composeAddress = (p) => [p.street, p.district, [p.city, (p.uf || "").toUpperCase()].filter(Boolean).join(" - "), p.cep && "CEP " + p.cep].filter(Boolean).join(", ");
 const bizName = (p) => p.name || p.owner;
@@ -373,6 +531,7 @@ const store = {
       if (!id) return;
       this.profileRef = db.doc("data/users/" + id + "/perfil");
       this.quotesCol = this.profileRef.collection("orcamentos");
+      this.receiptsCol = this.profileRef.collection("recibos");
       await this.profileRef.get();
       this.mode = "db";
     } catch { this.mode = "local"; }
@@ -403,6 +562,20 @@ const store = {
   async deleteQuote(id) {
     if (this.mode === "db") { await this.quotesCol.doc(id).delete(); return; }
     local.set("orc.quotes", local.get("orc.quotes", []).filter((x) => x.id !== id));
+  },
+  async listReceipts() {
+    if (this.mode === "db") { const s = await this.receiptsCol.get(); return s.docs.map((d) => d.data()); }
+    return local.get("orc.receipts", []);
+  },
+  async saveReceipt(r) {
+    if (this.mode === "db") { await this.receiptsCol.doc(r.id).set(JSON.parse(JSON.stringify(r))); return; }
+    const all = local.get("orc.receipts", []).filter((x) => x.id !== r.id);
+    all.push(r);
+    if (!local.set("orc.receipts", all)) throw new Error("local");
+  },
+  async deleteReceipt(id) {
+    if (this.mode === "db") { await this.receiptsCol.doc(id).delete(); return; }
+    local.set("orc.receipts", local.get("orc.receipts", []).filter((x) => x.id !== id));
   },
 };
 
@@ -553,12 +726,12 @@ async function saveQuote(silent) {
 $("btn-save").onclick = () => saveQuote(false);
 
 /* ---------- PDF ---------- */
-function buildPdf(q) {
+// Folha A4 com o cabeçalho da empresa (logo, dados, QR Code) e o título do documento
+function pdfDoc(title, num) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const W = 210, M = 16, t = calc(q);
+  const W = 210, M = 16;
   const ACC = [28, 90, 99], INK = [22, 36, 42], MUT = [90, 107, 114], LINE = [214, 222, 225];
-  const num = String(q.number || 0).padStart(4, "0");
 
   const mtx = qrMatrix(qrText(profile));
   const header = () => {
@@ -583,12 +756,18 @@ function buildPdf(q) {
       rx = qx - 4;
     }
     doc.setTextColor(...ACC); doc.setFont("helvetica", "bold"); doc.setFontSize(15);
-    doc.text("ORÇAMENTO", rx, 17, { align: "right" });
+    doc.text(title, rx, 17, { align: "right" });
     doc.setFontSize(9); doc.setTextColor(...MUT); doc.setFont("helvetica", "normal");
     doc.text(`Nº ${num}`, rx, 22, { align: "right" });
     doc.setDrawColor(...ACC); doc.setLineWidth(0.6); doc.line(M, 33, W - M, 33);
   };
+  return { doc, header, W, M, ACC, INK, MUT, LINE };
+}
 
+function buildPdf(q) {
+  const t = calc(q);
+  const num = String(q.number || 0).padStart(4, "0");
+  const { doc, header, W, M, ACC, INK, MUT, LINE } = pdfDoc("ORÇAMENTO", num);
   header();
   // Cliente e datas
   let y = 40;
@@ -645,7 +824,7 @@ function buildPdf(q) {
   doc.setFontSize(10); doc.text(`${profile.city || "Local"}, ${longDate(q.start)}.`, M, y - 14);
   const colW = (W - 2 * M - 16) / 2;
   const sigBlock = (x, img, name, docId, role) => {
-    if (img) { try { doc.addImage(img, "PNG", x + 6, y - 22, colW - 12, 20); } catch {} }
+    if (img) { try { doc.addImage(img, "PNG", x + 6, y - 22, colW - 12, 20, undefined, "FAST"); } catch {} }
     doc.setDrawColor(...INK); doc.setLineWidth(0.3); doc.line(x, y, x + colW, y);
     doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(...INK);
     doc.text(name || " ", x + colW / 2, y + 5, { align: "center" });
@@ -713,11 +892,13 @@ function renderSaved() {
       <div class="val">${money(calc(q).total)}</div>
       <div class="row" style="grid-column:1/-1">
         <button class="btn small" data-a="open">Abrir</button>
+        <button class="btn small" data-a="rec">Gerar recibo</button>
         <button class="btn small" data-a="copy">Duplicar</button>
         <button class="btn small danger" data-a="del">Excluir</button>
       </div>`;
     el.querySelector("strong").textContent = q.client.name || "Sem nome";
     el.querySelector('[data-a="open"]').onclick = () => { quote = JSON.parse(JSON.stringify(q)); show("editor"); renderEditor(); };
+    el.querySelector('[data-a="rec"]').onclick = () => receiptFromQuote(q);
     el.querySelector('[data-a="copy"]').onclick = () => {
       const start = todayISO();
       quote = { ...JSON.parse(JSON.stringify(q)), id: "", number: 0, start, valid: addDays(start, parseNum(profile.days) || 15), clientSig: "" };
@@ -791,7 +972,7 @@ $("btn-save-profile").onclick = async () => {
   profile.obs = $("p-obs").value;
   profile.days = parseNum($("p-days").value) || 15; profile.next = parseNum($("p-next").value) || 1;
   profile.signature = sigMe.value();
-  try { await store.saveProfile(profile); toast("Seus dados foram salvos"); }
+  try { await store.saveProfile(profile); renderBrand(); toast("Seus dados foram salvos"); }
   catch { toast("Não consegui salvar seus dados. Tente de novo."); }
 };
 
@@ -845,11 +1026,227 @@ $("btn-pw").onclick = async () => {
   toast("Senha trocada");
 };
 
-/* ---------- Abas e telas de entrada ---------- */
-const APP_VIEWS = ["editor", "saved", "profile"];
+/* ---------- Valor por extenso ---------- */
+const EXT_U = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", "dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
+const EXT_D = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
+const EXT_C = ["", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos", "setecentos", "oitocentos", "novecentos"];
+const ate999 = (n) => {
+  if (n === 100) return "cem";
+  const c = Math.floor(n / 100), r = n % 100, out = [];
+  if (c) out.push(EXT_C[c]);
+  if (r) out.push(r < 20 ? EXT_U[r] : EXT_D[Math.floor(r / 10)] + (r % 10 ? " e " + EXT_U[r % 10] : ""));
+  return out.join(" e ");
+};
+function inteiroExtenso(n) {
+  if (n === 0) return "zero";
+  const SC = [["", ""], ["mil", "mil"], ["milhão", "milhões"], ["bilhão", "bilhões"]];
+  const g = []; while (n > 0) { g.push(n % 1000); n = Math.floor(n / 1000); }
+  const parts = [];
+  for (let i = g.length - 1; i >= 0; i--) {
+    if (!g[i]) continue;
+    const txt = i === 1 && g[i] === 1 ? "mil" : ate999(g[i]) + (i ? " " + SC[i][g[i] === 1 ? 0 : 1] : "");
+    parts.push({ txt, v: g[i], i });
+  }
+  return parts.map((p, k) => (k === 0 ? "" : k === parts.length - 1 && (p.v < 100 || p.v % 100 === 0) ? " e " : " ") + p.txt).join("");
+}
+function extenso(v) {
+  const cents = Math.round((Number(v) || 0) * 100), r = Math.floor(cents / 100), c = cents % 100;
+  let out = "";
+  if (r) out = inteiroExtenso(r) + (r === 1 ? " real" : (r % 1000000 === 0 ? " de reais" : " reais"));
+  if (c) out += (out ? " e " : "") + inteiroExtenso(c) + (c === 1 ? " centavo" : " centavos");
+  return out || "zero reais";
+}
+
+/* ---------- Recibos ---------- */
+let receipts = [];
+const KIND = { total: "Pagamento total", entrada: "Entrada", parcela: "Parcela", saldo: "Saldo final" };
+const blankReceipt = () => ({ id: "", number: 0, date: todayISO(), kind: "total", payer: { name: "", doc: "", phone: "", email: "" }, amount: 0, method: "Pix", desc: "", quoteId: "", quoteNumber: 0, quoteTotal: 0, mySig: profile.signature || "", payerSig: "" });
+let receipt = blankReceipt();
+const sigRMe = SigPad($("sig-r-me"), () => { receipt.mySig = sigRMe.value(); });
+const sigRPayer = SigPad($("sig-r-payer"), () => { receipt.payerSig = sigRPayer.value(); });
+$("sig-r-me-clear").onclick = () => sigRMe.clear();
+$("sig-r-me-mine").onclick = () => { receipt.mySig = profile.signature || ""; sigRMe.set(receipt.mySig); if (!profile.signature) toast("Você ainda não salvou sua assinatura em Meus dados"); };
+$("sig-r-payer-clear").onclick = () => sigRPayer.clear();
+const receivedFor = (quoteId, exceptId) => receipts.filter((r) => r.quoteId === quoteId && r.id !== exceptId).reduce((s, r) => s + parseNum(r.amount), 0);
+const pad4 = (n) => String(n || 0).padStart(4, "0");
+
+function renderReceiptAmount() {
+  const v = parseNum(receipt.amount);
+  $("r-amount-show").textContent = money(v);
+  $("r-extenso").textContent = v ? "(" + extenso(v) + ")" : "";
+  $("rbar-total").textContent = money(v);
+  if (receipt.quoteId) {
+    const before = receivedFor(receipt.quoteId, receipt.id), left = receipt.quoteTotal - before - v;
+    $("r-link").textContent = `Orçamento nº ${pad4(receipt.quoteNumber)}: total ${money(receipt.quoteTotal)}, já recebido ${money(before)}, saldo depois deste recibo ${money(Math.max(0, left))}.`;
+  }
+  $("r-link").hidden = !receipt.quoteId;
+}
+function renderReceipt() {
+  $("r-title").textContent = receipt.number ? `Recibo nº ${pad4(receipt.number)}` : "Novo recibo";
+  $("r-date").value = receipt.date; $("r-kind").value = receipt.kind; $("r-method").value = receipt.method;
+  for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).value = receipt.payer[k] || "";
+  $("r-amount").value = numIn(receipt.amount); $("r-desc").value = receipt.desc;
+  sigRMe.set(receipt.mySig); sigRPayer.set(receipt.payerSig);
+  $("r-send-card").hidden = true;
+  renderReceiptAmount();
+}
+$("r-date").onchange = (e) => { receipt.date = e.target.value; };
+$("r-kind").onchange = (e) => { receipt.kind = e.target.value; };
+$("r-method").onchange = (e) => { receipt.method = e.target.value; };
+for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).oninput = (e) => { receipt.payer[k] = e.target.value; };
+$("r-amount").oninput = (e) => { receipt.amount = parseNum(e.target.value); renderReceiptAmount(); };
+$("r-desc").oninput = (e) => { receipt.desc = e.target.value; };
+const newReceipt = () => { receipt = blankReceipt(); renderReceipt(); window.scrollTo(0, 0); };
+$("btn-r-new").onclick = newReceipt;
+
+function receiptFromQuote(q) {
+  const total = calc(q).total, before = receivedFor(q.id, "");
+  receipt = { ...blankReceipt(), payer: { name: q.client.name, doc: q.client.doc, phone: q.client.phone, email: q.client.email },
+    quoteId: q.id, quoteNumber: q.number, quoteTotal: total, amount: Math.max(0, Math.round((total - before) * 100) / 100),
+    kind: before > 0 ? "saldo" : "total", desc: `Materiais e serviços do orçamento nº ${pad4(q.number)}` };
+  show("receipt"); renderReceipt();
+  if (before > 0) toast("Valor preenchido com o saldo que falta receber");
+}
+
+async function saveReceipt(silent) {
+  if (!receipt.id) {
+    receipt.id = uid(); receipt.number = parseNum(profile.nextReceipt) || 1;
+    profile.nextReceipt = receipt.number + 1;
+    try { await store.saveProfile(profile); } catch {}
+  }
+  receipt.mySig = sigRMe.value(); receipt.payerSig = sigRPayer.value();
+  receipt.updated = new Date().toISOString();
+  try { await store.saveReceipt(receipt); if (!silent) toast("Recibo salvo"); }
+  catch { toast("Não consegui salvar. Gere o PDF para não perder o recibo."); }
+  receipts = await store.listReceipts().catch(() => receipts);
+  renderReceipt();
+}
+$("btn-r-save").onclick = () => { if (receiptProblem()) return; saveReceipt(false); };
+function receiptProblem() {
+  if (!receipt.payer.name.trim()) { toast("Preencha o nome de quem pagou"); $("r-name").focus(); return true; }
+  if (!(parseNum(receipt.amount) > 0)) { toast("Preencha o valor recebido"); $("r-amount").focus(); return true; }
+  return false;
+}
+
+function buildReceiptPdf(r) {
+  const num = pad4(r.number), v = parseNum(r.amount);
+  const { doc, header, W, M, ACC, INK, MUT, LINE } = pdfDoc("RECIBO", num);
+  header();
+  let y = 44;
+  // Caixa do valor
+  doc.setFillColor(225, 238, 239); doc.roundedRect(W - M - 70, y - 4, 70, 22, 2, 2, "F");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...MUT);
+  doc.text("VALOR RECEBIDO", W - M - 66, y + 2);
+  doc.setFontSize(17); doc.setTextColor(...ACC); doc.text(money(v), W - M - 66, y + 12);
+  doc.setFontSize(8); doc.setTextColor(...MUT);
+  doc.text("DATA", M, y + 2); doc.text("TIPO", M + 38, y + 2); doc.text("FORMA DE PAGAMENTO", M + 76, y + 2);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); doc.setTextColor(...INK);
+  doc.text(fmtDate(r.date), M, y + 8); doc.text(KIND[r.kind] || "", M + 38, y + 8); doc.text(r.method, M + 76, y + 8);
+  y += 34;
+  const who = bizName(profile) || "o prestador";
+  const payer = r.payer.name + (r.payer.doc ? `, CPF/CNPJ ${r.payer.doc}` : "");
+  const ref = (r.desc || "serviços prestados").trim().replace(/\.$/, "");
+  const body = `Recebi(emos) de ${payer}, a importância de ${money(v)} (${extenso(v)}), referente a ${ref}, paga por ${r.method.toLowerCase()}.\n\nPara maior clareza, firmo(amos) o presente recibo, dando quitação do valor acima recebido.`;
+  doc.setFontSize(11.5);
+  for (const ln of doc.splitTextToSize(body, W - 2 * M)) { doc.text(ln, M, y); y += 6.2; }
+  if (r.quoteId) {
+    const before = receivedFor(r.quoteId, r.id), left = Math.max(0, r.quoteTotal - before - v);
+    y += 4;
+    doc.autoTable({
+      startY: y, margin: { left: M, right: M },
+      head: [[`Orçamento nº ${pad4(r.quoteNumber)}`, "Valor"]],
+      body: [["Total do orçamento", money(r.quoteTotal)], ["Recebido antes deste recibo", money(before)], ["Este recibo", money(v)], ["Saldo a receber", money(left)]],
+      styles: { font: "helvetica", fontSize: 9.5, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
+      headStyles: { fillColor: ACC, textColor: [255, 255, 255] }, columnStyles: { 1: { halign: "right", cellWidth: 45 } },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+  y += 6;
+  doc.setFontSize(10.5); doc.setTextColor(...INK);
+  doc.text(`${profile.city || "Local"}, ${longDate(r.date)}.`, M, y);
+  y = Math.max(y + 38, 200);
+  const colW = (W - 2 * M - 16) / 2;
+  const sigBlock = (x, img, name, docId, role) => {
+    if (img) { try { doc.addImage(img, "PNG", x + 6, y - 22, colW - 12, 20, undefined, "FAST"); } catch {} }
+    doc.setDrawColor(...INK); doc.setLineWidth(0.3); doc.line(x, y, x + colW, y);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(...INK);
+    doc.text(name || " ", x + colW / 2, y + 5, { align: "center" });
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...MUT);
+    doc.text([role, docId ? `CPF/CNPJ ${docId}` : ""].filter(Boolean), x + colW / 2, y + 9.5, { align: "center" });
+  };
+  sigBlock(M, r.mySig, profile.owner || profile.name, profile.doc, profile.name && profile.owner ? `Recebedor, ${profile.name}` : "Recebedor");
+  sigBlock(M + colW + 16, r.payerSig, r.payer.name, r.payer.doc, "Pagador");
+  doc.setFontSize(8); doc.setTextColor(...MUT);
+  doc.text(`Recibo nº ${num}  |  ${who}`, W / 2, 289, { align: "center" });
+  return doc;
+}
+$("btn-r-pdf").onclick = async () => {
+  if (!window.jspdf) { toast("O gerador de PDF não carregou. Verifique a internet e abra de novo."); return; }
+  if (receiptProblem()) return;
+  await saveReceipt(true);
+  const doc = buildReceiptPdf(receipt);
+  const first = (receipt.payer.name || "").split(" ")[0];
+  $("r-send-msg").textContent = `Olá${first ? " " + first : ""}! Segue o recibo nº ${pad4(receipt.number)} do pagamento de ${money(parseNum(receipt.amount))} recebido em ${fmtDate(receipt.date)}. Obrigado pela confiança!${bizName(profile) ? "\n" + bizName(profile) : ""}`;
+  $("r-send-card").hidden = false;
+  const name = `Recibo-${pad4(receipt.number)}-${(receipt.payer.name || "cliente").normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
+  await deliverPdf(doc, name);
+};
+$("btn-r-copy").onclick = async () => {
+  try { await navigator.clipboard.writeText($("r-send-msg").textContent); toast("Mensagem copiada"); }
+  catch { const rg = document.createRange(); rg.selectNodeContents($("r-send-msg")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(rg); toast("Texto selecionado. Copie pelo menu."); }
+};
+
+function renderReceipts() {
+  $("receipts-where").textContent = store.mode === "db" ? "Guardados na sua conta. Só você vê esta lista." : "Guardados neste aparelho e navegador.";
+  const box = $("receipts-list"); box.textContent = "";
+  const list = [...receipts].sort((a, b) => (b.number || 0) - (a.number || 0));
+  if (!list.length) { box.innerHTML = `<p class="hint">Nenhum recibo ainda. Crie um na aba Recibo ou use "Gerar recibo" num orçamento salvo.</p>`; return; }
+  for (const r of list) {
+    const el = document.createElement("div"); el.className = "q";
+    el.innerHTML = `<div><strong></strong><span class="pill">${KIND[r.kind] || ""}</span>
+      <div class="meta">Nº ${pad4(r.number)} · ${fmtDate(r.date)} · ${r.method}${r.quoteNumber ? " · Orçamento nº " + pad4(r.quoteNumber) : ""}</div></div>
+      <div class="val">${money(parseNum(r.amount))}</div>
+      <div class="row" style="grid-column:1/-1">
+        <button class="btn small" data-a="open">Abrir</button>
+        <button class="btn small danger" data-a="del">Excluir</button>
+      </div>`;
+    el.querySelector("strong").textContent = r.payer.name || "Sem nome";
+    el.querySelector('[data-a="open"]').onclick = () => { receipt = JSON.parse(JSON.stringify(r)); show("receipt"); renderReceipt(); };
+    const del = el.querySelector('[data-a="del"]');
+    del.onclick = async () => {
+      if (del.dataset.confirm !== "1") { del.dataset.confirm = "1"; del.textContent = "Toque de novo para excluir"; return; }
+      await store.deleteReceipt(r.id).catch(() => {});
+      receipts = receipts.filter((x) => x.id !== r.id); renderReceipts(); toast("Excluído");
+    };
+    box.appendChild(el);
+  }
+}
+
+/* ---------- Início ---------- */
+function renderBrand() {
+  $("tb-name").textContent = bizName(profile) || "Orçamento e Recibo";
+  $("tb-logo").hidden = !profile.logo; if (profile.logo) $("tb-logo").src = profile.logo;
+}
+function renderHome() {
+  const first = (profile.owner || "").split(" ")[0];
+  $("home-hello").textContent = first ? `Olá, ${first}` : "Bem-vindo";
+  $("st-quotes").textContent = String(quotes.length);
+  const ym = todayISO().slice(0, 7);
+  $("st-month").textContent = money(receipts.filter((r) => (r.date || "").startsWith(ym)).reduce((s, r) => s + parseNum(r.amount), 0));
+  const open = quotes.reduce((s, q) => { const got = receivedFor(q.id, ""); return got > 0 ? s + Math.max(0, calc(q).total - got) : s; }, 0);
+  $("st-open").textContent = money(open);
+}
+$("go-quote").onclick = () => show("editor");
+$("go-receipt").onclick = () => show("receipt");
+$("btn-home").onclick = () => show("home");
+$("btn-back").onclick = () => show("home");
+$("tab-profile").onclick = () => show("profile");
+
+/* ---------- Telas ---------- */
+const APP_VIEWS = ["home", "editor", "saved", "receipt", "receipts", "profile"];
 function gate(which) {
   for (const v of [...APP_VIEWS, "loading", "signup", "login"]) $("view-" + v).hidden = v !== which;
-  $("topbar").hidden = true; $("bar").hidden = true;
+  $("topbar").hidden = true; $("subnav").hidden = true; $("bar").hidden = true; $("rbar").hidden = true;
   if (which === "signup") { $("signup-slot").appendChild($("company-card")); renderProfile(); }
   if (which === "login") {
     $("l-name").textContent = bizName(profile) || "Entrar";
@@ -864,13 +1261,21 @@ function enterApp() {
   $("profile-slot").appendChild($("company-card"));
   for (const v of ["loading", "signup", "login"]) $("view-" + v).hidden = true;
   $("topbar").hidden = false;
-  show("editor");
+  renderBrand();
+  show("home");
 }
 function show(view) {
   for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", String(b.dataset.view === view));
   for (const v of APP_VIEWS) $("view-" + v).hidden = v !== view;
+  $("subnav").hidden = view === "home";
+  $("tabs-quote").hidden = !["editor", "saved"].includes(view);
+  $("tabs-receipt").hidden = !["receipt", "receipts"].includes(view);
   $("bar").hidden = view !== "editor";
+  $("rbar").hidden = view !== "receipt";
+  if (view === "home") renderHome();
   if (view === "saved") renderSaved();
+  if (view === "receipt") renderReceiptAmount();
+  if (view === "receipts") renderReceipts();
   if (view === "profile") renderProfile();
   window.scrollTo(0, 0);
 }
@@ -881,7 +1286,9 @@ renderEditor();
   await store.init();
   profile = await store.loadProfile();
   quotes = await store.listQuotes().catch(() => []);
+  receipts = await store.listReceipts().catch(() => []);
   if (quotes.length && quote.sample) newQuote();
+  receipt = blankReceipt(); renderReceipt();
   if (!profile.registered || !profile.pwHash) gate("signup");
   else if (session.get()) enterApp();
   else gate("login");
