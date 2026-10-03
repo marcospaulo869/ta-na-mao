@@ -1,0 +1,671 @@
+<title>Orçamento e Recibo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: uma coluna estreita como um bloco de orçamento, com barra de total fixa embaixo */
+:root {
+  --bg: #F2F5F6;
+  --surface: #FFFFFF;
+  --ink: #16242A;
+  --muted: #5A6B72;
+  --line: #D6DEE1;
+  --accent: #1C5A63;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E1EEEF;
+  --danger: #A8321F;
+  --sample: #8A5A00;
+  --sample-soft: #FBF1DC;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1417; --surface: #162026; --ink: #E4EDEF; --muted: #93A5AB; --line: #2A3940;
+    --accent: #6FBDBE; --accent-ink: #0E1417; --accent-soft: #1D3337; --danger: #F08A76;
+    --sample: #F2C26B; --sample-soft: #3A2E15; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1417; --surface: #162026; --ink: #E4EDEF; --muted: #93A5AB; --line: #2A3940;
+  --accent: #6FBDBE; --accent-ink: #0E1417; --accent-soft: #1D3337; --danger: #F08A76;
+  --sample: #F2C26B; --sample-soft: #3A2E15; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 var(--font-body); }
+.wrap { max-width: 760px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 140px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+h1 { font-size: 1.35rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.1rem; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-block: 8px; }
+.tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+.tabs button { border: 0; background: none; color: var(--muted); font: 600 0.92rem var(--font-body); padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+section.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; }
+.stack { display: grid; gap: 14px; margin-top: 12px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+label { display: grid; gap: 4px; font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; min-width: 0; }
+input, textarea, select { font: 400 1rem var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%; min-width: 0; text-transform: none; letter-spacing: 0; }
+textarea { min-height: 220px; resize: vertical; line-height: 1.5; }
+input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 600 0.95rem var(--font-body); padding: 9px 14px; border-radius: 8px; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.danger { color: var(--danger); }
+.btn.small { padding: 5px 10px; font-size: 0.85rem; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.hint { font-size: 0.85rem; color: var(--muted); margin: 0; }
+.sample { background: var(--sample-soft); color: var(--sample); border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; font-weight: 600; }
+.items { display: grid; gap: 10px; }
+.item { display: grid; grid-template-columns: 1fr 70px 80px 110px 32px; gap: 8px; align-items: end; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
+.item .desc { grid-column: 1 / -1; }
+.item .tot { font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; padding-bottom: 9px; }
+.item .rm { border: 0; background: none; color: var(--danger); font-size: 1.3rem; cursor: pointer; padding-bottom: 6px; }
+@media (max-width: 480px) { .item { grid-template-columns: 1fr 1fr 1fr 32px; } .item .tot { grid-column: 1 / 4; text-align: left; } }
+.totals { display: grid; gap: 4px; font-variant-numeric: tabular-nums; }
+.totals div { display: flex; justify-content: space-between; }
+.totals .grand { font-family: var(--font-display); font-size: 1.25rem; border-top: 1px solid var(--line); padding-top: 6px; margin-top: 4px; }
+.sig { display: grid; gap: 6px; }
+.sig canvas { width: 100%; height: 140px; background: #FFFFFF; border: 1px dashed var(--line); border-radius: 8px; touch-action: none; }
+.list { display: grid; gap: 8px; }
+.q { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.q .meta { font-size: 0.88rem; color: var(--muted); }
+.q .val { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.pill { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); margin-left: 6px; }
+.pill.late { background: var(--sample-soft); color: var(--sample); }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
+.bar .in { max-width: 760px; margin: 0 auto; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.bar .total { font-family: var(--font-display); font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 90px; background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-weight: 600; max-width: calc(100% - 32px); }
+.msgbox { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; white-space: pre-wrap; font-size: 0.95rem; user-select: all; }
+.logo-prev { max-height: 60px; max-width: 160px; }
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <h1>Orçamento e Recibo</h1>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-editor" aria-selected="true" data-view="editor">Orçamento</button>
+      <button role="tab" id="tab-saved" aria-selected="false" data-view="saved">Salvos</button>
+      <button role="tab" id="tab-profile" aria-selected="false" data-view="profile">Meus dados</button>
+    </div>
+  </div>
+
+  <!-- EDITOR -->
+  <div id="view-editor" class="stack">
+    <div id="sample-note" class="sample" hidden>Exemplo preenchido para você ver como fica. Toque em "Novo" para começar o seu.</div>
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2 id="q-title">Novo orçamento</h2>
+        <button class="btn small" id="btn-new">Novo</button>
+      </div>
+      <div class="grid2">
+        <label>Data inicial<input type="date" id="q-start"></label>
+        <label>Válido até<input type="date" id="q-valid"></label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Cliente</h2>
+      <div class="grid2">
+        <label>Nome<input id="c-name" autocomplete="off"></label>
+        <label>CPF ou CNPJ<input id="c-doc" autocomplete="off"></label>
+        <label>Telefone / WhatsApp<input id="c-phone" inputmode="tel" autocomplete="off"></label>
+        <label>E-mail<input id="c-email" type="email" autocomplete="off"></label>
+      </div>
+      <label>Endereço da obra<input id="c-address" autocomplete="off"></label>
+    </section>
+
+    <section class="card">
+      <h2>Materiais</h2>
+      <div class="items" id="items"></div>
+      <div class="row"><button class="btn" id="btn-add">+ Adicionar material</button></div>
+      <div class="grid2">
+        <label>Mão de obra (R$)<input id="q-labor" class="num" inputmode="decimal"></label>
+        <label>Desconto (R$)<input id="q-discount" class="num" inputmode="decimal"></label>
+      </div>
+      <div class="totals" id="totals"></div>
+    </section>
+
+    <section class="card">
+      <h2>Obs / Pré-contrato</h2>
+      <p class="hint">Vai na última página do PDF, antes das assinaturas. Os campos {CLIENTE}, {TOTAL}, {VALIDADE} e {EMPRESA} são trocados pelos dados do orçamento.</p>
+      <textarea id="q-obs"></textarea>
+      <div class="row"><button class="btn small" id="btn-obs-default">Usar meu texto padrão</button></div>
+    </section>
+
+    <section class="card">
+      <h2>Assinatura do cliente</h2>
+      <p class="hint">Opcional. Use quando o cliente assinar no seu celular. Se ficar em branco, o PDF sai com a linha para ele assinar.</p>
+      <div class="sig">
+        <canvas id="sig-client" aria-label="Área para o cliente assinar"></canvas>
+        <div class="row"><button class="btn small" id="sig-client-clear">Limpar</button></div>
+      </div>
+    </section>
+
+    <section class="card" id="send-card" hidden>
+      <h2>Mensagem para o cliente</h2>
+      <p class="hint">Copie e cole no WhatsApp ou e-mail junto com o PDF.</p>
+      <div class="msgbox" id="send-msg"></div>
+      <div class="row"><button class="btn small" id="btn-copy">Copiar mensagem</button></div>
+    </section>
+  </div>
+
+  <!-- SALVOS -->
+  <div id="view-saved" class="stack" hidden>
+    <p class="hint" id="saved-where"></p>
+    <div class="list" id="saved-list"></div>
+  </div>
+
+  <!-- MEUS DADOS -->
+  <div id="view-profile" class="stack" hidden>
+    <section class="card">
+      <h2>Sua empresa</h2>
+      <p class="hint">Esses dados aparecem no topo de todo PDF.</p>
+      <div class="grid2">
+        <label>Nome ou empresa<input id="p-name"></label>
+        <label>CPF ou CNPJ<input id="p-doc"></label>
+        <label>Telefone / WhatsApp<input id="p-phone" inputmode="tel"></label>
+        <label>E-mail<input id="p-email" type="email"></label>
+      </div>
+      <label>Endereço<input id="p-address"></label>
+      <div class="grid2">
+        <label>Validade padrão (dias)<input id="p-days" class="num" inputmode="numeric"></label>
+        <label>Próximo número<input id="p-next" class="num" inputmode="numeric"></label>
+      </div>
+      <label>Logo (opcional)<input type="file" id="p-logo" accept="image/*"></label>
+      <div class="row"><img id="p-logo-prev" class="logo-prev" alt="Logo" hidden><button class="btn small danger" id="p-logo-rm" hidden>Remover logo</button></div>
+    </section>
+    <section class="card">
+      <h2>Sua assinatura</h2>
+      <p class="hint">Desenhe uma vez. Ela entra em todos os PDFs.</p>
+      <div class="sig">
+        <canvas id="sig-me" aria-label="Área para sua assinatura"></canvas>
+        <div class="row"><button class="btn small" id="sig-me-clear">Limpar</button></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Texto padrão do pré-contrato</h2>
+      <textarea id="p-obs"></textarea>
+    </section>
+    <div class="row"><button class="btn primary" id="btn-save-profile">Salvar meus dados</button></div>
+  </div>
+</div>
+
+<div class="bar" id="bar">
+  <div class="in">
+    <div><div class="hint">Total</div><div class="total" id="bar-total">R$ 0,00</div></div>
+    <div class="row">
+      <button class="btn" id="btn-save">Salvar</button>
+      <button class="btn primary" id="btn-pdf">Gerar PDF</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+(() => {
+"use strict";
+const $ = (id) => document.getElementById(id);
+const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+const money = (n) => BRL.format(Number.isFinite(n) ? n : 0);
+const parseNum = (s) => {
+  if (typeof s === "number") return s;
+  s = String(s || "").trim().replace(/[R$\s]/g, "");
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : 0;
+};
+const numIn = (n) => (n ? String(n).replace(".", ",") : "");
+const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const addDays = (iso, days) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10); };
+const fmtDate = (iso) => iso ? iso.split("-").reverse().join("/") : "";
+const MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const longDate = (iso) => { if (!iso) return ""; const [y, m, d] = iso.split("-"); return `${+d} de ${MESES[+m - 1]} de ${y}`; };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+const DEFAULT_OBS = `PRÉ-CONTRATO DE PRESTAÇÃO DE SERVIÇOS
+
+1. Objeto: fornecimento dos materiais e execução dos serviços descritos neste orçamento para {CLIENTE}.
+2. Valor total: {TOTAL}, conforme os itens listados.
+3. Pagamento: 50% de entrada na aprovação e 50% na entrega do serviço.
+4. Prazo de execução: ___ dias úteis, contados a partir da aprovação e do pagamento da entrada.
+5. Validade: os preços deste orçamento valem até {VALIDADE}. Depois dessa data os valores podem ser revistos.
+6. Garantia: 90 dias para defeitos de execução, conforme o Código de Defesa do Consumidor.
+7. Mudanças no projeto depois da aprovação podem gerar um novo orçamento.
+8. Ao assinar este documento, o cliente aprova o orçamento e as condições acima, firmadas com {EMPRESA}.`;
+
+const blankProfile = () => ({ name: "", doc: "", phone: "", email: "", address: "", days: 15, next: 1, logo: "", signature: "", obs: DEFAULT_OBS });
+
+const sampleQuote = () => {
+  const start = todayISO();
+  return {
+    id: "", number: 0, sample: true, start, valid: addDays(start, 15),
+    client: { name: "Ana Souza (exemplo)", doc: "123.456.789-00", phone: "(11) 98888-7777", email: "ana@exemplo.com", address: "Rua das Flores, 120, apto 32" },
+    items: [
+      { desc: "MDF branco 18 mm (chapa 2,75 x 1,85 m)", un: "ch", qty: 4, price: 289.9 },
+      { desc: "Dobradiça com amortecedor 35 mm", un: "un", qty: 12, price: 18.5 },
+      { desc: "Corrediça telescópica 45 cm", un: "par", qty: 4, price: 42 },
+      { desc: "Fita de borda branca 22 mm", un: "m", qty: 50, price: 1.2 },
+    ],
+    labor: 1200, discount: 100, obs: DEFAULT_OBS, clientSig: "",
+  };
+};
+
+/* ---------- Armazenamento: banco do app quando disponível, senão este aparelho ---------- */
+const local = {
+  get(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
+};
+const store = {
+  mode: "local", profileRef: null, quotesCol: null,
+  async init() {
+    try {
+      if (!window.claude || !window.claude.use) return;
+      const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+      if (!db || !user) return;
+      const id = await user.id();
+      if (!id) return;
+      this.profileRef = db.doc("data/users/" + id + "/perfil");
+      this.quotesCol = this.profileRef.collection("orcamentos");
+      await this.profileRef.get();
+      this.mode = "db";
+    } catch { this.mode = "local"; }
+  },
+  async loadProfile() {
+    if (this.mode === "db") {
+      try { const s = await this.profileRef.get(); if (s.exists) return { ...blankProfile(), ...s.data() }; } catch {}
+    }
+    return { ...blankProfile(), ...local.get("orc.profile", {}) };
+  },
+  async saveProfile(p) {
+    if (this.mode === "db") { await this.profileRef.set(JSON.parse(JSON.stringify(p))); return; }
+    if (!local.set("orc.profile", p)) throw new Error("local");
+  },
+  async listQuotes() {
+    if (this.mode === "db") {
+      const s = await this.quotesCol.get();
+      return s.docs.map((d) => d.data());
+    }
+    return local.get("orc.quotes", []);
+  },
+  async saveQuote(q) {
+    if (this.mode === "db") { await this.quotesCol.doc(q.id).set(JSON.parse(JSON.stringify(q))); return; }
+    const all = local.get("orc.quotes", []).filter((x) => x.id !== q.id);
+    all.push(q);
+    if (!local.set("orc.quotes", all)) throw new Error("local");
+  },
+  async deleteQuote(id) {
+    if (this.mode === "db") { await this.quotesCol.doc(id).delete(); return; }
+    local.set("orc.quotes", local.get("orc.quotes", []).filter((x) => x.id !== id));
+  },
+};
+
+/* ---------- Estado ---------- */
+let profile = blankProfile();
+let quote = sampleQuote();
+let quotes = [];
+
+const toast = (msg) => { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (t.hidden = true), 2600); };
+
+/* ---------- Assinatura desenhada ---------- */
+function SigPad(canvas, onChange) {
+  const ctx = canvas.getContext("2d");
+  let drawing = false, dirty = false, last = null;
+  const fit = () => {
+    const r = canvas.getBoundingClientRect();
+    if (!r.width) return;
+    const keep = dirty ? canvas.toDataURL() : null;
+    canvas.width = Math.round(r.width * 2); canvas.height = Math.round(r.height * 2);
+    ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#111";
+    if (keep) load(keep, true);
+  };
+  const pos = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) * canvas.width / r.width, y: (e.clientY - r.top) * canvas.height / r.height }; };
+  canvas.addEventListener("pointerdown", (e) => { drawing = true; last = pos(e); canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener("pointermove", (e) => {
+    if (!drawing) return; const p = pos(e);
+    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; dirty = true;
+  });
+  const end = () => { if (drawing) { drawing = false; onChange && onChange(); } };
+  canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
+  function load(url, silent) {
+    const img = new Image();
+    img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); dirty = true; };
+    img.src = url;
+  }
+  const api = {
+    clear() { ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; onChange && onChange(); },
+    value() { return dirty ? canvas.toDataURL("image/png") : ""; },
+    set(url) { ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; if (url) load(url); },
+    fit,
+  };
+  new ResizeObserver(fit).observe(canvas);
+  return api;
+}
+const sigClient = SigPad($("sig-client"), () => { quote.clientSig = sigClient.value(); });
+const sigMe = SigPad($("sig-me"));
+$("sig-client-clear").onclick = () => sigClient.clear();
+$("sig-me-clear").onclick = () => sigMe.clear();
+
+/* ---------- Cálculo ---------- */
+const lineTotal = (it) => parseNum(it.qty) * parseNum(it.price);
+const calc = (q) => {
+  const materials = q.items.reduce((s, it) => s + lineTotal(it), 0);
+  const labor = parseNum(q.labor), discount = parseNum(q.discount);
+  return { materials, labor, discount, total: Math.max(0, materials + labor - discount) };
+};
+const fillVars = (text, q, t) => String(text || "")
+  .replaceAll("{CLIENTE}", q.client.name || "o cliente")
+  .replaceAll("{TOTAL}", money(t.total))
+  .replaceAll("{VALIDADE}", fmtDate(q.valid))
+  .replaceAll("{EMPRESA}", profile.name || "o prestador");
+
+/* ---------- Editor ---------- */
+function renderItems() {
+  const box = $("items"); box.textContent = "";
+  quote.items.forEach((it, i) => {
+    const row = document.createElement("div"); row.className = "item";
+    row.innerHTML = `
+      <label class="desc">Material<input id="it-d-${i}" autocomplete="off"></label>
+      <label>Un.<input id="it-u-${i}" autocomplete="off"></label>
+      <label>Qtd.<input id="it-q-${i}" class="num" inputmode="decimal"></label>
+      <label>Preço un. (R$)<input id="it-p-${i}" class="num" inputmode="decimal"></label>
+      <button class="rm" title="Remover material" aria-label="Remover material">×</button>
+      <div class="tot" id="it-t-${i}"></div>`;
+    box.appendChild(row);
+    const d = row.querySelector(`#it-d-${i}`), u = row.querySelector(`#it-u-${i}`), q = row.querySelector(`#it-q-${i}`), p = row.querySelector(`#it-p-${i}`);
+    d.value = it.desc; u.value = it.un; q.value = numIn(it.qty); p.value = numIn(it.price);
+    d.oninput = () => { it.desc = d.value; };
+    u.oninput = () => { it.un = u.value; };
+    q.oninput = () => { it.qty = parseNum(q.value); renderTotals(); };
+    p.oninput = () => { it.price = parseNum(p.value); renderTotals(); };
+    row.querySelector(".rm").onclick = () => { quote.items.splice(i, 1); renderItems(); renderTotals(); };
+  });
+}
+function renderTotals() {
+  const t = calc(quote);
+  quote.items.forEach((it, i) => { const el = $(`it-t-${i}`); if (el) el.textContent = money(lineTotal(it)); });
+  $("totals").innerHTML = `
+    <div><span>Materiais</span><span>${money(t.materials)}</span></div>
+    <div><span>Mão de obra</span><span>${money(t.labor)}</span></div>
+    <div><span>Desconto</span><span>− ${money(t.discount)}</span></div>
+    <div class="grand"><span>Total</span><span>${money(t.total)}</span></div>`;
+  $("bar-total").textContent = money(t.total);
+}
+function renderEditor() {
+  $("sample-note").hidden = !quote.sample;
+  $("q-title").textContent = quote.number ? `Orçamento nº ${String(quote.number).padStart(4, "0")}` : "Novo orçamento";
+  $("q-start").value = quote.start; $("q-valid").value = quote.valid;
+  for (const k of ["name", "doc", "phone", "email", "address"]) $("c-" + k).value = quote.client[k] || "";
+  $("q-labor").value = numIn(quote.labor); $("q-discount").value = numIn(quote.discount);
+  $("q-obs").value = quote.obs;
+  sigClient.set(quote.clientSig);
+  $("send-card").hidden = true;
+  renderItems(); renderTotals();
+}
+$("q-start").onchange = () => {
+  const oldDays = Math.round((new Date(quote.valid) - new Date(quote.start)) / 864e5);
+  quote.start = $("q-start").value;
+  quote.valid = addDays(quote.start, oldDays > 0 ? oldDays : parseNum(profile.days) || 15);
+  $("q-valid").value = quote.valid;
+};
+$("q-valid").onchange = () => { quote.valid = $("q-valid").value; };
+for (const k of ["name", "doc", "phone", "email", "address"]) $("c-" + k).oninput = (e) => { quote.client[k] = e.target.value; };
+$("q-labor").oninput = (e) => { quote.labor = parseNum(e.target.value); renderTotals(); };
+$("q-discount").oninput = (e) => { quote.discount = parseNum(e.target.value); renderTotals(); };
+$("q-obs").oninput = (e) => { quote.obs = e.target.value; };
+$("btn-obs-default").onclick = () => { quote.obs = profile.obs || DEFAULT_OBS; $("q-obs").value = quote.obs; };
+$("btn-add").onclick = () => {
+  quote.items.push({ desc: "", un: "un", qty: 1, price: 0 });
+  renderItems(); renderTotals();
+  $(`it-d-${quote.items.length - 1}`).focus();
+};
+const newQuote = () => {
+  const start = todayISO();
+  quote = { id: "", number: 0, start, valid: addDays(start, parseNum(profile.days) || 15),
+    client: { name: "", doc: "", phone: "", email: "", address: "" },
+    items: [{ desc: "", un: "un", qty: 1, price: 0 }], labor: 0, discount: 0, obs: profile.obs || DEFAULT_OBS, clientSig: "" };
+  renderEditor(); window.scrollTo(0, 0);
+};
+$("btn-new").onclick = newQuote;
+
+async function saveQuote(silent) {
+  if (quote.sample) { quote.sample = false; quote.client.name = quote.client.name.replace(" (exemplo)", ""); }
+  if (!quote.id) {
+    quote.id = uid();
+    quote.number = parseNum(profile.next) || 1;
+    profile.next = quote.number + 1;
+    try { await store.saveProfile(profile); } catch {}
+  }
+  quote.items = quote.items.filter((it) => it.desc.trim() || parseNum(it.price));
+  quote.clientSig = sigClient.value();
+  quote.updated = new Date().toISOString();
+  try { await store.saveQuote(quote); if (!silent) toast("Orçamento salvo"); }
+  catch { toast("Não consegui salvar. Gere o PDF para não perder o orçamento."); }
+  renderEditor();
+  quotes = await store.listQuotes().catch(() => quotes);
+}
+$("btn-save").onclick = () => saveQuote(false);
+
+/* ---------- PDF ---------- */
+function buildPdf(q) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const W = 210, M = 16, t = calc(q);
+  const ACC = [28, 90, 99], INK = [22, 36, 42], MUT = [90, 107, 114], LINE = [214, 222, 225];
+  const num = String(q.number || 0).padStart(4, "0");
+
+  const header = () => {
+    let x = M;
+    if (profile.logo) {
+      try { const p = doc.getImageProperties(profile.logo); const h = 18, w = Math.min(40, (p.width / p.height) * h); doc.addImage(profile.logo, M, 12, w, h); x = M + w + 5; } catch {}
+    }
+    doc.setTextColor(...INK); doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+    doc.text(profile.name || "Seu nome ou empresa", x, 17);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...MUT);
+    const info = [profile.doc && `CPF/CNPJ ${profile.doc}`, profile.phone, profile.email].filter(Boolean).join("  |  ");
+    if (info) doc.text(info, x, 22);
+    if (profile.address) doc.text(profile.address, x, 26);
+    doc.setTextColor(...ACC); doc.setFont("helvetica", "bold"); doc.setFontSize(15);
+    doc.text("ORÇAMENTO", W - M, 17, { align: "right" });
+    doc.setFontSize(9); doc.setTextColor(...MUT); doc.setFont("helvetica", "normal");
+    doc.text(`Nº ${num}`, W - M, 22, { align: "right" });
+    doc.setDrawColor(...ACC); doc.setLineWidth(0.6); doc.line(M, 32, W - M, 32);
+  };
+
+  header();
+  // Cliente e datas
+  let y = 40;
+  doc.setFontSize(8); doc.setTextColor(...MUT); doc.setFont("helvetica", "bold");
+  doc.text("CLIENTE", M, y); doc.text("DATA INICIAL", 128, y); doc.text("VÁLIDO ATÉ", 166, y);
+  doc.setFont("helvetica", "normal"); doc.setTextColor(...INK); doc.setFontSize(10.5);
+  doc.text(q.client.name || "-", M, y + 5.5);
+  doc.text(fmtDate(q.start), 128, y + 5.5); doc.setFont("helvetica", "bold"); doc.text(fmtDate(q.valid), 166, y + 5.5);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...MUT);
+  const cl = [q.client.doc && `CPF/CNPJ ${q.client.doc}`, q.client.phone, q.client.email].filter(Boolean).join("  |  ");
+  let cy = y + 10.5;
+  if (cl) { doc.text(cl, M, cy); cy += 4.5; }
+  if (q.client.address) { doc.text(doc.splitTextToSize(q.client.address, 105), M, cy); cy += 4.5; }
+  y = Math.max(cy, y + 12) + 4;
+
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M, top: 38 },
+    head: [["#", "Material", "Un.", "Qtd.", "Preço un.", "Total"]],
+    body: q.items.map((it, i) => [i + 1, it.desc, it.un, String(parseNum(it.qty)).replace(".", ","), money(parseNum(it.price)), money(lineTotal(it))]),
+    styles: { font: "helvetica", fontSize: 9, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
+    headStyles: { fillColor: ACC, textColor: [255, 255, 255], fontStyle: "bold" },
+    alternateRowStyles: { fillColor: [244, 247, 248] },
+    columnStyles: { 0: { cellWidth: 9, halign: "center" }, 2: { cellWidth: 13, halign: "center" }, 3: { cellWidth: 15, halign: "right" }, 4: { cellWidth: 28, halign: "right" }, 5: { cellWidth: 30, halign: "right" } },
+    didDrawPage: (d) => { if (d.pageNumber > 1) header(); },
+  });
+  y = doc.lastAutoTable.finalY + 6;
+  if (y > 250) { doc.addPage(); header(); y = 42; }
+  const row = (label, val, bold) => {
+    doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setFontSize(bold ? 12 : 10);
+    doc.setTextColor(...(bold ? ACC : INK));
+    doc.text(label, 130, y); doc.text(val, W - M, y, { align: "right" }); y += bold ? 7 : 5.5;
+  };
+  row("Materiais", money(t.materials));
+  if (t.labor) row("Mão de obra", money(t.labor));
+  if (t.discount) row("Desconto", "- " + money(t.discount));
+  doc.setDrawColor(...LINE); doc.line(130, y - 3.5, W - M, y - 3.5); y += 1.5;
+  row("TOTAL", money(t.total), true);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...MUT);
+  doc.text(`Orçamento válido até ${fmtDate(q.valid)}. Condições e assinaturas na página de observações.`, M, y + 4);
+
+  // Página Obs / pré-contrato + assinaturas
+  doc.addPage(); header();
+  y = 42;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(...ACC);
+  doc.text("OBSERVAÇÕES E PRÉ-CONTRATO", M, y); y += 8;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(...INK);
+  const lines = doc.splitTextToSize(fillVars(q.obs, q, t), W - 2 * M);
+  for (const ln of lines) {
+    if (y > 225) { doc.addPage(); header(); y = 42; }
+    doc.text(ln, M, y); y += 5;
+  }
+  if (y > 222) { doc.addPage(); header(); y = 42; }
+  y = Math.max(y + 10, 225);
+  doc.setFontSize(10); doc.text(`${(profile.address || "").split(",").slice(-1)[0].trim() || "Local"}, ${longDate(q.start)}.`, M, y - 14);
+  const colW = (W - 2 * M - 16) / 2;
+  const sigBlock = (x, img, name, docId, role) => {
+    if (img) { try { doc.addImage(img, "PNG", x + 6, y - 22, colW - 12, 20); } catch {} }
+    doc.setDrawColor(...INK); doc.setLineWidth(0.3); doc.line(x, y, x + colW, y);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(...INK);
+    doc.text(name || " ", x + colW / 2, y + 5, { align: "center" });
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...MUT);
+    doc.text([role, docId ? `CPF/CNPJ ${docId}` : ""].filter(Boolean), x + colW / 2, y + 9.5, { align: "center" });
+  };
+  sigBlock(M, profile.signature, profile.name, profile.doc, "Prestador");
+  sigBlock(M + colW + 16, q.clientSig, q.client.name, q.client.doc, "Cliente");
+
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i); doc.setFontSize(8); doc.setTextColor(...MUT);
+    doc.text(`Orçamento nº ${num}  |  Página ${i} de ${pages}`, W / 2, 289, { align: "center" });
+  }
+  return doc;
+}
+const fileName = (q) => `Orcamento-${String(q.number || 0).padStart(4, "0")}-${(q.client.name || "cliente").normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
+const clientMessage = (q) => {
+  const t = calc(q);
+  const first = (q.client.name || "").split(" ")[0];
+  return `Olá${first ? " " + first : ""}! Segue o orçamento nº ${String(q.number).padStart(4, "0")} no valor de ${money(t.total)}, válido até ${fmtDate(q.valid)}. No PDF está também o pré-contrato com as condições. Qualquer dúvida, estou à disposição.${profile.name ? "\n" + profile.name : ""}`;
+};
+
+async function deliverPdf(doc, name) {
+  const blob = doc.output("blob");
+  try {
+    const dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+    if (dl) { await dl.save({ filename: name, data: blob }); toast("PDF pronto"); return; }
+  } catch (e) { if (e && e.code === "declined") return; }
+  try {
+    const file = new File([blob], name, { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
+  } catch (e) { if (e && e.name === "AbortError") return; }
+  doc.save(name);
+}
+$("btn-pdf").onclick = async () => {
+  if (!window.jspdf) { toast("O gerador de PDF não carregou. Verifique a internet e abra de novo."); return; }
+  if (!quote.client.name.trim()) { toast("Preencha o nome do cliente"); $("c-name").focus(); return; }
+  await saveQuote(true);
+  const doc = buildPdf(quote);
+  $("send-msg").textContent = clientMessage(quote);
+  $("send-card").hidden = false;
+  await deliverPdf(doc, fileName(quote));
+};
+$("btn-copy").onclick = async () => {
+  const txt = $("send-msg").textContent;
+  try { await navigator.clipboard.writeText(txt); toast("Mensagem copiada"); }
+  catch { const r = document.createRange(); r.selectNodeContents($("send-msg")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Texto selecionado. Copie pelo menu."); }
+};
+
+/* ---------- Salvos ---------- */
+function renderSaved() {
+  $("saved-where").textContent = store.mode === "db"
+    ? "Guardados na sua conta. Só você vê esta lista."
+    : "Guardados neste aparelho e navegador.";
+  const box = $("saved-list"); box.textContent = "";
+  const list = [...quotes].sort((a, b) => (b.number || 0) - (a.number || 0));
+  if (!list.length) { box.innerHTML = `<p class="hint">Nenhum orçamento salvo ainda. Preencha a aba Orçamento e toque em Salvar.</p>`; return; }
+  const today = todayISO();
+  for (const q of list) {
+    const el = document.createElement("div"); el.className = "q";
+    const late = q.valid && q.valid < today;
+    el.innerHTML = `<div><strong></strong><span class="pill ${late ? "late" : ""}">${late ? "Vencido" : "Válido"}</span>
+      <div class="meta">Nº ${String(q.number).padStart(4, "0")} · ${fmtDate(q.start)} até ${fmtDate(q.valid)}</div></div>
+      <div class="val">${money(calc(q).total)}</div>
+      <div class="row" style="grid-column:1/-1">
+        <button class="btn small" data-a="open">Abrir</button>
+        <button class="btn small" data-a="copy">Duplicar</button>
+        <button class="btn small danger" data-a="del">Excluir</button>
+      </div>`;
+    el.querySelector("strong").textContent = q.client.name || "Sem nome";
+    el.querySelector('[data-a="open"]').onclick = () => { quote = JSON.parse(JSON.stringify(q)); show("editor"); renderEditor(); };
+    el.querySelector('[data-a="copy"]').onclick = () => {
+      const start = todayISO();
+      quote = { ...JSON.parse(JSON.stringify(q)), id: "", number: 0, start, valid: addDays(start, parseNum(profile.days) || 15), clientSig: "" };
+      show("editor"); renderEditor(); toast("Cópia criada. Salve para gerar um novo número.");
+    };
+    const del = el.querySelector('[data-a="del"]');
+    del.onclick = async () => {
+      if (del.dataset.confirm !== "1") { del.dataset.confirm = "1"; del.textContent = "Toque de novo para excluir"; return; }
+      await store.deleteQuote(q.id).catch(() => {});
+      quotes = quotes.filter((x) => x.id !== q.id); renderSaved(); toast("Excluído");
+    };
+    box.appendChild(el);
+  }
+}
+
+/* ---------- Meus dados ---------- */
+function renderProfile() {
+  for (const k of ["name", "doc", "phone", "email", "address"]) $("p-" + k).value = profile[k] || "";
+  $("p-days").value = profile.days; $("p-next").value = profile.next; $("p-obs").value = profile.obs;
+  $("p-logo-prev").hidden = !profile.logo; $("p-logo-rm").hidden = !profile.logo;
+  if (profile.logo) $("p-logo-prev").src = profile.logo;
+  sigMe.set(profile.signature);
+}
+$("p-logo").onchange = (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const img = new Image();
+  img.onload = () => {
+    const s = Math.min(1, 400 / img.width, 200 / img.height);
+    const c = document.createElement("canvas"); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+    const cx = c.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0, 0, c.width, c.height); cx.drawImage(img, 0, 0, c.width, c.height);
+    profile.logo = c.toDataURL("image/jpeg", 0.85); renderProfile(); URL.revokeObjectURL(img.src);
+  };
+  img.src = URL.createObjectURL(f);
+};
+$("p-logo-rm").onclick = () => { profile.logo = ""; renderProfile(); };
+$("btn-save-profile").onclick = async () => {
+  for (const k of ["name", "doc", "phone", "email", "address", "obs"]) profile[k] = $("p-" + k).value;
+  profile.days = parseNum($("p-days").value) || 15; profile.next = parseNum($("p-next").value) || 1;
+  profile.signature = sigMe.value();
+  try { await store.saveProfile(profile); toast("Seus dados foram salvos"); }
+  catch { toast("Não consegui salvar seus dados. Tente de novo."); }
+};
+
+/* ---------- Abas ---------- */
+function show(view) {
+  for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", String(b.dataset.view === view));
+  for (const v of ["editor", "saved", "profile"]) $("view-" + v).hidden = v !== view;
+  $("bar").hidden = view !== "editor";
+  if (view === "saved") renderSaved();
+  if (view === "profile") renderProfile();
+  window.scrollTo(0, 0);
+}
+for (const b of document.querySelectorAll(".tabs button")) b.onclick = () => show(b.dataset.view);
+
+renderEditor();
+(async () => {
+  await store.init();
+  profile = await store.loadProfile();
+  quotes = await store.listQuotes().catch(() => []);
+  if (quotes.length && quote.sample) newQuote();
+})();
+})();
+</script>
