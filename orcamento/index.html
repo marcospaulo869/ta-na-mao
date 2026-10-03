@@ -236,7 +236,10 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
       <label>Senha<input type="password" id="l-pass" autocomplete="current-password"></label>
       <p class="err" id="l-err" hidden></p>
       <div class="row"><button class="btn primary" id="btn-login">Entrar</button><button class="btn small" id="btn-forgot">Esqueci minha senha</button></div>
-      <p class="hint" id="l-forgot" hidden>Por enquanto a senha não pode ser recuperada por e-mail. Essa opção entra na versão de venda do app, com contas no servidor.</p>
+      <div id="l-forgot" class="stack0" hidden>
+        <p class="hint">Por enquanto a senha não pode ser recuperada por e-mail. Essa opção entra na versão de venda do app, com contas no servidor. Se quiser, você pode apagar tudo e fazer um cadastro novo.</p>
+        <div class="row"><button class="btn small danger" id="btn-reset-login">Apagar tudo e cadastrar de novo</button></div>
+      </div>
     </section>
   </div>
 
@@ -439,6 +442,11 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
       <p class="err" id="pw-err" hidden></p>
       <div class="row"><button class="btn" id="btn-pw">Trocar senha</button></div>
     </section>
+    <section class="card">
+      <h2>Recomeçar do zero</h2>
+      <p class="hint">Apaga seu cadastro, sua senha, seus orçamentos e seus recibos deste app, e volta para a tela de primeiro acesso. Não dá para desfazer.</p>
+      <div class="row"><button class="btn danger" id="btn-reset">Apagar tudo e recomeçar</button></div>
+    </section>
   </div>
 </div>
 
@@ -592,6 +600,17 @@ const store = {
   async deleteReceipt(id) {
     if (this.mode === "db") { await this.receiptsCol.doc(id).delete(); return; }
     local.set("orc.receipts", local.get("orc.receipts", []).filter((x) => x.id !== id));
+  },
+  async resetAll() {
+    if (this.mode === "db") {
+      for (const col of [this.quotesCol, this.receiptsCol]) {
+        const snap = await col.get();
+        for (const d of snap.docs) await col.doc(d.id).delete();
+      }
+      await this.profileRef.delete();
+      return;
+    }
+    try { for (const k of ["orc.profile", "orc.quotes", "orc.receipts"]) localStorage.removeItem(k); } catch {}
   },
 };
 
@@ -1171,6 +1190,21 @@ async function doLogin() {
 $("btn-login").onclick = doLogin;
 $("l-pass").onkeydown = (e) => { if (e.key === "Enter") doLogin(); };
 $("btn-forgot").onclick = () => { $("l-forgot").hidden = false; };
+// Apagar tudo pede dois toques: o primeiro troca o texto do botão para confirmar
+function confirmReset(btn) {
+  if (btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.dataset.label = btn.textContent; btn.textContent = "Toque de novo para apagar tudo"; return; }
+  btn.disabled = true; btn.textContent = "Apagando…";
+  store.resetAll().catch(() => {}).then(() => {
+    profile = blankProfile(); quotes = []; receipts = [];
+    quote = sampleQuote(); receipt = blankReceipt();
+    renderEditor(); renderReceipt();
+    session.set(false);
+    btn.disabled = false; btn.dataset.confirm = ""; btn.textContent = btn.dataset.label;
+    gate("signup"); toast("Tudo apagado. Faça um cadastro novo.");
+  });
+}
+$("btn-reset").onclick = (e) => confirmReset(e.currentTarget);
+$("btn-reset-login").onclick = (e) => confirmReset(e.currentTarget);
 $("btn-logout").onclick = () => { session.set(false); gate("login"); };
 
 $("btn-pw").onclick = async () => {
