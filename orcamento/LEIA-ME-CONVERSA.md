@@ -32,6 +32,15 @@ Para continuar, peça ao Claude: "leia a pasta orcamento do ta-na-mao e vamos re
 ### Envio
 O botão "Gerar PDF" salva o orçamento, baixa o PDF e mostra uma mensagem pronta para colar no WhatsApp ou no e-mail.
 
+## Atualização (03/10/2026, à tarde): cadastro e senha
+
+Você disse que quer **vender o app depois**, então:
+- **Primeiro acesso:** abre a tela de cadastro com seu nome, nome da empresa, CPF/CNPJ, inscrição estadual, profissão ou ramo, telefone/WhatsApp, e-mail, Instagram, CEP, rua e número, bairro, cidade, UF e logomarca. Nessa mesma tela você cria a senha (mínimo de 6 caracteres, digitada duas vezes).
+- **Próximos acessos:** tela "Entrar" com a logomarca, o nome da empresa e o campo de senha. Tem também um botão "Sair" e, em Meus dados, a opção "Trocar senha".
+- **QR Code:** aparece no topo do PDF, ao lado dos seus dados, e abre o seu WhatsApp ou o seu Instagram (você escolhe). Também dá para tirar.
+- **Limite atual:** a senha protege o app neste navegador, mas ainda não é uma conta de verdade num servidor. Para vender, cada cliente precisa de uma conta própria, com recuperação de senha por e-mail e cobrança. O backend do ta-na-mao já tem cadastro com senha, planos e pagamento pelo Stripe, e pode servir de base para isso.
+- Sua última mensagem terminou em "E logo abaixo...". Falta você dizer o que vai abaixo dos dados.
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.
