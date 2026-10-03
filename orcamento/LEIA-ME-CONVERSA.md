@@ -61,6 +61,10 @@ Decidimos fazer **um app só**, com Orçamento e Recibo juntos (mesmo cadastro, 
 - **Ordem das telas:** 1) **Boas-vindas** (foto da moça com o celular, chamada "Feche mais serviços com orçamentos que passam confiança", três vantagens, "Como funciona" em 3 passos e o botão laranja **Começar cadastro**); 2) **Cadastro** (dados, logomarca e senha, com "‹ Voltar"); 3) **Página inicial** com os botões Orçamento e Recibo. Nas próximas vezes, abre direto em **Entrar** (senha).
 - **Recomeçar do zero:** em Meus dados, "Apagar tudo e recomeçar". Na tela Entrar, "Esqueci minha senha → Apagar tudo e cadastrar de novo". Os dois pedem dois toques. Serve para simular o primeiro acesso de um cliente que comprou o app.
 
+## Decisão (03/10/2026, 22h): validar antes de vender
+
+Marcos vai usar o app no dia a dia com os dados reais da empresa e a logomarca, para validar e anotar ajustes. Só depois de validado é que vamos montar a estrutura para vender (Play Store ou venda online), com contas no servidor, recuperação de senha e cobrança.
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.
