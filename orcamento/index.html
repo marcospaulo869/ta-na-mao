@@ -67,6 +67,22 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .item .desc { grid-column: 1 / -1; }
 .item .tot { font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; padding-bottom: 9px; }
 .item .rm { border: 0; background: none; color: var(--danger); font-size: 1.3rem; cursor: pointer; padding-bottom: 6px; }
+.ihead { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.inum { font: 700 0.95rem var(--font-display); color: var(--accent); }
+.mic { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--warm); background: var(--warm-soft); color: var(--ink); font: 600 0.9rem var(--font-body); padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.mic svg { width: 18px; height: 18px; color: var(--warm); }
+.mic.on { background: var(--warm); color: var(--warm-ink); }
+.mic.on svg { color: var(--warm-ink); animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .mic.on svg { animation: none; } }
+.ins { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; color: var(--accent); font: 600 0.88rem var(--font-body); cursor: pointer; padding: 2px 0; }
+.ins::before, .ins::after { content: ""; flex: 1; border-top: 1px dashed var(--accent); opacity: 0.45; }
+.ins:hover::before, .ins:hover::after { opacity: 1; }
+.itools { display: flex; gap: 6px; align-items: center; }
+.mv { width: 34px; height: 34px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; cursor: pointer; font-size: 1rem; }
+.mv:disabled { opacity: 0.35; cursor: default; }
+.dict { grid-column: 1 / -1; display: grid; gap: 6px; background: var(--warm-soft); border-radius: 10px; padding: 10px; }
+.dict .row input { flex: 1 1 200px; }
 @media (max-width: 480px) { .item { grid-template-columns: 1fr 1fr 1fr 32px; } .item .tot { grid-column: 1 / 4; text-align: left; } }
 .totals { display: grid; gap: 4px; font-variant-numeric: tabular-nums; }
 .totals div { display: flex; justify-content: space-between; }
@@ -252,7 +268,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
     <section class="card">
       <h2>Materiais</h2>
       <div class="items" id="items"></div>
-      <div class="row"><button class="btn" id="btn-add">+ Adicionar material</button></div>
+      <div class="row"><button class="btn" id="btn-add">+ Adicionar material</button><button class="mic" id="btn-add-voice" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar novo item</span></button></div>
       <div class="grid2">
         <label>Mão de obra (R$)<input id="q-labor" class="num" inputmode="decimal"></label>
         <label>Desconto (R$)<input id="q-discount" class="num" inputmode="decimal"></label>
@@ -642,8 +658,19 @@ const fillVars = (text, q, t) => String(text || "")
 function renderItems() {
   const box = $("items"); box.textContent = "";
   quote.items.forEach((it, i) => {
+    if (i > 0) {
+      const ins = document.createElement("button");
+      ins.className = "ins"; ins.type = "button"; ins.textContent = `+ Inserir item entre ${i} e ${i + 1}`;
+      ins.onclick = () => insertItemAt(i);
+      box.appendChild(ins);
+    }
     const row = document.createElement("div"); row.className = "item";
     row.innerHTML = `
+      <div class="ihead"><span class="inum">Item ${i + 1}</span><span class="itools"><button class="mv" type="button" data-d="-1" title="Subir" aria-label="Subir item ${i + 1}" ${i === 0 ? "disabled" : ""}>↑</button><button class="mv" type="button" data-d="1" title="Descer" aria-label="Descer item ${i + 1}" ${i === quote.items.length - 1 ? "disabled" : ""}>↓</button><button class="mic" type="button" aria-label="Ditar o item ${i + 1}">${MIC_SVG}<span>Ditar</span></button></span></div>
+      <div class="dict" hidden>
+        <p class="hint">Fale assim: "MDF chapa branco TX 18 milímetros, quatro unidades, valor 289,90". Se o app não ouvir, toque no microfone do teclado e fale.</p>
+        <div class="row"><input id="it-x-${i}" autocomplete="off" placeholder="O que você ditar aparece aqui"><button class="btn small warm" type="button" data-a="fill">Preencher</button></div>
+      </div>
       <label class="desc">Material<input id="it-d-${i}" autocomplete="off"></label>
       <label>Un.<input id="it-u-${i}" autocomplete="off"></label>
       <label>Qtd.<input id="it-q-${i}" class="num" inputmode="decimal"></label>
@@ -652,13 +679,138 @@ function renderItems() {
       <div class="tot" id="it-t-${i}"></div>`;
     box.appendChild(row);
     const d = row.querySelector(`#it-d-${i}`), u = row.querySelector(`#it-u-${i}`), q = row.querySelector(`#it-q-${i}`), p = row.querySelector(`#it-p-${i}`);
-    d.value = it.desc; u.value = it.un; q.value = numIn(it.qty); p.value = numIn(it.price);
+    d.value = it.desc; u.value = it.un; q.value = numIn(it.qty); p.value = it.price ? Number(it.price).toFixed(2).replace(".", ",") : "";
     d.oninput = () => { it.desc = d.value; };
     u.oninput = () => { it.un = u.value; };
     q.oninput = () => { it.qty = parseNum(q.value); renderTotals(); };
     p.oninput = () => { it.price = parseNum(p.value); renderTotals(); };
     row.querySelector(".rm").onclick = () => { quote.items.splice(i, 1); renderItems(); renderTotals(); };
+    row.querySelector(".mic").onclick = () => startDictation(i);
+    for (const mv of row.querySelectorAll(".mv")) mv.onclick = () => {
+      const j = i + Number(mv.dataset.d); if (j < 0 || j >= quote.items.length) return;
+      [quote.items[i], quote.items[j]] = [quote.items[j], quote.items[i]];
+      renderItems(); renderTotals(); $(`it-d-${j}`).closest(".item").scrollIntoView({ block: "center" });
+    };
+    const x = row.querySelector(`#it-x-${i}`);
+    row.querySelector('[data-a="fill"]').onclick = () => applyDictation(i, x.value);
+    x.onkeydown = (e) => { if (e.key === "Enter") applyDictation(i, x.value); };
   });
+}
+function insertItemAt(i) {
+  quote.items.splice(i, 0, { desc: "", un: "un", qty: 1, price: 0 });
+  renderItems(); renderTotals();
+  const d = $(`it-d-${i}`); d.closest(".item").scrollIntoView({ block: "center" }); d.focus();
+  toast(`Novo item ${i + 1} inserido`);
+}
+const MIC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+
+/* ---------- Ditado: transforma a frase falada em material, unidade, quantidade e preço ---------- */
+const NUM_WORDS = { um: 1, uma: 1, dois: 2, duas: 2, "três": 3, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9, dez: 10, onze: 11, doze: 12, treze: 13, quatorze: 14, catorze: 14, quinze: 15, dezesseis: 16, dezessete: 17, dezoito: 18, dezenove: 19, vinte: 20, trinta: 30, quarenta: 40, cinquenta: 50, sessenta: 60, setenta: 70, oitenta: 80, noventa: 90, cem: 100, meia: 0.5, meio: 0.5 };
+// palavra falada -> abreviação usada na tabela
+const UNIT_WORDS = [
+  [/^(chapas?)$/, "ch"], [/^(unidades?|unids?|un|peças?|pecas?|pç|pc)$/, "un"], [/^(metros? quadrados?|m²|m2)$/, "m²"],
+  [/^(metros? lineares?|metros?|m)$/, "m"], [/^(pares?)$/, "par"], [/^(caixas?|cx)$/, "cx"], [/^(rolos?)$/, "rl"],
+  [/^(barras?)$/, "br"], [/^(litros?|l)$/, "L"], [/^(quilos?|kg|quilogramas?)$/, "kg"], [/^(pacotes?)$/, "pct"],
+  [/^(jogos?)$/, "jg"], [/^(kits?)$/, "kit"], [/^(latas?)$/, "lt"], [/^(galões|galoes|galão|galao)$/, "gl"], [/^(tubos?)$/, "tb"],
+];
+const UNIT_RE = "metros? quadrados?|metros? lineares?|chapas?|unidades?|unids?|peças?|pecas?|metros?|pares?|caixas?|rolos?|barras?|litros?|quilos?|quilogramas?|pacotes?|jogos?|kits?|latas?|galões|galoes|galão|galao|tubos?|un|pç|pc|m²|m2|cx|kg|m";
+const unitOf = (w) => { w = w.toLowerCase(); for (const [re, u] of UNIT_WORDS) if (re.test(w)) return u; return ""; };
+const QTY_RE = "\\d+(?:[.,]\\d+)?|" + Object.keys(NUM_WORDS).sort((a, b) => b.length - a.length).join("|");
+const qtyOf = (s) => { s = s.toLowerCase(); return s in NUM_WORDS ? NUM_WORDS[s] : parseFloat(s.replace(",", ".")); };
+
+function parseDictation(raw) {
+  let s = " " + String(raw || "").replace(/(?<!\d)[.…]+|[.…]+(?!\d)/g, " ").replace(/\s+/g, " ").trim() + " ";
+  const out = { desc: "", un: "", qty: null, price: null };
+  // "item 1", "item um" no começo
+  s = s.replace(/^\s*(?:o\s+)?item\s+(?:n[úu]mero\s+)?(?:\d+|[a-zçê]+)[.,:;]?\s/i, " ");
+  // preço: "valor R$ 289,90", "preço 289 reais e 90 centavos", "R$ 42", "a 18,50 cada"
+  const priceRe = /(?:(?:valor|pre[çc]o|unit[aá]rio|custa|custando|por|a)\s+(?:de\s+|unit[aá]rio\s+)?)?(?:R\$\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?|\d+\.\d{1,2})(?:\s*(?:reais|real|R\$))?(?:\s*e\s*(\d{1,2})\s*centavos?)?(?:\s*(?:cada|a unidade|o metro|a chapa|por unidade))?/gi;
+  let best = null;
+  for (const m of s.matchAll(priceRe)) {
+    const txt = m[0];
+    const strong = /valor|pre[çc]o|custa|R\$|reais|real|centavo/i.test(txt);
+    if (strong) best = m; // o último com cara de dinheiro vence
+  }
+  if (best) {
+    let n = best[1];
+    n = n.includes(",") ? n.replace(/\./g, "").replace(",", ".") : /\.\d{3}$/.test(n) ? n.replace(/\./g, "") : n;
+    out.price = parseFloat(n) + (best[2] ? parseInt(best[2], 10) / 100 : 0);
+    s = s.slice(0, best.index) + " " + s.slice(best.index + best[0].length);
+  }
+  // quantidade: "quatro unidades", "4 chapas", "quantidade 4", "50 metros"
+  const qRe = new RegExp("(?:quantidade\\s*(?:de\\s*)?)?\\b(" + QTY_RE + ")\\s+(" + UNIT_RE + ")\\b(?!\\s*(?:de\\s+)?(?:largura|comprimento|altura|espessura))", "i");
+  const qm = s.match(qRe);
+  // "18 milímetros" é medida do material, não quantidade: só aceita se a unidade não for medida
+  if (qm) {
+    out.qty = qtyOf(qm[1]); out.un = unitOf(qm[2]);
+    s = s.slice(0, qm.index) + " " + s.slice(qm.index + qm[0].length);
+  } else {
+    const q2 = s.match(new RegExp("quantidade\\s*(?:de\\s*)?(" + QTY_RE + ")\\b", "i"));
+    if (q2) { out.qty = qtyOf(q2[1]); s = s.slice(0, q2.index) + " " + s.slice(q2.index + q2[0].length); }
+  }
+  // descrição: o que sobrou, com medidas abreviadas
+  let d = s
+    .replace(/\b(\d+(?:[.,]\d+)?)\s*mil[íi]metros?\b/gi, "$1 mm")
+    .replace(/\b(\d+(?:[.,]\d+)?)\s*cent[íi]metros?\b/gi, "$1 cm")
+    .replace(/\b(\d+(?:[.,]\d+)?)\s*metros?\b/gi, "$1 m")
+    .replace(/\b(\d+(?:[.,]\d+)?)\s*(?:por|x)\s*(\d+(?:[.,]\d+)?)\b/gi, "$1 x $2")
+    .replace(/(?:^|\s)(?:material|descri[çc][ãa]o|valor|pre[çc]o|quantidade)(?=\s|,|$)/gi, " ")
+    .replace(/\s*[.;:]\s*/g, " ").replace(/\s*,\s*(?=\S)/g, ", ")
+    .replace(/\s+/g, " ").replace(/^[\s,]+|[\s,]+$/g, "");
+  // se a quantidade veio como "unidades" mas o material diz "chapa", a unidade é chapa
+  if ((!out.un || out.un === "un") && /\bchapas?\b/i.test(d)) { out.un = "ch"; d = d.replace(/\s*\bchapas?\b/i, "").replace(/\s+/g, " ").trim(); }
+  out.desc = d ? d.charAt(0).toUpperCase() + d.slice(1) : "";
+  return out;
+}
+
+
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let speechBlocked = !SpeechRec, activeRec = null;
+function openDictBox(i) {
+  const x = $(`it-x-${i}`); if (!x) return null;
+  x.closest(".dict").hidden = false;
+  return x;
+}
+function startDictation(i) {
+  if (activeRec) { try { activeRec.stop(); } catch {} return; }
+  const x = openDictBox(i); if (!x) return;
+  x.value = "";
+  if (speechBlocked) { x.focus(); return; }
+  const btn = x.closest(".item").querySelector(".mic");
+  let rec;
+  try { rec = new SpeechRec(); } catch { speechBlocked = true; x.focus(); return; }
+  rec.lang = "pt-BR"; rec.interimResults = true; rec.continuous = false;
+  let finalText = "";
+  rec.onresult = (e) => {
+    let interim = "";
+    for (let k = e.resultIndex; k < e.results.length; k++) {
+      if (e.results[k].isFinal) finalText += e.results[k][0].transcript + " "; else interim += e.results[k][0].transcript;
+    }
+    x.value = (finalText + interim).trim();
+  };
+  rec.onerror = (e) => {
+    if (["not-allowed", "service-not-allowed", "audio-capture", "network"].includes(e.error)) {
+      speechBlocked = true; toast("Use o microfone do teclado do celular e depois toque em Preencher"); x.focus();
+    }
+  };
+  rec.onend = () => {
+    activeRec = null; btn.classList.remove("on"); btn.querySelector("span").textContent = "Ditar";
+    if (finalText.trim()) applyDictation(i, finalText);
+  };
+  try { rec.start(); activeRec = rec; btn.classList.add("on"); btn.querySelector("span").textContent = "Ouvindo… toque para parar"; }
+  catch { speechBlocked = true; x.focus(); }
+}
+function applyDictation(i, text) {
+  const it = quote.items[i]; if (!it || !String(text || "").trim()) return;
+  const r = parseDictation(text);
+  if (!r.desc && r.qty == null && r.price == null) { toast("Não entendi. Tente: material, quantidade e valor."); return; }
+  if (r.desc) it.desc = r.desc;
+  if (r.un) it.un = r.un;
+  if (r.qty != null && !Number.isNaN(r.qty)) it.qty = r.qty;
+  if (r.price != null && !Number.isNaN(r.price)) it.price = r.price;
+  renderItems(); renderTotals();
+  const missing = [r.qty == null && "quantidade", r.price == null && "valor"].filter(Boolean);
+  toast(missing.length ? `Item ${i + 1} preenchido. Confira: faltou ${missing.join(" e ")}.` : `Item ${i + 1} preenchido`);
 }
 function renderTotals() {
   const t = calc(quote);
@@ -693,6 +845,12 @@ $("q-labor").oninput = (e) => { quote.labor = parseNum(e.target.value); renderTo
 $("q-discount").oninput = (e) => { quote.discount = parseNum(e.target.value); renderTotals(); };
 $("q-obs").oninput = (e) => { quote.obs = e.target.value; };
 $("btn-obs-default").onclick = () => { quote.obs = profile.obs || DEFAULT_OBS; $("q-obs").value = quote.obs; };
+$("btn-add-voice").onclick = () => {
+  const last = quote.items[quote.items.length - 1];
+  if (!last || last.desc.trim() || parseNum(last.price)) quote.items.push({ desc: "", un: "un", qty: 1, price: 0 });
+  renderItems(); renderTotals();
+  startDictation(quote.items.length - 1);
+};
 $("btn-add").onclick = () => {
   quote.items.push({ desc: "", un: "un", qty: 1, price: 0 });
   renderItems(); renderTotals();
