@@ -136,6 +136,7 @@ Pedidos do Marcos: (1) ao digitar um material (ex.: "chapa MDF branco"), abrir s
 - **Como a lista se enche:** ao salvar um orçamento, os materiais novos entram na lista. A lista manda: salvar um orçamento não muda nome nem preço de um material que já está nela (só completa unidade ou preço se estiverem vazios). Preço novo, você muda na aba Materiais. Orçamentos já salvos não mudam.
 - Materiais apagados ou renomeados na lista não voltam sozinhos quando você salva de novo um orçamento antigo ou faz uma cópia dele.
 - Na primeira vez que o app abre com essa versão, a lista é montada com os materiais dos orçamentos que você já tinha salvo.
+- "18mm" e "18 mm", "2,75x1,85" e "2,75 x 1,85", "m2" e "m²" contam como o mesmo material (não criam repetidos). Preços da lista ficam sempre em centavos (1,255 vira 1,26). A lista guarda até 500 materiais; passou disso, saem os que estão há mais tempo sem uso.
 - A lista fica na sua conta: é a mesma no celular e no notebook. O app busca a versão mais nova ao abrir um orçamento, ao tocar no campo Material e ao abrir a aba Materiais. Se a internet falhar, nenhuma mudança grava por cima da lista guardada: ela fica esperando e é guardada na próxima vez. "Apagar tudo e recomeçar" também apaga a lista.
 - Antes de publicar, a versão passou por uma revisão com cinco revisores (celular, dados entre aparelhos, aba Materiais, integração e busca); os problemas encontrados foram corrigidos e conferidos com os próprios testes deles.
 

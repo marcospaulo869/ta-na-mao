@@ -978,8 +978,11 @@ const fillVars = (text, q, t) => String(text || "")
 /* ---------- Memória de materiais: o que já foi usado vira sugestão ao digitar ---------- */
 let catalog = { items: [] }, catalogOk = false;
 const CAT_MAX = 500, CAT_DESC_MAX = 200;
-const catKey = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
-const catWords = (k) => k.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+// Chave do material: sem acento, minúsculas, número e letra separados e sem pontuação, para "18mm" = "18 mm",
+// "2,75x1,85" = "2,75 x 1,85" e "m²" = "m2"
+const catKey = (s) => (String(s || "").normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().match(/\p{L}+|\p{N}+/gu) || []).join(" ");
+const catWords = (k) => (k ? k.split(" ") : []);
+const cents = (n) => Math.round(Number((n * 100).toPrecision(12))) / 100; // 1,255 -> 1,26 (sem o erro de vírgula flutuante)
 let catIdx = null;
 const catIndex = () => catIdx || (catIdx = catalog.items.map((e) => { const k = catKey(e.desc); return { e, k, w: catWords(k) }; }));
 const catSet = (data) => { catalog = { items: (data && Array.isArray(data.items) ? data.items : []).filter((e) => e && e.desc) }; catIdx = null; };
@@ -997,7 +1000,7 @@ function addToCatalog(items, before, when, overwrite) {
     const desc = String(it.desc || "").replace(/\s+/g, " ").trim(), k = catKey(desc);
     if (k.length < 2 || desc.length > CAT_DESC_MAX || seen.has(k)) continue;
     seen.add(k);
-    const un = String(it.un || "").trim(), price = parseNum(it.price) > 0 ? parseNum(it.price) : 0;
+    const un = String(it.un || "").trim(), price = parseNum(it.price) > 0 ? cents(parseNum(it.price)) : 0;
     let e = byKey.get(k);
     if (!e) {
       if (same.has(k) || orig.has(k) || it.cat === k) continue; // it.cat: veio de uma sugestão e foi apagado ou renomeado na lista
@@ -1019,6 +1022,7 @@ function pruneCatalog() { catalog.items.sort((a, b) => touchedAt(b).localeCompar
 // Se não der para ler, nada é guardado por cima: as mudanças ficam pendentes para a próxima vez.
 // fn precisa funcionar pela chave do material.
 let catQueue = Promise.resolve(), catPending = [], catSyncAt = 0;
+let quotesOk = false; // a lista de orçamentos salvos foi lida (sem ela não dá para montar a memória pela primeira vez)
 const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
 async function readCatalog() {
   let r = await store.loadCatalog();
@@ -1034,7 +1038,7 @@ function seedFromQuotes() {
 async function syncCatalog() {
   catSyncAt = Date.now();
   const fresh = await readCatalog();
-  if (!fresh.ok) { if (catPending.length) toast("Não consegui guardar a lista de materiais agora. Ela será guardada na próxima vez."); return false; }
+  if (!fresh.ok || (!fresh.data && !quotesOk)) { if (catPending.length) toast("Não consegui guardar a lista de materiais agora. Ela será guardada na próxima vez."); return false; }
   let save = catPending.length > 0;
   const before = JSON.stringify(catalog.items);
   if (fresh.data) catSet(fresh.data); else { seedFromQuotes(); save = save || catalog.items.length > 0; }
@@ -1042,7 +1046,10 @@ async function syncCatalog() {
   for (const f of fns) f();
   catIdx = null; catalogOk = true;
   if (save) { try { await store.saveCatalog(catalog); } catch { catPending = fns.concat(catPending); toast("Não consegui guardar a lista de materiais. Tente de novo."); } }
-  if (JSON.stringify(catalog.items) !== before && materialsIdle()) drawMaterials();
+  if (JSON.stringify(catalog.items) !== before) {
+    if (materialsIdle()) drawMaterials();
+    if (sug) openSugg(sug.i, sug.input); // sugestões abertas passam a mostrar o preço novo
+  }
   return true;
 }
 function mutateCatalog(fn) {
@@ -1070,7 +1077,7 @@ function suggest(text) {
 // Mostra o material com o começo das palavras digitadas em destaque
 function markWords(el, desc, toks) {
   let pos = 0;
-  for (const m of desc.matchAll(/[\p{L}\p{N}]+/gu)) {
+  for (const m of desc.matchAll(/\p{L}+|\p{N}+/gu)) {
     const wk = catKey(m[0]); let len = 0;
     for (const t of toks) if (wk.startsWith(t) && t.length > len) len = t.length;
     if (!len) continue;
@@ -1135,6 +1142,7 @@ function pickSugg(e) {
   if (!sug) return;
   const i = sug.i, it = quote.items[i]; closeSugg();
   if (!it) return;
+  e = catalog.items.find((y) => catKey(y.desc) === catKey(e.desc)) || e; // a versão mais nova da lista
   it.desc = e.desc; it.cat = catKey(e.desc); if (e.un) it.un = e.un; it.price = e.price > 0 ? e.price : 0; if (!parseNum(it.qty)) it.qty = 1;
   const d = $(`it-d-${i}`), u = $(`it-u-${i}`), q = $(`it-q-${i}`), p = $(`it-p-${i}`);
   if (d) d.value = it.desc;
@@ -1161,7 +1169,7 @@ function suggKey(e, input, i) {
 
 /* ---------- Aba Materiais: a lista que alimenta as sugestões (nome, unidade, preço) ---------- */
 const priceIn = (n) => (n ? Number(n).toFixed(2).replace(".", ",") : "");
-const MAT_PAGE = 80;
+const MAT_PAGE = 80, MAT_COLL = new Intl.Collator("pt-BR", { sensitivity: "base", numeric: true });
 let matSeq = 0, matLimit = MAT_PAGE;
 // A aba está aberta e ninguém está digitando nela nem com um material novo pela metade: dá para redesenhar
 const materialsIdle = () => !$("view-materials").hidden && !$("mat-list").contains(document.activeElement) && ![...$("mat-list").querySelectorAll(".mat")].some((r) => !r.key);
@@ -1179,7 +1187,7 @@ function drawMaterials() {
   const box = $("mat-list"); box.textContent = "";
   const toks = catWords(catKey($("mat-search").value));
   const list = catIndex().filter((x) => toks.every((t) => x.k.includes(t))).map((x) => x.e)
-    .sort((a, b) => a.desc.localeCompare(b.desc, "pt-BR", { sensitivity: "base", numeric: true }));
+    .sort((a, b) => MAT_COLL.compare(a.desc, b.desc));
   if (!catalog.items.length && !catalogOk) { box.innerHTML = `<p class="hint">Não consegui abrir a lista de materiais agora. Verifique a internet e abra esta aba de novo.</p>`; return; }
   if (!catalog.items.length) { box.innerHTML = `<p class="hint">Ainda não há materiais. Eles entram aqui quando você salva um orçamento, ou toque em "+ Novo material".</p>`; return; }
   if (!list.length) { box.innerHTML = `<p class="hint">Nenhum material com esse nome.</p>`; return; }
@@ -1223,9 +1231,10 @@ function matRow(e) {
       const when = new Date().toISOString(); let gone = false;
       mutateCatalog(() => { const x = catalog.items.find((y) => catKey(y.desc) === old); gone = !x; if (x) { x.desc = desc; x.edited = when; } }).then(() => lostEdit(gone));
     } else {
+      if (catalog.items.length >= CAT_MAX) { toast(`A lista chegou a ${CAT_MAX} materiais. Apague os que não usa mais para criar outro.`); return; }
       row.key = k;
-      const fresh = { desc, un: u.value.trim(), price: parseNum(p.value) > 0 ? parseNum(p.value) : 0, uses: 0, last: "", edited: new Date().toISOString() };
-      mutateCatalog(() => { if (!catalog.items.some((y) => catKey(y.desc) === k)) { catalog.items.push({ ...fresh }); if (catalog.items.length > CAT_MAX) pruneCatalog(); } });
+      const fresh = { desc, un: u.value.trim(), price: parseNum(p.value) > 0 ? cents(parseNum(p.value)) : 0, uses: 0, last: "", edited: new Date().toISOString() };
+      mutateCatalog(() => { if (!catalog.items.some((y) => catKey(y.desc) === k)) catalog.items.push({ ...fresh }); });
       matCount();
     }
     meta.textContent = matMeta(find());
@@ -1239,7 +1248,7 @@ function matRow(e) {
   d.addEventListener("input", (ev) => { if (!ev.isTrusted && row.key) d.onchange(); });
   rm.addEventListener("pointerdown", () => { if (!row.key) row.cancel = true; });
   u.onchange = () => { const un = u.value.trim(); u.value = un; edit((x) => { x.un = un; }); };
-  p.onchange = () => { const price = parseNum(p.value) > 0 ? parseNum(p.value) : 0; p.value = priceIn(price); edit((x) => { x.price = price; }); };
+  p.onchange = () => { const price = parseNum(p.value) > 0 ? cents(parseNum(p.value)) : 0; p.value = priceIn(price); edit((x) => { x.price = price; }); };
   rm.onclick = () => {
     if (!row.key) { row.remove(); if (!$("mat-list").querySelector(".mat")) drawMaterials(); return; }
     if (rm.dataset.confirm !== "1") {
@@ -1536,7 +1545,7 @@ async function saveQuote(silent) {
   try { await store.saveQuote(quote); if (!silent) toast("Orçamento salvo"); }
   catch { toast("Não consegui salvar. Gere o PDF para não perder o orçamento."); }
   renderEditor();
-  quotes = await store.listQuotes().catch(() => quotes);
+  quotes = await store.listQuotes().then((r) => { quotesOk = true; return r; }).catch(() => quotes);
 }
 $("btn-save").onclick = () => saveQuote(false);
 
@@ -1939,7 +1948,7 @@ function confirmReset(btn) {
   if (btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.dataset.label = btn.textContent; btn.textContent = "Toque de novo para apagar tudo"; return; }
   btn.disabled = true; btn.textContent = "Apagando…";
   store.resetAll().catch(() => {}).then(() => {
-    profile = blankProfile(); quotes = []; receipts = []; catSet(null); catPending = []; catQueue = Promise.resolve();
+    profile = blankProfile(); quotes = []; receipts = []; catSet(null); catPending = []; catQueue = Promise.resolve(); quotesOk = true;
     quote = sampleQuote(); receipt = blankReceipt();
     renderEditor(); renderReceipt();
     session.set(false);
@@ -2245,7 +2254,7 @@ renderEditor();
   profile = await store.loadProfile();
   if (!profile.bizDays) { if (!parseNum(profile.days) || parseNum(profile.days) === 15) profile.days = 10; profile.bizDays = true; } // validade passou a ser em dias úteis (padrão 10)
   applyBrand(); prepLogo();
-  quotes = await store.listQuotes().catch(() => []);
+  quotes = await store.listQuotes().then((r) => { quotesOk = true; return r; }).catch(() => []);
   receipts = await store.listReceipts().catch(() => []);
   await refreshCatalog(true);
   if (quotes.length && quote.sample) newQuote();
