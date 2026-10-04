@@ -154,6 +154,13 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - **Por que não ouvia**: dentro do link do Claude a página não recebe permissão para usar o microfone (não existe essa permissão para apps publicados lá). O app agora detecta isso: o botão vira "Ditar", um toque abre o campo já com o teclado e a mensagem "O microfone do app está bloqueado aqui. Toque no 🎤 do teclado e fale. Depois toque em Preencher." No notebook com Windows a dica é "Windows + H".
 - O "segurar e falar" de verdade funciona onde o navegador libera o microfone: o app aberto como site próprio ou a futura versão da Play Store.
 
+## Atualização (04/10/2026, 23h): ditado dentro do Claude
+
+- No notebook (app do Claude), o app mostrou "Ditar" e a caixa com "Windows + H": a página não recebe o microfone ali. Dentro do Claude, o jeito que funciona é o microfone do teclado (celular: 🎤 do teclado; notebook: Windows + H) e depois "Preencher".
+- A caixa agora mostra, em letra pequena, o motivo do bloqueio ("Motivo: ...").
+- Corrigido: o total do item saía do painel na tela larga (versão 20); o toque no Ditar às vezes caía em outro botão logo depois de a caixa abrir (versão 21).
+- Em aberto: escolher entre ficar no Claude (recomendado enquanto valida) ou abrir um link próprio (GitHub Pages), onde o "Segure e fale" funciona no Chrome, mas os dados ficam só no aparelho.
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.
