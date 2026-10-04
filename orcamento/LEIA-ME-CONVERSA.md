@@ -117,6 +117,17 @@ Pedido do Marcos: o campo de e-mail mostrar a informação inteira.
 - Se o e-mail ainda for maior que o campo, a **letra diminui sozinha** até caber tudo (até 12 px no mínimo). Num celular de 360 px, um e-mail de uns 35 caracteres cabe com letra de uns 13 px. Acima de uns 45 caracteres no celular, o texto rola dentro do campo.
 - Se quiser o mesmo ajuste em nome ou endereço, é só pedir.
 
+## Atualização (04/10/2026, 16h30): endereço completo, botões de copiar e validade em dias úteis
+
+Pedidos do Marcos: um endereço completo com botão de copiar (para nota fiscal ou pré-contrato) e as datas do orçamento novo se ajustando sozinhas.
+- **Endereço da obra** agora tem campos separados: CEP, número, rua ou avenida, complemento, bairro, cidade e UF. Logo abaixo aparece o **Endereço completo** montado sozinho, por exemplo: "Rua das Flores, 120, Apto 32 - Centro, Passo de Torres - SC, CEP 88980-000". Isso também vai no PDF.
+- O CEP ganha o traço sozinho ("88980000" vira "88980-000"), a UF fica em maiúsculas e rua, bairro e cidade recebem as maiúsculas automáticas.
+- Botões: **Copiar endereço** (só a linha do endereço) e **Copiar dados do cliente** (nome, CPF/CNPJ, telefone, e-mail e endereço, um por linha). Em Meus dados: **Copiar dados da empresa**.
+- Se o navegador não deixar copiar, o texto fica selecionado na tela para copiar pelo menu.
+- Orçamentos antigos: o endereço que estava em um campo só vai para "Rua ou avenida", nada se perde.
+- Pré-contrato: além de {CLIENTE}, {TOTAL}, {VALIDADE} e {EMPRESA}, agora aceita **{DOCUMENTO}** (CPF/CNPJ do cliente) e **{ENDERECO}** (endereço completo). O texto padrão para cadastros novos já usa os dois no item 1. O texto que você já salvou em Meus dados não foi alterado; se quiser, coloque {DOCUMENTO} e {ENDERECO} nele.
+- **Datas automáticas:** todo orçamento novo abre com a data de hoje e validade de **10 dias úteis** (segunda a sexta, sem contar feriados nacionais e a Sexta-feira Santa). Feriados da cidade ou do estado não entram na conta. Se trocar a data inicial, a validade anda junto. Em Meus dados → Preferências, o campo agora é "Validade padrão (dias úteis)"; quem tinha 15 (o padrão antigo) passou para 10.
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.
