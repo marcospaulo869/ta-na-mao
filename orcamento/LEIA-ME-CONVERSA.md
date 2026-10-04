@@ -128,6 +128,16 @@ Pedidos do Marcos: um endereço completo com botão de copiar (para nota fiscal 
 - Pré-contrato: além de {CLIENTE}, {TOTAL}, {VALIDADE} e {EMPRESA}, agora aceita **{DOCUMENTO}** (CPF/CNPJ do cliente) e **{ENDERECO}** (endereço completo). O texto padrão para cadastros novos já usa os dois no item 1. O texto que você já salvou em Meus dados não foi alterado; se quiser, coloque {DOCUMENTO} e {ENDERECO} nele.
 - **Datas automáticas:** todo orçamento novo abre com a data de hoje e validade de **10 dias úteis** (segunda a sexta, sem contar feriados nacionais e a Sexta-feira Santa). Feriados da cidade ou do estado não entram na conta. Se trocar a data inicial, a validade anda junto. Em Meus dados → Preferências, o campo agora é "Validade padrão (dias úteis)"; quem tinha 15 (o padrão antigo) passou para 10.
 
+## Atualização (04/10/2026, 17h): memória de materiais e aba Materiais
+
+Pedidos do Marcos: (1) ao digitar um material (ex.: "chapa MDF branco"), abrir sozinha uma janela com o que já foi usado e, com um toque, preencher tudo; (2) um "banco de dados" separado, ao lado de Orçamento e Salvos, para atualizar nomes e preços (MDFs que saem de linha, preços que mudam na planilha do fornecedor).
+- **Sugestões ao digitar:** no campo Material, a partir de 2 letras aparece a janela "Da sua memória" com até 6 materiais. Pode digitar só o começo das palavras, em qualquer ordem e sem acento ("mdf br" acha "Chapa MDF branco TX 18 mm"). Um toque preenche material, unidade e preço e o cursor vai para a quantidade. No notebook também dá para usar as setas e o Enter. O "×" ao lado de uma sugestão tira esse material da memória.
+- **Aba Materiais** (Orçamento | Salvos | Materiais): a lista completa em ordem alfabética, com busca. Dá para mudar nome, unidade e preço de cada material, criar um material novo ("+ Novo material") e apagar (dois toques). Mostra em quantos orçamentos cada um foi usado e a data do último uso.
+- **Como a lista se enche:** ao salvar um orçamento, os materiais novos entram na lista. A lista manda: salvar um orçamento não muda nome nem preço de um material que já está nela (só completa unidade ou preço se estiverem vazios). Preço novo, você muda na aba Materiais. Orçamentos já salvos não mudam.
+- Materiais apagados ou renomeados na lista não voltam sozinhos quando você salva de novo um orçamento antigo ou faz uma cópia dele.
+- Na primeira vez que o app abre com essa versão, a lista é montada com os materiais dos orçamentos que você já tinha salvo.
+- A lista fica na sua conta: é a mesma no celular e no notebook. "Apagar tudo e recomeçar" também apaga a lista.
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.

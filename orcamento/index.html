@@ -78,7 +78,25 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .sample { background: var(--sample-soft); color: var(--sample); border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; font-weight: 600; }
 .items { display: grid; gap: 10px; }
 .item { display: grid; grid-template-columns: 1fr 70px 80px 110px 32px; gap: 8px; align-items: end; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
-.item .desc { grid-column: 1 / -1; }
+.item .desc { grid-column: 1 / -1; position: relative; }
+.sugg { position: absolute; left: 0; right: 0; z-index: 4; background: var(--surface); border: 1px solid var(--accent); border-radius: 10px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18); overflow-y: auto; overscroll-behavior: contain; max-height: 300px; padding: 4px; }
+.sugg-cap { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 8px 2px; }
+.sugg .opt { display: flex; align-items: center; gap: 8px; padding: 6px 4px 6px 8px; border-radius: 8px; cursor: pointer; min-height: 46px; }
+.sugg .opt:hover, .sugg .opt.on { background: var(--accent-soft); }
+.sugg .o-main { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.sugg .o-desc { font-size: 0.98rem; color: var(--ink); overflow-wrap: anywhere; }
+.sugg .o-desc b { color: var(--accent); font-weight: 700; }
+.sugg .o-meta { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sugg .o-del { flex: none; width: 36px; height: 36px; border: 0; border-radius: 8px; background: none; color: var(--muted); font-size: 1.25rem; line-height: 1; cursor: pointer; }
+.sugg .o-del:hover { color: var(--danger); background: var(--bg); }
+.mat-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.mat-tools input { flex: 1 1 200px; }
+.mats { display: grid; gap: 10px; }
+.mat { display: grid; grid-template-columns: minmax(0, 1fr) 80px 130px 40px; gap: 8px; align-items: end; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
+.mat .meta { grid-column: 1 / -1; font-size: 0.8rem; color: var(--muted); }
+.mat .rm { height: 40px; border: 0; border-radius: 8px; background: none; color: var(--danger); font: 600 1.3rem var(--font-body); cursor: pointer; white-space: nowrap; }
+.mat .rm.confirm { grid-column: auto; font-size: 0.78rem; background: var(--bg); border: 1px solid var(--danger); }
+@media (max-width: 560px) { .mat { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 64px; } .mat .name { grid-column: 1 / -1; } }
 .login .field { width: 100%; }
 .item .tot { font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; padding-bottom: 9px; }
 .item .rm { border: 0; background: none; color: var(--danger); font-size: 1.3rem; cursor: pointer; padding-bottom: 6px; }
@@ -218,6 +236,8 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .extenso { color: var(--muted); font-size: 0.95rem; font-style: italic; }
 .linkinfo { background: var(--accent-soft); color: var(--accent); border-radius: 8px; padding: 8px 12px; font-size: 0.92rem; font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .action { transition: none; } .action:hover { transform: none; } }
+/* Celular estreito: as três abas (Orçamento, Salvos, Materiais) cabem na mesma linha do "Início" */
+@media (max-width: 440px) { .tabs button { padding: 6px 7px; font-size: 0.82rem; } .subnav { column-gap: 6px; } }
 </style>
 
 <div class="wrap">
@@ -233,6 +253,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <div class="tabs" role="tablist" id="tabs-quote" hidden>
       <button role="tab" id="tab-editor" data-view="editor">Orçamento</button>
       <button role="tab" id="tab-saved" data-view="saved">Salvos</button>
+      <button role="tab" id="tab-materials" data-view="materials">Materiais</button>
     </div>
     <div class="tabs" role="tablist" id="tabs-receipt" hidden>
       <button role="tab" id="tab-receipt" data-view="receipt">Recibo</button>
@@ -379,6 +400,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 
     <section class="card">
       <h2>Materiais</h2>
+      <p class="hint">Digite o começo do nome (ex.: "mdf br") e toque na sugestão para preencher unidade e preço. Os materiais vêm da aba Materiais, e os novos entram lá quando você salva o orçamento.</p>
       <div class="items" id="items"></div>
       <div class="row"><button class="btn" id="btn-add">+ Adicionar material</button><button class="mic" id="btn-add-voice" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar novo item</span></button></div>
       <div class="grid2">
@@ -411,6 +433,20 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <button class="btn primary new" id="btn-new-2" type="button"><span class="plus" aria-hidden="true">+</span>Novo orçamento</button>
     <p class="hint" id="saved-where"></p>
     <div class="list" id="saved-list"></div>
+  </div>
+
+  <!-- MATERIAIS -->
+  <div id="view-materials" class="stack" hidden>
+    <section class="card">
+      <div class="row" style="justify-content:space-between"><h2>Meus materiais</h2><span class="hint" id="mat-count"></span></div>
+      <p class="hint">Todo material novo que você usar em um orçamento entra aqui. Quando um MDF sair de linha ou o preço mudar, atualize aqui: as sugestões do orçamento vêm desta lista. Orçamentos já salvos não mudam.</p>
+      <div class="mat-tools">
+        <input id="mat-search" type="search" placeholder="Buscar material" autocomplete="off" aria-label="Buscar material">
+        <button class="btn primary" id="mat-add" type="button">+ Novo material</button>
+      </div>
+      <div class="mats" id="mat-list"></div>
+    </section>
+    <div class="row"><button class="btn small danger" id="mat-clear" type="button">Apagar todos os materiais</button></div>
   </div>
 
   <!-- RECIBO -->
@@ -707,6 +743,7 @@ const store = {
       this.profileRef = db.doc("data/users/" + id + "/perfil");
       this.quotesCol = this.profileRef.collection("orcamentos");
       this.receiptsCol = this.profileRef.collection("recibos");
+      this.catalogRef = this.profileRef.collection("memoria").doc("materiais");
       await this.profileRef.get();
       this.mode = "db";
     } catch { this.mode = "local"; }
@@ -738,6 +775,15 @@ const store = {
     if (this.mode === "db") { await this.quotesCol.doc(id).delete(); return; }
     local.set("orc.quotes", local.get("orc.quotes", []).filter((x) => x.id !== id));
   },
+  // Memória de materiais. ok:false = não deu para ler (não sobrescrever o que está guardado)
+  async loadCatalog() {
+    if (this.mode === "db") { try { const s = await this.catalogRef.get(); return { ok: true, data: s.exists ? s.data() : null }; } catch { return { ok: false }; } }
+    return { ok: true, data: local.get("orc.catalog", null) };
+  },
+  async saveCatalog(c) {
+    if (this.mode === "db") { await this.catalogRef.set(JSON.parse(JSON.stringify(c))); return; }
+    if (!local.set("orc.catalog", c)) throw new Error("local");
+  },
   async listReceipts() {
     if (this.mode === "db") { const s = await this.receiptsCol.get(); return s.docs.map((d) => d.data()); }
     return local.get("orc.receipts", []);
@@ -758,10 +804,11 @@ const store = {
         const snap = await col.get();
         for (const d of snap.docs) await col.doc(d.id).delete();
       }
+      await this.catalogRef.delete().catch(() => {});
       await this.profileRef.delete();
       return;
     }
-    try { for (const k of ["orc.profile", "orc.quotes", "orc.receipts"]) localStorage.removeItem(k); } catch {}
+    try { for (const k of ["orc.profile", "orc.quotes", "orc.receipts", "orc.catalog"]) localStorage.removeItem(k); } catch {}
   },
 };
 
@@ -930,7 +977,272 @@ const fillVars = (text, q, t) => String(text || "")
   .replaceAll("{EMPRESA}", bizName(profile) || "o prestador");
 
 /* ---------- Editor ---------- */
+/* ---------- Memória de materiais: o que já foi usado vira sugestão ao digitar ---------- */
+let catalog = { items: [] }, catalogOk = false;
+const CAT_MAX = 500, CAT_DESC_MAX = 200;
+const catKey = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+const catWords = (k) => k.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+let catIdx = null;
+const catIndex = () => catIdx || (catIdx = catalog.items.map((e) => { const k = catKey(e.desc); return { e, k, w: catWords(k) }; }));
+const catSet = (data) => { catalog = { items: (data && Array.isArray(data.items) ? data.items : []).filter((e) => e && e.desc) }; catIdx = null; };
+// Junta os materiais de um orçamento na memória. A lista da aba Materiais manda: um orçamento só
+// acrescenta materiais novos (e completa unidade ou preço que estiverem vazios), não muda nome nem preço.
+// before: { same: itens deste orçamento antes de salvar de novo (não contam de novo), orig: itens do original,
+// se for uma cópia }. Material que estava lá e foi apagado ou renomeado na lista não volta sozinho.
+// overwrite: só na montagem inicial (o orçamento mais recente define nome, unidade e preço).
+function addToCatalog(items, before, when, overwrite) {
+  const byKey = new Map(catalog.items.map((e) => [catKey(e.desc), e]));
+  const keys = (list) => new Set((list || []).map((it) => catKey(it.desc)));
+  const same = keys(before.same), orig = keys(before.orig);
+  const seen = new Set();
+  for (const it of items) {
+    const desc = String(it.desc || "").replace(/\s+/g, " ").trim(), k = catKey(desc);
+    if (k.length < 2 || desc.length > CAT_DESC_MAX || seen.has(k)) continue;
+    seen.add(k);
+    const un = String(it.un || "").trim(), price = parseNum(it.price) > 0 ? parseNum(it.price) : 0;
+    let e = byKey.get(k);
+    if (!e) {
+      if (same.has(k) || orig.has(k)) continue;
+      e = { desc, un, price, uses: 0, last: "" }; catalog.items.push(e); byKey.set(k, e);
+    } else if (overwrite) { e.desc = desc; if (un) e.un = un; if (price) e.price = price; }
+    else { if (!e.un && un) e.un = un; if (!(e.price > 0) && price) e.price = price; }
+    if (!same.has(k)) e.uses = (e.uses || 0) + 1;
+    if (when > (e.last || "")) e.last = when;
+  }
+  if (catalog.items.length > CAT_MAX) { catalog.items.sort((a, b) => String(b.last).localeCompare(String(a.last))); catalog.items.length = CAT_MAX; }
+  catIdx = null;
+}
+// Toda mudança na memória passa por aqui, uma de cada vez: lê o que está guardado (o celular e o notebook
+// usam a mesma lista), aplica a mudança e guarda de novo. fn precisa funcionar pela chave do material.
+let catQueue = Promise.resolve();
+function mutateCatalog(fn) {
+  fn(); catIdx = null; // na tela, na hora
+  const job = async () => {
+    const fresh = await store.loadCatalog();
+    if (fresh.ok && fresh.data) { catSet(fresh.data); fn(); catIdx = null; }
+    else if (!fresh.ok && !catalogOk) return; // sem conseguir ler, não sobrescreve o que está guardado
+    catalogOk = true;
+    try { await store.saveCatalog(catalog); } catch { toast("Não consegui guardar a lista de materiais. Tente de novo."); }
+  };
+  return (catQueue = catQueue.then(job, job));
+}
+// Primeira vez: monta a memória com os orçamentos que já estão salvos
+async function loadCatalog() {
+  const r = await store.loadCatalog();
+  if (!r.ok) return false;
+  if (r.data) { catSet(r.data); return true; }
+  catSet(null);
+  const list = [...quotes].sort((a, b) => String(a.updated || a.start || "").localeCompare(String(b.updated || b.start || "")));
+  for (const q of list) addToCatalog(q.items || [], {}, q.updated || (q.start ? q.start + "T12:00:00.000Z" : ""), true);
+  if (catalog.items.length) await store.saveCatalog(catalog).catch(() => {});
+  return true;
+}
+const rememberItems = (items, before) => { const when = new Date().toISOString(); return mutateCatalog(() => addToCatalog(items, before, when)); };
+const forgetMaterial = (k) => mutateCatalog(() => { catalog.items = catalog.items.filter((e) => catKey(e.desc) !== k); });
+// Sugestões: cada pedaço digitado precisa ser o começo de uma palavra do material ("mdf br" acha "MDF branco 18 mm")
+function suggest(text) {
+  const qk = catKey(text), toks = catWords(qk);
+  if (qk.length < 2 || !toks.length) return [];
+  const out = [];
+  for (const x of catIndex()) if (toks.every((t) => x.w.some((w) => w.startsWith(t)))) out.push({ ...x, starts: x.k.startsWith(qk) ? 1 : 0 });
+  out.sort((a, b) => (b.starts - a.starts) || ((b.e.uses || 0) - (a.e.uses || 0)) || String(b.e.last).localeCompare(String(a.e.last)));
+  return out.slice(0, 6);
+}
+// Mostra o material com o começo das palavras digitadas em destaque
+function markWords(el, desc, toks) {
+  let pos = 0;
+  for (const m of desc.matchAll(/[\p{L}\p{N}]+/gu)) {
+    const wk = catKey(m[0]); let len = 0;
+    for (const t of toks) if (wk.startsWith(t) && t.length > len) len = t.length;
+    if (!len) continue;
+    el.append(desc.slice(pos, m.index));
+    const b = document.createElement("b"); b.textContent = m[0].slice(0, len); el.append(b);
+    pos = m.index + len;
+  }
+  el.append(desc.slice(pos));
+}
+let sug = null; // { i, input, box, list, active }
+function closeSugg() {
+  if (!sug) return;
+  sug.box.remove(); sug.input.setAttribute("aria-expanded", "false"); sug.input.removeAttribute("aria-activedescendant");
+  sug = null;
+}
+function openSugg(i, input) {
+  const list = suggest(input.value);
+  if (!list.length) { closeSugg(); return; }
+  if (!sug || sug.input !== input) {
+    closeSugg();
+    const box = document.createElement("div");
+    box.className = "sugg"; box.id = "sugg-" + i; box.setAttribute("role", "listbox"); box.setAttribute("aria-label", "Materiais da memória");
+    box.addEventListener("mousedown", (e) => e.preventDefault()); // o toque na sugestão não tira o foco do campo
+    input.parentElement.appendChild(box); input.setAttribute("aria-controls", box.id);
+    sug = { i, input, box, list: [], active: -1 };
+  }
+  sug.list = list; sug.active = -1;
+  input.setAttribute("aria-expanded", "true"); input.removeAttribute("aria-activedescendant");
+  drawSugg(); placeSugg();
+}
+function drawSugg() {
+  const { box, list, i } = sug; box.textContent = "";
+  const cap = document.createElement("div"); cap.className = "sugg-cap"; cap.textContent = "Da sua memória"; box.appendChild(cap);
+  const toks = catWords(catKey(sug.input.value));
+  list.forEach((x, n) => {
+    const o = document.createElement("div");
+    o.className = "opt" + (n === sug.active ? " on" : ""); o.id = `sugg-${i}-${n}`; o.setAttribute("role", "option"); o.setAttribute("aria-selected", String(n === sug.active));
+    const main = document.createElement("div"); main.className = "o-main";
+    const t = document.createElement("div"); t.className = "o-desc"; markWords(t, x.e.desc, toks);
+    const m = document.createElement("div"); m.className = "o-meta";
+    m.textContent = [x.e.un, x.e.price ? money(x.e.price) : "sem preço", x.e.uses > 1 ? `usado ${x.e.uses} vezes` : ""].filter(Boolean).join(" · ");
+    main.append(t, m);
+    const del = document.createElement("button");
+    del.type = "button"; del.className = "o-del"; del.textContent = "×"; del.title = "Esquecer este material"; del.setAttribute("aria-label", `Esquecer ${x.e.desc}`);
+    del.onclick = (ev) => {
+      ev.stopPropagation();
+      const input = sug && sug.input, at = sug && sug.i;
+      forgetMaterial(x.k); toast("Material tirado da memória");
+      if (input) openSugg(at, input);
+    };
+    o.append(main, del);
+    o.onclick = () => pickSugg(x.e);
+    box.appendChild(o);
+  });
+}
+// Abre a lista para baixo; se não couber (teclado do celular, barra de baixo), abre para cima
+function placeSugg() {
+  if (!sug) return;
+  const { box, input } = sug;
+  const r = input.getBoundingClientRect(), vv = window.visualViewport;
+  let bottom = vv ? vv.offsetTop + vv.height : innerHeight;
+  for (const bar of document.querySelectorAll(".bar")) { const br = bar.getBoundingClientRect(); if (br.height && br.top < bottom) bottom = br.top; }
+  const sub = $("subnav"), top = sub && !sub.hidden ? Math.max(0, sub.getBoundingClientRect().bottom) : 0;
+  const below = bottom - r.bottom - 8, above = r.top - top - 8;
+  box.style.maxHeight = ""; const need = Math.min(box.scrollHeight + 2, 300);
+  const up = need > below && above > below;
+  box.style.top = up ? "auto" : input.offsetTop + input.offsetHeight + 4 + "px";
+  box.style.bottom = up ? input.parentElement.clientHeight - input.offsetTop + 4 + "px" : "auto";
+  box.style.maxHeight = Math.max(120, Math.min(300, up ? above : below)) + "px";
+}
+if (window.visualViewport) visualViewport.addEventListener("resize", placeSugg);
+window.addEventListener("resize", placeSugg);
+function pickSugg(e) {
+  if (!sug) return;
+  const i = sug.i, it = quote.items[i]; closeSugg();
+  if (!it) return;
+  it.desc = e.desc; if (e.un) it.un = e.un; if (e.price) it.price = e.price; if (!parseNum(it.qty)) it.qty = 1;
+  const d = $(`it-d-${i}`), u = $(`it-u-${i}`), q = $(`it-q-${i}`), p = $(`it-p-${i}`);
+  if (d) d.value = it.desc;
+  if (u) u.value = it.un;
+  if (p) p.value = it.price ? Number(it.price).toFixed(2).replace(".", ",") : "";
+  if (q) q.value = numIn(it.qty);
+  renderTotals();
+  if (q) { q.focus(); q.select(); } // falta só a quantidade
+}
+function suggKey(e, input, i) {
+  if (!sug || sug.input !== input) { if (e.key === "ArrowDown") openSugg(i, input); return; }
+  const n = sug.list.length;
+  if (e.key === "ArrowDown") sug.active = (sug.active + 1) % n;
+  else if (e.key === "ArrowUp") sug.active = sug.active <= 0 ? n - 1 : sug.active - 1;
+  else if (e.key === "Enter") { if (sug.active >= 0) { e.preventDefault(); pickSugg(sug.list[sug.active].e); } else closeSugg(); return; }
+  else if (e.key === "Escape") { e.preventDefault(); closeSugg(); return; }
+  else return;
+  e.preventDefault(); drawSugg();
+  input.setAttribute("aria-activedescendant", `sugg-${sug.i}-${sug.active}`);
+  const el = $(`sugg-${sug.i}-${sug.active}`); if (el) el.scrollIntoView({ block: "nearest" });
+}
+
+/* ---------- Aba Materiais: a lista que alimenta as sugestões (nome, unidade, preço) ---------- */
+const priceIn = (n) => (n ? Number(n).toFixed(2).replace(".", ",") : "");
+let matSeq = 0;
+async function renderMaterials() {
+  drawMaterials();
+  // traz o que o outro aparelho guardou, sem atropelar mudanças que ainda estão sendo gravadas
+  catQueue = catQueue.then(async () => { const r = await store.loadCatalog(); if (r.ok && r.data) catSet(r.data); }).catch(() => {});
+  await catQueue;
+  if (!$("view-materials").hidden && !$("mat-list").contains(document.activeElement)) drawMaterials();
+}
+function matCount() {
+  const n = catalog.items.length;
+  $("mat-count").textContent = n === 1 ? "1 material" : `${n} materiais`;
+  $("mat-clear").hidden = !n;
+}
+function drawMaterials() {
+  matCount();
+  const box = $("mat-list"); box.textContent = "";
+  const toks = catWords(catKey($("mat-search").value));
+  const list = catIndex().filter((x) => toks.every((t) => x.k.includes(t))).map((x) => x.e)
+    .sort((a, b) => a.desc.localeCompare(b.desc, "pt-BR", { sensitivity: "base", numeric: true }));
+  if (!catalog.items.length) { box.innerHTML = `<p class="hint">Ainda não há materiais. Eles entram aqui quando você salva um orçamento, ou toque em "+ Novo material".</p>`; return; }
+  if (!list.length) { box.innerHTML = `<p class="hint">Nenhum material com esse nome.</p>`; return; }
+  for (const e of list) box.appendChild(matRow(e));
+}
+function matMeta(e) {
+  if (!e) return "Novo: digite o nome para guardar.";
+  const used = e.uses > 0 ? `Usado em ${e.uses} ${e.uses === 1 ? "orçamento" : "orçamentos"}` : "Ainda não usado em orçamento";
+  return e.last ? `${used} · último uso ${fmtDate(e.last.slice(0, 10))}` : used;
+}
+function matRow(e) {
+  const n = ++matSeq, row = document.createElement("div");
+  row.className = "mat"; row.key = e ? catKey(e.desc) : null;
+  row.innerHTML = `
+    <div class="field name"><label for="m-d-${n}">Material</label><input id="m-d-${n}" autocomplete="off" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true"></div>
+    <div class="field"><label for="m-u-${n}">Un.</label><input id="m-u-${n}" autocomplete="off"></div>
+    <div class="field"><label for="m-p-${n}">Preço un. (R$)</label><input id="m-p-${n}" class="num" inputmode="decimal"></div>
+    <button class="rm" type="button" title="Apagar material" aria-label="Apagar material">×</button>
+    <div class="meta"></div>`;
+  const d = row.querySelector(`#m-d-${n}`), u = row.querySelector(`#m-u-${n}`), p = row.querySelector(`#m-p-${n}`), rm = row.querySelector(".rm"), meta = row.querySelector(".meta");
+  d.value = e ? e.desc : ""; u.value = e ? e.un || "" : "un"; p.value = e ? priceIn(e.price) : "";
+  meta.textContent = matMeta(e);
+  const find = () => catalog.items.find((x) => catKey(x.desc) === row.key);
+  d.onchange = () => {
+    const desc = fixCase(d.value.replace(/\s+/g, " ").trim(), "text"), k = catKey(desc);
+    if (!desc) { if (row.key) { d.value = find() ? find().desc : ""; toast("O nome do material não pode ficar vazio"); } return; }
+    if (desc.length > CAT_DESC_MAX) { toast("Nome muito comprido"); d.value = row.key && find() ? find().desc : ""; return; }
+    const other = catalog.items.find((x) => catKey(x.desc) === k);
+    if (other && k !== row.key) { toast(`"${other.desc}" já está na lista`); d.value = row.key && find() ? find().desc : ""; return; }
+    d.value = desc;
+    if (row.key) {
+      const old = row.key; row.key = k;
+      mutateCatalog(() => { const x = catalog.items.find((y) => catKey(y.desc) === old); if (x) x.desc = desc; });
+    } else {
+      row.key = k;
+      const fresh = { desc, un: u.value.trim(), price: parseNum(p.value) > 0 ? parseNum(p.value) : 0, uses: 0, last: "" };
+      mutateCatalog(() => { if (!catalog.items.some((y) => catKey(y.desc) === k)) catalog.items.push({ ...fresh }); });
+      matCount();
+    }
+    meta.textContent = matMeta(find());
+  };
+  u.onchange = () => { const un = u.value.trim(); u.value = un; if (row.key) mutateCatalog(() => { const x = catalog.items.find((y) => catKey(y.desc) === row.key); if (x) x.un = un; }); };
+  p.onchange = () => {
+    const price = parseNum(p.value) > 0 ? parseNum(p.value) : 0; p.value = priceIn(price);
+    if (row.key) mutateCatalog(() => { const x = catalog.items.find((y) => catKey(y.desc) === row.key); if (x) x.price = price; });
+  };
+  rm.onclick = () => {
+    if (!row.key) { row.remove(); return; }
+    if (rm.dataset.confirm !== "1") {
+      rm.dataset.confirm = "1"; rm.textContent = "Apagar?"; rm.classList.add("confirm");
+      clearTimeout(rm.undo); rm.undo = setTimeout(() => { rm.dataset.confirm = ""; rm.textContent = "×"; rm.classList.remove("confirm"); }, 4000);
+      return;
+    }
+    const k = row.key; row.remove(); forgetMaterial(k); matCount(); toast("Material apagado da lista");
+  };
+  return row;
+}
+$("mat-search").addEventListener("input", drawMaterials);
+$("mat-add").onclick = () => {
+  if (!catalog.items.length) $("mat-list").textContent = "";
+  const row = matRow(null); $("mat-list").prepend(row);
+  row.querySelector("input").focus();
+};
+$("mat-clear").onclick = (e) => {
+  const btn = e.currentTarget;
+  if (btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.textContent = "Toque de novo para apagar todos"; clearTimeout(btn.undo); btn.undo = setTimeout(() => { btn.dataset.confirm = ""; btn.textContent = "Apagar todos os materiais"; }, 4000); return; }
+  clearTimeout(btn.undo); btn.dataset.confirm = ""; btn.textContent = "Apagar todos os materiais";
+  mutateCatalog(() => { catalog.items = []; });
+  drawMaterials(); toast("Lista de materiais apagada");
+};
+
 function renderItems() {
+  closeSugg();
   const box = $("items"); box.textContent = "";
   quote.items.forEach((it, i) => {
     if (i > 0) {
@@ -946,7 +1258,7 @@ function renderItems() {
         <p class="hint">Fale assim: "MDF chapa branco TX 18 milímetros, quatro unidades, valor 289,90". Se o app não ouvir, toque no microfone do teclado e fale.</p>
         <div class="row"><input id="it-x-${i}" autocomplete="off" placeholder="O que você ditar aparece aqui"><button class="btn small warm" type="button" data-a="fill">Preencher</button></div>
       </div>
-      <div class="field desc"><label for="it-d-${i}">Material</label><input id="it-d-${i}" autocomplete="off" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true"></div>
+      <div class="field desc"><label for="it-d-${i}">Material</label><input id="it-d-${i}" autocomplete="off" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true" role="combobox" aria-autocomplete="list" aria-expanded="false"></div>
       <div class="field"><label for="it-u-${i}">Un.</label><input id="it-u-${i}" autocomplete="off"></div>
       <div class="field"><label for="it-q-${i}">Qtd.</label><input id="it-q-${i}" class="num" inputmode="decimal"></div>
       <div class="field"><label for="it-p-${i}">Preço un. (R$)</label><input id="it-p-${i}" class="num" inputmode="decimal"></div>
@@ -955,7 +1267,9 @@ function renderItems() {
     box.appendChild(row);
     const d = row.querySelector(`#it-d-${i}`), u = row.querySelector(`#it-u-${i}`), q = row.querySelector(`#it-q-${i}`), p = row.querySelector(`#it-p-${i}`);
     d.value = it.desc; u.value = it.un; q.value = numIn(it.qty); p.value = it.price ? Number(it.price).toFixed(2).replace(".", ",") : "";
-    d.oninput = () => { it.desc = d.value; };
+    d.oninput = (e) => { it.desc = d.value; if (e.isTrusted) openSugg(i, d); };
+    d.onkeydown = (e) => suggKey(e, d, i);
+    d.addEventListener("blur", () => setTimeout(() => { if (sug && sug.input === d && document.activeElement !== d) closeSugg(); }, 200));
     u.oninput = () => { it.un = u.value; };
     q.oninput = () => { it.qty = parseNum(q.value); renderTotals(); };
     p.oninput = () => { it.price = parseNum(p.value); renderTotals(); };
@@ -1181,6 +1495,8 @@ async function saveQuote(silent) {
   }
   normalizeQuote(quote);
   quote.items = quote.items.filter((it) => it.desc.trim() || parseNum(it.price));
+  const same = quotes.find((x) => x.id === quote.id), orig = quote.from && quotes.find((x) => x.id === quote.from);
+  rememberItems(JSON.parse(JSON.stringify(quote.items)), { same: same && same.items, orig: orig && orig.items });
   quote.clientSig = sigClient.value();
   quote.updated = new Date().toISOString();
   try { await store.saveQuote(quote); if (!silent) toast("Orçamento salvo"); }
@@ -1449,7 +1765,7 @@ function renderSaved() {
     el.querySelector('[data-a="send"]').onclick = () => { if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet."); sendQuote(q); };
     el.querySelector('[data-a="copy"]').onclick = () => {
       const start = todayISO();
-      quote = { ...JSON.parse(JSON.stringify(q)), id: "", number: 0, start, valid: addBizDays(start, validDays()), clientSig: "", datesSet: false };
+      quote = { ...JSON.parse(JSON.stringify(q)), id: "", number: 0, start, valid: addBizDays(start, validDays()), clientSig: "", datesSet: false, from: q.id };
       show("editor"); renderEditor(); toast("Cópia criada. Salve para gerar um novo número.");
     };
     const del = el.querySelector('[data-a="del"]');
@@ -1589,7 +1905,7 @@ function confirmReset(btn) {
   if (btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.dataset.label = btn.textContent; btn.textContent = "Toque de novo para apagar tudo"; return; }
   btn.disabled = true; btn.textContent = "Apagando…";
   store.resetAll().catch(() => {}).then(() => {
-    profile = blankProfile(); quotes = []; receipts = [];
+    profile = blankProfile(); quotes = []; receipts = []; catSet(null); catalogOk = true; catQueue = Promise.resolve();
     quote = sampleQuote(); receipt = blankReceipt();
     renderEditor(); renderReceipt();
     session.set(false);
@@ -1847,7 +2163,7 @@ $("btn-back").onclick = () => show("home");
 $("tab-profile").onclick = () => show("profile");
 
 /* ---------- Telas ---------- */
-const APP_VIEWS = ["home", "editor", "saved", "receipt", "receipts", "profile"];
+const APP_VIEWS = ["home", "editor", "saved", "materials", "receipt", "receipts", "profile"];
 function gate(which) {
   for (const v of [...APP_VIEWS, "loading", "welcome", "signup", "login"]) $("view-" + v).hidden = v !== which;
   fitSoon();
@@ -1874,12 +2190,13 @@ function show(view) {
   for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", String(b.dataset.view === view));
   for (const v of APP_VIEWS) $("view-" + v).hidden = v !== view;
   $("subnav").hidden = view === "home";
-  $("tabs-quote").hidden = !["editor", "saved"].includes(view);
+  $("tabs-quote").hidden = !["editor", "saved", "materials"].includes(view);
   $("tabs-receipt").hidden = !["receipt", "receipts"].includes(view);
   $("bar").hidden = view !== "editor";
   $("rbar").hidden = view !== "receipt";
   if (view === "home") renderHome();
   if (view === "saved") renderSaved();
+  if (view === "materials") renderMaterials();
   if (view === "receipt") renderReceiptAmount();
   if (view === "receipts") renderReceipts();
   if (view === "profile") renderProfile();
@@ -1895,6 +2212,7 @@ renderEditor();
   applyBrand(); prepLogo();
   quotes = await store.listQuotes().catch(() => []);
   receipts = await store.listReceipts().catch(() => []);
+  catalogOk = await loadCatalog().catch(() => false);
   if (quotes.length && quote.sample) newQuote();
   receipt = blankReceipt(); renderReceipt();
   if (!profile.registered || !profile.pwHash) gate("welcome");
