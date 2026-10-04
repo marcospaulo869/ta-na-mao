@@ -79,12 +79,13 @@ Marcos vai usar o app no dia a dia com os dados reais da empresa e a logomarca, 
 - O botão **+ Novo orçamento** agora é grande, ocupa a largura toda e fica no topo da tela do orçamento e da lista de Salvos (azul-petróleo). No recibo, **+ Novo recibo** (laranja), também no topo do recibo e da lista.
 - Se o orçamento ou recibo atual ainda não foi salvo, o primeiro toque avisa "Toque de novo: o atual não foi salvo", para não perder o que foi digitado.
 
-## Atualização (04/10/2026, 11h30): marca Madeira Forte e marca d'água
+## Atualização (04/10/2026, 11h40): selo no centro do QR Code e logomarca na cor das letras
 
-- O selo oficial da Madeira Forte (fundo branco e fundo preto) está na pasta `marca` do projeto e do GitHub, para usar em todos os seus produtos.
-- **Marca d'água:** a logomarca cadastrada em Meus dados aparece clarinha no centro de **todas as páginas** do PDF de orçamento e de recibo. O fundo branco ou preto da imagem some sozinho. Em Meus dados há a opção "Marca d'água no PDF" para desligar.
-- A logomarca agora é guardada com mais definição. **Envie a logomarca de novo** em Meus dados (use a versão de fundo branco) para a marca d'água sair nítida.
-- Corrigido: quem deixava "Rua e número" em branco via a cidade repetida no cabeçalho do PDF depois de salvar Meus dados.
+Marcos pediu uma marca discreta (o app vai ser vendido), então **a marca d'água grande no fundo das páginas foi tirada**. No lugar:
+- **Selo Madeira Forte no centro do QR Code**, bem pequeno, em tons escuros, no PDF e na prévia de Meus dados. O QR passou a usar correção de erros alta, e o teste de leitura com o selo no meio continua lendo o link do WhatsApp normalmente.
+- **Logomarca na cor das letras:** no PDF e no topo do app (acima do nome da empresa) a logomarca aparece como silhueta com relevo, na cor das letras (escura, e clara no modo escuro do app). Funciona com o logo de fundo branco ou de fundo preto. Em Meus dados, "Cor da logomarca" volta para as cores originais.
+- O selo do QR vem embutido no app. Para um cliente que comprar o app, o selo no QR continua sendo a assinatura discreta da Madeira Forte.
+- Corrigido: cidade repetida no cabeçalho do PDF quando "Rua e número" ficava em branco.
 
 ## Próximos passos (a combinar)
 
