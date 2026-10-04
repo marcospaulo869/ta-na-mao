@@ -77,7 +77,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .hint { font-size: 0.85rem; color: var(--muted); margin: 0; }
 .sample { background: var(--sample-soft); color: var(--sample); border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; font-weight: 600; }
 .items { display: grid; gap: 10px; }
-.item { display: grid; grid-template-columns: 1fr 70px 80px 110px 32px; gap: 8px; align-items: end; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) 70px 96px minmax(96px, max-content) 32px; gap: 8px; align-items: end; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
 .item .desc { grid-column: 1 / -1; position: relative; }
 .sugg { background: var(--surface); border: 1px solid var(--accent); border-radius: 10px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18); overflow-y: auto; overscroll-behavior: contain; max-height: 300px; padding: 4px; }
 .sugg-cap { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 8px 2px; }
@@ -96,7 +96,9 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .mat .rm.confirm { font-size: 0.78rem; padding-inline: 8px; background: var(--bg); border: 1px solid var(--danger); }
 @media (max-width: 560px) { .mat { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(64px, max-content); } .mat .name { grid-column: 1 / -1; } }
 .login .field { width: 100%; }
-.item .tot { font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; padding-bottom: 9px; }
+/* o total do item fica antes do × na tela larga (no HTML o × vem antes, por causa do layout do celular) */
+.item .tot { order: 1; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; padding-bottom: 9px; }
+.item .rm { order: 2; }
 .item .rm { border: 0; background: none; color: var(--danger); font-size: 1.3rem; cursor: pointer; padding-bottom: 6px; }
 .ihead { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .inum { font: 700 0.95rem var(--font-display); color: var(--accent); }
@@ -124,7 +126,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .mv:disabled { opacity: 0.35; cursor: default; }
 .dict { grid-column: 1 / -1; display: grid; gap: 6px; background: var(--warm-soft); border-radius: 10px; padding: 10px; }
 .dict .row input { flex: 1 1 200px; }
-@media (max-width: 480px) { .item { grid-template-columns: 1fr 1fr 1fr 32px; } .item .tot { grid-column: 1 / 4; text-align: left; } }
+@media (max-width: 600px) { .item { grid-template-columns: 1fr 1fr 1fr 32px; } .item .tot { grid-column: 1 / 4; text-align: left; } .item .tot, .item .rm { order: 0; } }
 .totals { display: grid; gap: 4px; font-variant-numeric: tabular-nums; }
 .totals div { display: flex; justify-content: space-between; }
 .totals .grand { font-family: var(--font-display); font-size: 1.25rem; border-top: 1px solid var(--line); padding-top: 6px; margin-top: 4px; }
