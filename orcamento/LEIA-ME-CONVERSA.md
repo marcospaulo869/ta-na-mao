@@ -74,6 +74,11 @@ Marcos vai usar o app no dia a dia com os dados reais da empresa e a logomarca, 
 - **Link próprio (Chrome / Edge):** o app também pode abrir como site pelo GitHub Pages, em https://marcospaulo869.github.io/ta-na-mao/orcamento/ (depois de ativar em Configurações → Pages do repositório, branch `claude/project-thread-o7weyg`, pasta raiz). Ali o microfone do ditado e o compartilhar com o PDF anexado funcionam direto. No Chrome, "Adicionar à tela inicial" cria um ícone como se fosse um app.
   - Os dados do site ficam guardados no navegador do celular, separados dos dados do app no Claude. Por isso o cadastro é feito de novo lá. Limpar os dados do navegador apaga os orçamentos desse site.
 
+## Atualização (04/10/2026, 9h30): botão Novo em destaque
+
+- O botão **+ Novo orçamento** agora é grande, ocupa a largura toda e fica no topo da tela do orçamento e da lista de Salvos (azul-petróleo). No recibo, **+ Novo recibo** (laranja), também no topo do recibo e da lista.
+- Se o orçamento ou recibo atual ainda não foi salvo, o primeiro toque avisa "Toque de novo: o atual não foi salvo", para não perder o que foi digitado.
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.

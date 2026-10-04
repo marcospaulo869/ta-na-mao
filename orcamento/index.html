@@ -119,6 +119,11 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .login { justify-items: start; }
 .login label { width: 100%; }
 .btn.warm { background: var(--warm); border-color: var(--warm); color: var(--warm-ink); }
+/* Botão "Novo": grande e chamativo, na cor de cada função (orçamento azul-petróleo, recibo laranja) */
+.btn.new { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 58px; padding: 14px 18px; border-radius: 14px; font: 700 1.15rem var(--font-display); letter-spacing: -0.01em; box-shadow: 0 10px 22px -14px rgba(16, 40, 46, 0.85); }
+.btn.new .plus { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 1.5rem; line-height: 1; background: rgba(255, 255, 255, 0.22); }
+.btn.warm.new .plus { background: rgba(42, 23, 4, 0.14); }
+.btn.new:active { transform: translateY(1px); box-shadow: 0 6px 14px -12px rgba(16, 40, 46, 0.85); }
 .brand { display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 0; cursor: pointer; color: var(--ink); min-width: 0; }
 .brand img { height: 40px; width: auto; max-width: 90px; border-radius: 6px; object-fit: contain; }
 .brand span { font: 700 1.15rem var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -308,11 +313,11 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 
   <!-- EDITOR -->
   <div id="view-editor" class="stack" hidden>
-    <div id="sample-note" class="sample" hidden>Exemplo preenchido para você ver como fica. Toque em "Novo" para começar o seu.</div>
+    <button class="btn primary new" id="btn-new" type="button"><span class="plus" aria-hidden="true">+</span>Novo orçamento</button>
+    <div id="sample-note" class="sample" hidden>Exemplo preenchido para você ver como fica. Toque em "Novo orçamento" para começar o seu.</div>
     <section class="card">
       <div class="row" style="justify-content:space-between">
         <h2 id="q-title">Novo orçamento</h2>
-        <button class="btn small" id="btn-new">Novo</button>
       </div>
       <div class="grid2">
         <div class="field"><label for="q-start">Data inicial</label><input type="date" id="q-start"></div>
@@ -362,16 +367,17 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 
   <!-- SALVOS -->
   <div id="view-saved" class="stack" hidden>
+    <button class="btn primary new" id="btn-new-2" type="button"><span class="plus" aria-hidden="true">+</span>Novo orçamento</button>
     <p class="hint" id="saved-where"></p>
     <div class="list" id="saved-list"></div>
   </div>
 
   <!-- RECIBO -->
   <div id="view-receipt" class="stack" hidden>
+    <button class="btn warm new" id="btn-r-new" type="button"><span class="plus" aria-hidden="true">+</span>Novo recibo</button>
     <section class="card">
       <div class="row" style="justify-content:space-between">
         <h2 id="r-title">Novo recibo</h2>
-        <button class="btn small" id="btn-r-new">Novo</button>
       </div>
       <p class="linkinfo" id="r-link" hidden></p>
       <div class="grid2">
@@ -421,6 +427,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
   </div>
 
   <div id="view-receipts" class="stack" hidden>
+    <button class="btn warm new" id="btn-r-new-2" type="button"><span class="plus" aria-hidden="true">+</span>Novo recibo</button>
     <p class="hint" id="receipts-where"></p>
     <div class="list" id="receipts-list"></div>
   </div>
@@ -946,7 +953,19 @@ const newQuote = () => {
     items: [{ desc: "", un: "un", qty: 1, price: 0 }], labor: 0, discount: 0, obs: profile.obs || DEFAULT_OBS, clientSig: "" };
   renderEditor(); window.scrollTo(0, 0);
 };
-$("btn-new").onclick = newQuote;
+// Botão grande "Novo": se o atual ainda não foi salvo, pede um segundo toque para não perder o que foi digitado
+function confirmNew(btn, label, isDraft, run) {
+  if (isDraft && btn.dataset.confirm !== "1") {
+    btn.dataset.confirm = "1"; btn.lastChild.textContent = "Toque de novo: o atual não foi salvo";
+    clearTimeout(btn.undo); btn.undo = setTimeout(() => { btn.dataset.confirm = ""; btn.lastChild.textContent = label; }, 4000);
+    return;
+  }
+  clearTimeout(btn.undo); btn.dataset.confirm = ""; btn.lastChild.textContent = label;
+  run();
+}
+const quoteDraft = () => !quote.sample && !quote.id && !!(quote.client.name.trim() || quote.items.some((it) => (it.desc || "").trim()));
+$("btn-new").onclick = () => confirmNew($("btn-new"), "Novo orçamento", quoteDraft(), newQuote);
+$("btn-new-2").onclick = () => confirmNew($("btn-new-2"), "Novo orçamento", quoteDraft(), () => { show("editor"); newQuote(); });
 
 async function saveQuote(silent) {
   if (quote.sample) { quote.sample = false; quote.client.name = quote.client.name.replace(" (exemplo)", ""); }
@@ -1390,7 +1409,9 @@ for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).oninput = (e) => 
 $("r-amount").oninput = (e) => { receipt.amount = parseNum(e.target.value); renderReceiptAmount(); };
 $("r-desc").oninput = (e) => { receipt.desc = e.target.value; };
 const newReceipt = () => { receipt = blankReceipt(); renderReceipt(); window.scrollTo(0, 0); };
-$("btn-r-new").onclick = newReceipt;
+const receiptDraft = () => !receipt.id && !!(receipt.payer.name.trim() || parseNum(receipt.amount) > 0);
+$("btn-r-new").onclick = () => confirmNew($("btn-r-new"), "Novo recibo", receiptDraft(), newReceipt);
+$("btn-r-new-2").onclick = () => confirmNew($("btn-r-new-2"), "Novo recibo", receiptDraft(), () => { show("receipt"); newReceipt(); });
 
 function receiptFromQuote(q) {
   const total = calc(q).total, before = receivedFor(q.id, "");
