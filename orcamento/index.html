@@ -114,7 +114,8 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .mic.off { background: var(--danger); border-color: var(--danger); color: var(--bg); }
 .mic.off svg { color: var(--bg); animation: none; }
 .dict-st { margin: 0; font-weight: 700; }
-.dict-st:empty { display: none; }
+.dict-st:empty, .dict-why:empty { display: none; }
+.dict-why { font-size: 0.75rem; }
 .dict-st.live::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: #D93025; vertical-align: 1px; animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .mic.on svg, .dict-st.live::before { animation: none; } }
@@ -141,7 +142,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
 .bar .in { max-width: 760px; margin: 0 auto; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .bar .total { font-family: var(--font-display); font-size: 1.2rem; font-variant-numeric: tabular-nums; }
-.toast { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: 90px; background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-weight: 600; max-width: calc(100% - 32px); }
+.toast { pointer-events: none; position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: 90px; background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-weight: 600; max-width: calc(100% - 32px); }
 .msgbox { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; white-space: pre-wrap; font-size: 0.95rem; user-select: all; }
 .logo-prev { max-height: 60px; max-width: 160px; }
 .qrbox { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
@@ -1313,6 +1314,7 @@ function renderItems() {
         <p class="dict-st" role="status" aria-live="polite"></p>
         <p class="hint">Fale assim: "MDF chapa branco TX 18 milímetros, quatro unidades, valor 289,90".</p>
         <div class="row"><input id="it-x-${i}" autocomplete="off" placeholder="O que você ditar aparece aqui"><button class="btn small warm" type="button" data-a="fill">Preencher</button><button class="btn small" type="button" data-a="close">Fechar</button></div>
+        <p class="hint dict-why"></p>
       </div>
       <div class="field desc"><label for="it-d-${i}">Material</label><input id="it-d-${i}" autocomplete="off" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true" role="combobox" aria-autocomplete="list" aria-expanded="false"></div>
       <div class="field"><label for="it-u-${i}">Un.</label><input id="it-u-${i}" autocomplete="off"></div>
@@ -1419,20 +1421,23 @@ const micPolicyOk = () => {
   try { const fp = document.permissionsPolicy || document.featurePolicy; return !fp || typeof fp.allowsFeature !== "function" || fp.allowsFeature("microphone"); }
   catch { return true; }
 };
-let speechBlocked = !SpeechRec || !micPolicyOk() || /; wv\)/.test(navigator.userAgent);
+// motivo aparece em letra pequena na caixa do ditado, para saber o que bloqueou em cada aparelho
+let micWhy = !SpeechRec ? "este navegador não tem reconhecimento de voz" : !micPolicyOk() ? "a página que abre o app não libera o microfone"
+  : /; wv\)/.test(navigator.userAgent) ? "app aberto dentro de outro aplicativo (WebView)" : "";
+let speechBlocked = !!micWhy;
 let micPerm = "", micAsked = false, press = null, talk = null;
 const HOLD_MS = 200, CANCEL_PX = 80, FATAL = ["not-allowed", "service-not-allowed", "audio-capture", "network", "language-not-supported"];
 try {
   navigator.permissions.query({ name: "microphone" }).then((st) => {
-    const upd = () => { micPerm = st.state; if (st.state === "denied") setSpeechBlocked(); };
+    const upd = () => { micPerm = st.state; if (st.state === "denied") setSpeechBlocked("permissão do microfone negada"); };
     upd(); st.onchange = upd;
   }, () => {});
 } catch {}
 const micLabel = (b) => b.id === "btn-add-voice" ? (speechBlocked ? "Ditar novo item" : "Segure e dite um item") : (speechBlocked ? "Ditar" : "Segure e fale");
 const paintMic = (b) => { b.classList.remove("on", "off"); b.querySelector("span").textContent = micLabel(b); };
-function setSpeechBlocked() {
+function setSpeechBlocked(why) {
   if (speechBlocked) return;
-  speechBlocked = true;
+  speechBlocked = true; micWhy = why || micWhy || "microfone indisponível";
   for (const b of document.querySelectorAll(".mic")) if (!talk || talk.btn !== b) paintMic(b);
 }
 const kbHint = () => matchMedia("(pointer: coarse)").matches ? "Toque no 🎤 do teclado e fale. Depois toque em Preencher."
@@ -1444,15 +1449,17 @@ function openDictBox(i) {
   if (box.hidden) { x.value = ""; box.hidden = false; }
   return x;
 }
-function dictState(i, text, live) {
+function dictState(i, text, live, why) {
   const x = $(`it-x-${i}`); if (!x) return;
-  const st = x.closest(".dict").querySelector(".dict-st");
+  const box = x.closest(".dict"), st = box.querySelector(".dict-st");
   st.textContent = text; st.classList.toggle("live", !!live);
+  box.querySelector(".dict-why").textContent = why ? "Motivo: " + why + "." : "";
 }
 // precisa rodar dentro do toque (soltar o dedo) para o celular abrir o teclado
-function keyboardDictation(i, why) {
+const MIC_OFF = "O app não consegue usar o microfone aqui.";
+function keyboardDictation(i) {
   const x = openDictBox(i); if (!x) return;
-  dictState(i, (why ? why + " " : "") + kbHint());
+  dictState(i, MIC_OFF + " " + kbHint(), false, micWhy);
   x.focus();
 }
 function bindMic(btn, prepare) {
@@ -1466,9 +1473,9 @@ function bindMic(btn, prepare) {
     try { btn.setPointerCapture(e.pointerId); } catch {}
     if (!speechBlocked) press.timer = setTimeout(() => { if (press && !press.far && !talk) { press.started = true; press.i = prepare(); beginTalk(press.i, btn); } }, HOLD_MS);
   });
-  // teclado (Enter ou Espaço): um aperto começa a ouvir, outro para
-  btn.addEventListener("click", (e) => {
-    if (e.detail !== 0) return;
+  // teclado (Enter ou Espaço) ou leitor de tela: um aperto começa a ouvir, outro para.
+  // O click que vem do próprio toque/mouse é descartado logo abaixo (ghostUntil), então aqui só chega o de teclado.
+  btn.addEventListener("click", () => {
     if (talk) { endTalk(false); return; }
     const i = prepare();
     if (speechBlocked) keyboardDictation(i); else beginTalk(i, btn, true);
@@ -1487,15 +1494,25 @@ addEventListener("pointermove", (e) => {
 function release(e) {
   if (!press || e.pointerId !== press.id) return;
   const p = press; press = null; clearTimeout(p.timer);
+  if (e.type === "pointerup") ghostUntil = performance.now() + 500;
   // se o celular "roubar" o toque (pointercancel), preenche com o que já ouviu em vez de jogar fora
   if (talk && !talk.stopping) { endTalk(p.far); return; }
   if (e.type === "pointercancel" || talk || p.far) return;
-  if (speechBlocked) { keyboardDictation(p.i ?? p.prepare(), p.why); return; }
+  if (speechBlocked) { keyboardDictation(p.i ?? p.prepare()); return; }
   if (p.started) return; // já ouviu e terminou (ou pediu a permissão) antes de soltar
   toast("Segure o botão enquanto fala e solte para preencher, como no WhatsApp");
 }
 addEventListener("pointerup", release);
 addEventListener("pointercancel", release);
+// O toque no microfone ainda gera um "click" logo depois de soltar (no celular, às vezes com detail 0, igual ao do
+// teclado). Se a página mudou (caixa abriu, item novo), esse click cairia em outro lugar (outro campo, Enviar PDF) e
+// tiraria o foco da caixa do ditado; no próprio botão, ligaria o ditado de novo. Ele é ignorado.
+let ghostUntil = 0;
+for (const type of ["mousedown", "click"]) addEventListener(type, (e) => {
+  if (performance.now() > ghostUntil) return;
+  if (type === "click") ghostUntil = 0;
+  e.preventDefault(); e.stopPropagation();
+}, true);
 function beginTalk(i, btn, toggle) {
   const x = openDictBox(i); if (!x) return;
   x.value = "";
@@ -1505,7 +1522,7 @@ function beginTalk(i, btn, toggle) {
   dictState(i, toggle ? "Ouvindo… fale o material, a quantidade e o valor." : "Ouvindo… fale e solte o botão. Para cancelar, arraste o dedo para longe.", true);
   const t = talk;
   // se o microfone nunca chega a abrir (página sem permissão), cai no teclado
-  t.watch = setTimeout(() => { if (talk === t && !t.alive && (micPerm !== "prompt" || micAsked)) micBlocked(); }, 3000);
+  t.watch = setTimeout(() => { if (talk === t && !t.alive && (micPerm !== "prompt" || micAsked)) micBlocked("o microfone não respondeu"); }, 3000);
   listen(t);
 }
 // junta os pedaços reconhecidos; alguns celulares repetem o texto anterior em cada pedaço
@@ -1521,7 +1538,7 @@ function joinResults(res) {
 const talkText = (t) => [t.done, t.now].filter(Boolean).join(" ").trim();
 function listen(t) {
   let rec;
-  try { rec = new SpeechRec(); } catch { micBlocked(); return; }
+  try { rec = new SpeechRec(); } catch { micBlocked("o reconhecimento de voz não abriu"); return; }
   t.rec = rec; t.now = ""; t.err = "";
   rec.lang = "pt-BR"; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 1;
   rec.onstart = rec.onaudiostart = () => { t.alive = true; };
@@ -1537,13 +1554,13 @@ function listen(t) {
     if (FATAL.includes(t.err)) {
       // permissão ainda sendo pedida: na primeira vez não bloqueia, só pede para tentar de novo
       if (t.err === "not-allowed" && micPerm === "prompt" && !micAsked) { micAsked = true; t.cancel = true; t.quiet = true; finishTalk(t); toast("Permita o microfone quando o celular pedir e segure o botão de novo"); return; }
-      micBlocked(); return;
+      micBlocked("erro " + t.err); return;
     }
     // o Android encerra sozinho numa pausa: continua ouvindo enquanto o dedo estiver no botão
     if (!t.stopping && t.restarts < 8) { t.restarts++; listen(t); return; }
     finishTalk(t);
   };
-  try { rec.start(); } catch { micBlocked(); }
+  try { rec.start(); } catch { micBlocked("o reconhecimento de voz não abriu"); }
 }
 function endTalk(cancel, quiet) {
   const t = talk; if (!t || t.stopping) return;
@@ -1567,22 +1584,22 @@ function finishTalk(t) {
   // o microfone nem chegou a abrir: na primeira vez pode ser o pedido de permissão; depois, cai no teclado
   if (!t.alive) {
     if (micPerm === "prompt" && !micAsked) { micAsked = true; if (x) x.closest(".dict").hidden = true; toast("Permita o microfone quando o celular pedir e segure o botão de novo"); return; }
-    talk = t; micBlocked(); return;
+    talk = t; micBlocked("o microfone não respondeu"); return;
   }
   if (x) dictState(t.i, "Não ouvi nada. Segure o botão, fale e só então solte.");
   toast("Não ouvi nada. Segure o botão enquanto fala.");
 }
-function micBlocked() {
+function micBlocked(why) {
   const t = talk;
-  setSpeechBlocked();
+  setSpeechBlocked(why);
   if (!t) return;
   talk = null; clearTimeout(t.watch); clearTimeout(t.stopWatch);
   try { t.rec && t.rec.abort(); } catch {}
   paintMic(t.btn);
-  const why = "O microfone do app está bloqueado aqui.", x = openDictBox(t.i);
-  if (x) { x.value = talkText(t); dictState(t.i, why + " " + kbHint()); }
-  // com o dedo ainda no botão, o teclado abre ao soltar
-  if (press) press.why = why; else toast(why + " Toque no campo e use o 🎤 do teclado.");
+  const x = openDictBox(t.i);
+  if (x) { x.value = talkText(t); dictState(t.i, MIC_OFF + " " + kbHint(), false, micWhy); }
+  // com o dedo ainda no botão, o teclado abre ao soltar; senão, avisa
+  if (!press) toast(MIC_OFF + " Toque no campo e use o 🎤 do teclado.");
 }
 function applyDictation(i, text) {
   const it = quote.items[i]; if (!it || !String(text || "").trim()) return;
