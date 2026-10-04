@@ -81,10 +81,7 @@ Marcos vai usar o app no dia a dia com os dados reais da empresa e a logomarca, 
 
 ## Atualização (04/10/2026, 11h40): selo no centro do QR Code e logomarca na cor das letras
 
-Marcos pediu uma marca discreta (o app vai ser vendido), então **a marca d'água grande no fundo das páginas foi tirada**. No lugar:
-- **Selo Madeira Forte no centro do QR Code**, bem pequeno, em tons escuros, no PDF e na prévia de Meus dados. O QR passou a usar correção de erros alta, e o teste de leitura com o selo no meio continua lendo o link do WhatsApp normalmente.
-- **Logomarca na cor das letras:** no PDF e no topo do app (acima do nome da empresa) a logomarca aparece como silhueta com relevo, na cor das letras (escura, e clara no modo escuro do app). Funciona com o logo de fundo branco ou de fundo preto. Em Meus dados, "Cor da logomarca" volta para as cores originais.
-- O selo do QR vem embutido no app. Para um cliente que comprar o app, o selo no QR continua sendo a assinatura discreta da Madeira Forte.
+Marcos pediu uma marca discreta (o app vai ser vendido), então a marca d'água grande no fundo das páginas foi tirada. No lugar, o selo Madeira Forte ficou dentro do QR Code (versão final na atualização das 12h30) e a logomarca do cliente pode sair em silhueta na cor das letras (opção "mono" em Meus dados).
 - Corrigido: cidade repetida no cabeçalho do PDF quando "Rua e número" ficava em branco.
 
 ## Atualização (04/10/2026, 11h50): estilo preto e dourado
@@ -94,6 +91,15 @@ Marcos achou o azul-petróleo desalinhado com a página e com a logomarca dourad
 - **Preto e dourado no PDF:** título e linhas em dourado escuro, cabeçalho da tabela preto com letras douradas, linhas e fundos num tom areia, textos em quase preto.
 - **Preto e dourado no app:** papel claro quente com botões pretos e letras douradas; no modo escuro, fundo preto-quente com dourado vivo nos botões e destaques. O botão verde do WhatsApp continua verde.
 - O azul-petróleo continua disponível, e é o padrão para quem comprar o app.
+
+## Atualização (04/10/2026, 12h30): selo dourado fixo no QR e plano para a versão vendida
+
+Marcos aprovou o estilo preto e dourado e decidiu:
+- **Versão vendida:** o cabeçalho do PDF (nome da empresa, dados e logomarca) é todo editável por quem comprar, em Meus dados. Isso já funciona assim.
+- **QR Code:** continua levando os dados de quem comprou (WhatsApp ou Instagram dele).
+- **Selo da Madeira Forte fixo no QR:** dourado e quase transparente no centro, em todo PDF, sem opção para o cliente tirar. No PDF, o QR ficou um pouco maior (21 mm) e abre um espaço limpo no meio para o selo (opacidade 55%, 24% da largura do QR).
+- Limite honesto: o selo está dentro do próprio arquivo do app. Quem tiver o arquivo pode editá-lo. Na versão de venda (loja de aplicativos ou servidor), o PDF e o selo devem ser gerados pelo servidor, aí o selo fica realmente travado.
+- Teste com leitor automático: o QR continua lendo o WhatsApp. Falta o teste no celular de verdade (apontar a câmera para o PDF de exemplo).
 
 ## Próximos passos (a combinar)
 
