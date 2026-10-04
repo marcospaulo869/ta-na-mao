@@ -79,6 +79,13 @@ Marcos vai usar o app no dia a dia com os dados reais da empresa e a logomarca, 
 - O botão **+ Novo orçamento** agora é grande, ocupa a largura toda e fica no topo da tela do orçamento e da lista de Salvos (azul-petróleo). No recibo, **+ Novo recibo** (laranja), também no topo do recibo e da lista.
 - Se o orçamento ou recibo atual ainda não foi salvo, o primeiro toque avisa "Toque de novo: o atual não foi salvo", para não perder o que foi digitado.
 
+## Atualização (04/10/2026, 11h30): marca Madeira Forte e marca d'água
+
+- O selo oficial da Madeira Forte (fundo branco e fundo preto) está na pasta `marca` do projeto e do GitHub, para usar em todos os seus produtos.
+- **Marca d'água:** a logomarca cadastrada em Meus dados aparece clarinha no centro de **todas as páginas** do PDF de orçamento e de recibo. O fundo branco ou preto da imagem some sozinho. Em Meus dados há a opção "Marca d'água no PDF" para desligar.
+- A logomarca agora é guardada com mais definição. **Envie a logomarca de novo** em Meus dados (use a versão de fundo branco) para a marca d'água sair nítida.
+- Corrigido: quem deixava "Rua e número" em branco via a cidade repetida no cabeçalho do PDF depois de salvar Meus dados.
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.

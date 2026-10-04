@@ -457,6 +457,10 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       </div>
       <div class="field"><label for="p-logo">Logomarca</label><input type="file" id="p-logo" accept="image/*"></div>
       <div class="row"><img id="p-logo-prev" class="logo-prev" alt="Logomarca" hidden><button class="btn small danger" id="p-logo-rm" hidden>Remover logomarca</button></div>
+      <div class="field"><label for="p-wm">Marca d'água no PDF</label><select id="p-wm">
+        <option value="logo">Logomarca clarinha no fundo de cada página</option>
+        <option value="none">Sem marca d'água</option>
+      </select></div>
       <div class="qrbox">
         <canvas id="p-qr-prev" width="132" height="132" aria-label="QR Code"></canvas>
         <div class="stack0">
@@ -577,8 +581,8 @@ const DEFAULT_OBS = `PRÉ-CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 7. Mudanças no projeto depois da aprovação podem gerar um novo orçamento.
 8. Ao assinar este documento, o cliente aprova o orçamento e as condições acima, firmadas com {EMPRESA}.`;
 
-const blankProfile = () => ({ owner: "", name: "", doc: "", ie: "", instagram: "", qr: "whatsapp", role: "", phone: "", email: "", cep: "", street: "", district: "", city: "", uf: "", address: "", days: 15, next: 1, nextReceipt: 1, logo: "", signature: "", obs: DEFAULT_OBS, registered: false, pwHash: "", pwSalt: "" });
-const PROFILE_FIELDS = ["owner", "name", "doc", "ie", "role", "instagram", "qr", "phone", "email", "cep", "street", "district", "city", "uf"];
+const blankProfile = () => ({ owner: "", name: "", doc: "", ie: "", instagram: "", qr: "whatsapp", wm: "logo", role: "", phone: "", email: "", cep: "", street: "", district: "", city: "", uf: "", address: "", days: 15, next: 1, nextReceipt: 1, logo: "", signature: "", obs: DEFAULT_OBS, registered: false, pwHash: "", pwSalt: "" });
+const PROFILE_FIELDS = ["owner", "name", "doc", "ie", "role", "instagram", "qr", "wm", "phone", "email", "cep", "street", "district", "city", "uf"];
 const composeAddress = (p) => [p.street, p.district, [p.city, (p.uf || "").toUpperCase()].filter(Boolean).join(" - "), p.cep && "CEP " + p.cep].filter(Boolean).join(", ");
 const bizName = (p) => p.name || p.owner;
 const igHandle = (p) => (p.instagram || "").trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/^@/, "").replace(/\/.*$/, "");
@@ -1024,6 +1028,55 @@ function pdfDoc(title, num) {
   return { doc, header, W, M, ACC, INK, MUT, LINE };
 }
 
+/* ---------- Marca d'água: a logomarca clarinha no fundo de cada página do PDF ---------- */
+const wm = { src: null, data: "", ratio: 1, job: null };
+function prepWatermark() {
+  const src = profile.wm !== "none" ? profile.logo || "" : "";
+  if (src === wm.src && wm.job) return wm.job;
+  wm.src = src; wm.data = "";
+  if (!src) return (wm.job = Promise.resolve());
+  wm.job = new Promise((done) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const s = Math.min(1, 700 / Math.max(img.width, img.height));
+        const c = document.createElement("canvas"); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        const cx = c.getContext("2d"); cx.drawImage(img, 0, 0, c.width, c.height);
+        const px = cx.getImageData(0, 0, c.width, c.height), d = px.data;
+        // Fundo = cor dos quatro cantos (branco ou preto). Se os cantos forem iguais, o fundo vira transparente.
+        const at = (x, y) => (y * c.width + x) * 4;
+        const corners = [at(0, 0), at(c.width - 1, 0), at(0, c.height - 1), at(c.width - 1, c.height - 1)];
+        const bg = [0, 1, 2].map((k) => corners.reduce((t, i) => t + d[i + k], 0) / 4);
+        if (corners.every((i) => [0, 1, 2].every((k) => Math.abs(d[i + k] - bg[k]) < 24))) {
+          for (let i = 0; i < d.length; i += 4) {
+            const dist = Math.max(Math.abs(d[i] - bg[0]), Math.abs(d[i + 1] - bg[1]), Math.abs(d[i + 2] - bg[2]));
+            d[i + 3] = Math.round(d[i + 3] * Math.min(1, Math.max(0, (dist - 12) / 40)));
+          }
+          cx.putImageData(px, 0, 0);
+        }
+        if (wm.src === src) { wm.data = c.toDataURL("image/png"); wm.ratio = c.width / c.height; }
+      } catch {}
+      done();
+    };
+    img.onerror = () => done();
+    img.src = src;
+  });
+  return wm.job;
+}
+// Carimba a marca d'água por cima de todas as páginas, bem transparente, centralizada
+function stampWatermark(doc) {
+  if (!wm.data || profile.wm === "none" || !doc.GState) return;
+  let w = 120, h = w / wm.ratio;
+  if (h > 150) { h = 150; w = h * wm.ratio; }
+  const x = (210 - w) / 2, y = (297 - h) / 2 + 8;
+  for (let p = 1; p <= doc.getNumberOfPages(); p++) {
+    doc.setPage(p);
+    doc.setGState(new doc.GState({ opacity: 0.1 }));
+    doc.addImage(wm.data, "PNG", x, y, w, h, "marca-dagua", "FAST");
+    doc.setGState(new doc.GState({ opacity: 1 }));
+  }
+}
+
 function buildPdf(q) {
   const t = calc(q);
   const num = String(q.number || 0).padStart(4, "0");
@@ -1099,6 +1152,7 @@ function buildPdf(q) {
     doc.setPage(i); doc.setFontSize(8); doc.setTextColor(...MUT);
     doc.text(`Orçamento nº ${num}  |  Página ${i} de ${pages}`, W / 2, 289, { align: "center" });
   }
+  stampWatermark(doc);
   return doc;
 }
 const fileName = (q) => `Orcamento-${String(q.number || 0).padStart(4, "0")}-${(q.client.name || "cliente").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
@@ -1161,7 +1215,7 @@ $("sh-copy").onclick = async () => {
   try { await navigator.clipboard.writeText($("sh-msg").textContent); toast("Mensagem copiada"); }
   catch { const rg = document.createRange(); rg.selectNodeContents($("sh-msg")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(rg); toast("Texto selecionado. Copie pelo menu."); }
 };
-const sendQuote = (q) => sendDoc({ doc: buildPdf(q), name: fileName(q), who: q.client.name, phone: q.client.phone, message: clientMessage(q) });
+const sendQuote = async (q) => { await prepWatermark(); return sendDoc({ doc: buildPdf(q), name: fileName(q), who: q.client.name, phone: q.client.phone, message: clientMessage(q) }); };
 $("btn-pdf").onclick = async () => {
   if (!window.jspdf) { toast("O gerador de PDF não carregou. Verifique a internet e abra de novo."); return; }
   if (!quote.client.name.trim()) { toast("Preencha o nome do cliente"); $("c-name").focus(); return; }
@@ -1230,10 +1284,11 @@ function renderQr() {
 }
 for (const id of ["p-qr", "p-phone", "p-instagram"]) $(id).addEventListener("input", renderQr);
 function renderProfile() {
-  if (!profile.street && profile.address) profile.street = profile.address;
+  if (!profile.street && !profile.city && profile.address) profile.street = profile.address; // cadastro antigo, só com endereço
   for (const k of PROFILE_FIELDS) $("p-" + k).value = profile[k] || "";
   $("p-days").value = profile.days; $("p-next").value = profile.next; $("p-obs").value = profile.obs;
   $("p-qr").value = profile.qr || "whatsapp";
+  $("p-wm").value = profile.wm || "logo";
   $("p-err").hidden = true;
   renderLogo(); renderQr();
   sigMe.set(profile.signature);
@@ -1242,10 +1297,16 @@ $("p-logo").onchange = (e) => {
   const f = e.target.files[0]; if (!f) return;
   const img = new Image();
   img.onload = () => {
-    const s = Math.min(1, 400 / img.width, 200 / img.height);
-    const c = document.createElement("canvas"); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
-    const cx = c.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0, 0, c.width, c.height); cx.drawImage(img, 0, 0, c.width, c.height);
-    profile.logo = c.toDataURL("image/jpeg", 0.85); renderLogo(); URL.revokeObjectURL(img.src);
+    // Nítida o bastante para a marca d'água, mas leve para caber no cadastro (limite do banco: 256 KB por ficha)
+    let s = Math.min(1, 560 / img.width, 560 / img.height), url = "";
+    for (let k = 0; k < 6; k++) {
+      const c = document.createElement("canvas"); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      const cx = c.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0, 0, c.width, c.height); cx.drawImage(img, 0, 0, c.width, c.height);
+      url = c.toDataURL("image/jpeg", 0.85);
+      if (url.length < 110000) break;
+      s *= 0.8;
+    }
+    profile.logo = url; renderLogo(); URL.revokeObjectURL(img.src);
   };
   img.src = URL.createObjectURL(f);
 };
@@ -1492,6 +1553,7 @@ function buildReceiptPdf(r) {
   sigBlock(M + colW + 16, r.payerSig, r.payer.name, r.payer.doc, "Pagador");
   doc.setFontSize(8); doc.setTextColor(...MUT);
   doc.text(`Recibo nº ${num}  |  ${who}`, W / 2, 289, { align: "center" });
+  stampWatermark(doc);
   return doc;
 }
 $("btn-r-pdf").onclick = async () => {
@@ -1500,10 +1562,11 @@ $("btn-r-pdf").onclick = async () => {
   await saveReceipt(true);
   await sendReceipt(receipt);
 };
-function sendReceipt(r) {
+async function sendReceipt(r) {
   const first = (r.payer.name || "").split(" ")[0];
   const message = `Olá${first ? " " + first : ""}! Segue o recibo nº ${pad4(r.number)} do pagamento de ${money(parseNum(r.amount))} recebido em ${fmtDate(r.date)}. Obrigado pela confiança!${bizName(profile) ? "\n" + bizName(profile) : ""}`;
   const name = `Recibo-${pad4(r.number)}-${(r.payer.name || "cliente").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
+  await prepWatermark();
   return sendDoc({ doc: buildReceiptPdf(r), name, who: r.payer.name, phone: r.payer.phone, message });
 }
 
@@ -1598,6 +1661,7 @@ renderEditor();
 (async () => {
   await store.init();
   profile = await store.loadProfile();
+  prepWatermark();
   quotes = await store.listQuotes().catch(() => []);
   receipts = await store.listReceipts().catch(() => []);
   if (quotes.length && quote.sample) newQuote();
