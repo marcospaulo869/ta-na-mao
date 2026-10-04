@@ -104,8 +104,18 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .mic svg { width: 18px; height: 18px; color: var(--warm); }
 .mic.on { background: var(--warm); color: var(--warm-ink); }
 .mic.on svg { color: var(--warm-ink); animation: pulse 1s ease-in-out infinite; }
+/* segurar o botão como no WhatsApp: sem rolar a página, sem menu do toque longo, sem selecionar texto */
+.mic { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; white-space: nowrap; }
+.inum { white-space: nowrap; }
+.ihead { flex-wrap: wrap; row-gap: 6px; }
+@media (max-width: 400px) { .item .mic { padding: 6px 10px; gap: 4px; font-size: 0.85rem; } .item .mv { width: 30px; } }
+.mic.off { background: var(--danger); border-color: var(--danger); color: var(--bg); }
+.mic.off svg { color: var(--bg); animation: none; }
+.dict-st { margin: 0; font-weight: 700; }
+.dict-st:empty { display: none; }
+.dict-st.live::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: #D93025; vertical-align: 1px; animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.35; } }
-@media (prefers-reduced-motion: reduce) { .mic.on svg { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .mic.on svg, .dict-st.live::before { animation: none; } }
 .ins { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; color: var(--accent); font: 600 0.88rem var(--font-body); cursor: pointer; padding: 2px 0; }
 .ins::before, .ins::after { content: ""; flex: 1; border-top: 1px dashed var(--accent); opacity: 0.45; }
 .ins:hover::before, .ins:hover::after { opacity: 1; }
@@ -1296,10 +1306,11 @@ function renderItems() {
     }
     const row = document.createElement("div"); row.className = "item";
     row.innerHTML = `
-      <div class="ihead"><span class="inum">Item ${i + 1}</span><span class="itools"><button class="mv" type="button" data-d="-1" title="Subir" aria-label="Subir item ${i + 1}" ${i === 0 ? "disabled" : ""}>↑</button><button class="mv" type="button" data-d="1" title="Descer" aria-label="Descer item ${i + 1}" ${i === quote.items.length - 1 ? "disabled" : ""}>↓</button><button class="mic" type="button" aria-label="Ditar o item ${i + 1}">${MIC_SVG}<span>Ditar</span></button></span></div>
+      <div class="ihead"><span class="inum">Item ${i + 1}</span><span class="itools"><button class="mv" type="button" data-d="-1" title="Subir" aria-label="Subir item ${i + 1}" ${i === 0 ? "disabled" : ""}>↑</button><button class="mv" type="button" data-d="1" title="Descer" aria-label="Descer item ${i + 1}" ${i === quote.items.length - 1 ? "disabled" : ""}>↓</button><button class="mic" type="button" aria-label="Ditar o item ${i + 1}">${MIC_SVG}<span></span></button></span></div>
       <div class="dict" hidden>
-        <p class="hint">Fale assim: "MDF chapa branco TX 18 milímetros, quatro unidades, valor 289,90". Se o app não ouvir, toque no microfone do teclado e fale.</p>
-        <div class="row"><input id="it-x-${i}" autocomplete="off" placeholder="O que você ditar aparece aqui"><button class="btn small warm" type="button" data-a="fill">Preencher</button></div>
+        <p class="dict-st" role="status" aria-live="polite"></p>
+        <p class="hint">Fale assim: "MDF chapa branco TX 18 milímetros, quatro unidades, valor 289,90".</p>
+        <div class="row"><input id="it-x-${i}" autocomplete="off" placeholder="O que você ditar aparece aqui"><button class="btn small warm" type="button" data-a="fill">Preencher</button><button class="btn small" type="button" data-a="close">Fechar</button></div>
       </div>
       <div class="field desc"><label for="it-d-${i}">Material</label><input id="it-d-${i}" autocomplete="off" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true" role="combobox" aria-autocomplete="list" aria-expanded="false"></div>
       <div class="field"><label for="it-u-${i}">Un.</label><input id="it-u-${i}" autocomplete="off"></div>
@@ -1318,7 +1329,7 @@ function renderItems() {
     q.oninput = () => { it.qty = parseNum(q.value); renderTotals(); };
     p.oninput = () => { it.price = parseNum(p.value); renderTotals(); };
     row.querySelector(".rm").onclick = () => { quote.items.splice(i, 1); renderItems(); renderTotals(); };
-    row.querySelector(".mic").onclick = () => startDictation(i);
+    bindMic(row.querySelector(".mic"), () => i);
     for (const mv of row.querySelectorAll(".mv")) mv.onclick = () => {
       const j = i + Number(mv.dataset.d); if (j < 0 || j >= quote.items.length) return;
       [quote.items[i], quote.items[j]] = [quote.items[j], quote.items[i]];
@@ -1327,6 +1338,7 @@ function renderItems() {
     const x = row.querySelector(`#it-x-${i}`);
     row.querySelector('[data-a="fill"]').onclick = () => applyDictation(i, x.value);
     x.onkeydown = (e) => { if (e.key === "Enter") applyDictation(i, x.value); };
+    row.querySelector('[data-a="close"]').onclick = () => { if (talk && talk.i === i) endTalk(true, true); x.value = ""; x.closest(".dict").hidden = true; };
   });
 }
 function insertItemAt(i) {
@@ -1397,41 +1409,178 @@ function parseDictation(raw) {
 }
 
 
+/* Microfone como no WhatsApp: segure o botão e fale, solte para preencher, arraste o dedo para longe para cancelar.
+   Onde a página não pode usar o microfone (link do Claude, app em WebView, permissão negada), o botão abre o campo
+   com o teclado e a pessoa usa o microfone do próprio teclado. */
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-let speechBlocked = !SpeechRec, activeRec = null;
+const micPolicyOk = () => {
+  try { const fp = document.permissionsPolicy || document.featurePolicy; return !fp || typeof fp.allowsFeature !== "function" || fp.allowsFeature("microphone"); }
+  catch { return true; }
+};
+let speechBlocked = !SpeechRec || !micPolicyOk() || /; wv\)/.test(navigator.userAgent);
+let micPerm = "", micAsked = false, press = null, talk = null;
+const HOLD_MS = 200, CANCEL_PX = 80, FATAL = ["not-allowed", "service-not-allowed", "audio-capture", "network", "language-not-supported"];
+try {
+  navigator.permissions.query({ name: "microphone" }).then((st) => {
+    const upd = () => { micPerm = st.state; if (st.state === "denied") setSpeechBlocked(); };
+    upd(); st.onchange = upd;
+  }, () => {});
+} catch {}
+const micLabel = (b) => b.id === "btn-add-voice" ? (speechBlocked ? "Ditar novo item" : "Segure e dite um item") : (speechBlocked ? "Ditar" : "Segure e fale");
+const paintMic = (b) => { b.classList.remove("on", "off"); b.querySelector("span").textContent = micLabel(b); };
+function setSpeechBlocked() {
+  if (speechBlocked) return;
+  speechBlocked = true;
+  for (const b of document.querySelectorAll(".mic")) if (!talk || talk.btn !== b) paintMic(b);
+}
+const kbHint = () => matchMedia("(pointer: coarse)").matches ? "Toque no 🎤 do teclado e fale. Depois toque em Preencher."
+  : /Windows/.test(navigator.userAgent) ? "Aperte a tecla Windows + H e fale. Depois clique em Preencher."
+  : "Use o ditado do teclado e depois clique em Preencher.";
 function openDictBox(i) {
   const x = $(`it-x-${i}`); if (!x) return null;
-  x.closest(".dict").hidden = false;
+  const box = x.closest(".dict");
+  if (box.hidden) { x.value = ""; box.hidden = false; }
   return x;
 }
-function startDictation(i) {
-  if (activeRec) { try { activeRec.stop(); } catch {} return; }
+function dictState(i, text, live) {
+  const x = $(`it-x-${i}`); if (!x) return;
+  const st = x.closest(".dict").querySelector(".dict-st");
+  st.textContent = text; st.classList.toggle("live", !!live);
+}
+// precisa rodar dentro do toque (soltar o dedo) para o celular abrir o teclado
+function keyboardDictation(i, why) {
+  const x = openDictBox(i); if (!x) return;
+  dictState(i, (why ? why + " " : "") + kbHint());
+  x.focus();
+}
+function bindMic(btn, prepare) {
+  paintMic(btn);
+  btn.addEventListener("contextmenu", (e) => e.preventDefault());
+  btn.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || press) return;
+    e.preventDefault();
+    if (talk) { endTalk(false); return; }
+    press = { id: e.pointerId, x: e.clientX, y: e.clientY, prepare, far: false };
+    try { btn.setPointerCapture(e.pointerId); } catch {}
+    if (!speechBlocked) press.timer = setTimeout(() => { if (press && !press.far && !talk) { press.started = true; press.i = prepare(); beginTalk(press.i, btn); } }, HOLD_MS);
+  });
+  // teclado (Enter ou Espaço): um aperto começa a ouvir, outro para
+  btn.addEventListener("click", (e) => {
+    if (e.detail !== 0) return;
+    if (talk) { endTalk(false); return; }
+    const i = prepare();
+    if (speechBlocked) keyboardDictation(i); else beginTalk(i, btn, true);
+  });
+}
+addEventListener("pointermove", (e) => {
+  if (!press || e.pointerId !== press.id) return;
+  const far = Math.hypot(e.clientX - press.x, e.clientY - press.y) > CANCEL_PX;
+  if (far === press.far) return;
+  press.far = far;
+  const t = talk; if (!t || t.stopping || t.toggle) return;
+  t.btn.classList.toggle("off", far);
+  t.btn.querySelector("span").textContent = far ? "Cancelar" : "Ouvindo…";
+  dictState(t.i, far ? "Solte o dedo para cancelar." : "Ouvindo… fale e solte o botão.", !far);
+});
+function release(e) {
+  if (!press || e.pointerId !== press.id) return;
+  const p = press; press = null; clearTimeout(p.timer);
+  // se o celular "roubar" o toque (pointercancel), preenche com o que já ouviu em vez de jogar fora
+  if (talk && !talk.stopping) { endTalk(p.far); return; }
+  if (e.type === "pointercancel" || talk || p.far) return;
+  if (speechBlocked) { keyboardDictation(p.i ?? p.prepare(), p.why); return; }
+  if (p.started) return; // já ouviu e terminou (ou pediu a permissão) antes de soltar
+  toast("Segure o botão enquanto fala e solte para preencher, como no WhatsApp");
+}
+addEventListener("pointerup", release);
+addEventListener("pointercancel", release);
+function beginTalk(i, btn, toggle) {
   const x = openDictBox(i); if (!x) return;
   x.value = "";
-  if (speechBlocked) { x.focus(); return; }
-  const btn = x.closest(".item").querySelector(".mic");
+  talk = { i, btn, toggle, done: "", now: "", restarts: 0 };
+  btn.classList.add("on");
+  btn.querySelector("span").textContent = toggle ? "Parar" : "Ouvindo…";
+  dictState(i, toggle ? "Ouvindo… fale o material, a quantidade e o valor." : "Ouvindo… fale e solte o botão. Para cancelar, arraste o dedo para longe.", true);
+  const t = talk;
+  // se o microfone nunca chega a abrir (página sem permissão), cai no teclado
+  t.watch = setTimeout(() => { if (talk === t && !t.alive && (micPerm !== "prompt" || micAsked)) micBlocked(); }, 3000);
+  listen(t);
+}
+// junta os pedaços reconhecidos; alguns celulares repetem o texto anterior em cada pedaço
+function joinResults(res) {
+  const out = [];
+  for (let k = 0; k < res.length; k++) {
+    const s = String(res[k][0].transcript || "").trim(); if (!s) continue;
+    const last = out[out.length - 1];
+    if (last && s.toLowerCase().startsWith(last.toLowerCase())) out[out.length - 1] = s; else out.push(s);
+  }
+  return out.join(" ");
+}
+const talkText = (t) => [t.done, t.now].filter(Boolean).join(" ").trim();
+function listen(t) {
   let rec;
-  try { rec = new SpeechRec(); } catch { speechBlocked = true; x.focus(); return; }
-  rec.lang = "pt-BR"; rec.interimResults = true; rec.continuous = false;
-  let finalText = "";
+  try { rec = new SpeechRec(); } catch { micBlocked(); return; }
+  t.rec = rec; t.now = ""; t.err = "";
+  rec.lang = "pt-BR"; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 1;
+  rec.onstart = rec.onaudiostart = () => { t.alive = true; };
   rec.onresult = (e) => {
-    let interim = "";
-    for (let k = e.resultIndex; k < e.results.length; k++) {
-      if (e.results[k].isFinal) finalText += e.results[k][0].transcript + " "; else interim += e.results[k][0].transcript;
-    }
-    x.value = (finalText + interim).trim();
+    if (talk !== t) return;
+    t.alive = true; t.now = joinResults(e.results);
+    const x = $(`it-x-${t.i}`); if (x) x.value = talkText(t);
   };
-  rec.onerror = (e) => {
-    if (["not-allowed", "service-not-allowed", "audio-capture", "network"].includes(e.error)) {
-      speechBlocked = true; toast("Use o microfone do teclado do celular e depois toque em Preencher"); x.focus();
-    }
-  };
+  rec.onerror = (e) => { t.err = e.error || "erro"; };
   rec.onend = () => {
-    activeRec = null; btn.classList.remove("on"); btn.querySelector("span").textContent = "Ditar";
-    if (finalText.trim()) applyDictation(i, finalText);
+    if (talk !== t) return;
+    t.done = talkText(t); t.now = "";
+    if (FATAL.includes(t.err)) {
+      // permissão ainda sendo pedida: na primeira vez não bloqueia, só pede para tentar de novo
+      if (t.err === "not-allowed" && micPerm === "prompt" && !micAsked) { micAsked = true; t.cancel = true; t.quiet = true; finishTalk(t); toast("Permita o microfone quando o celular pedir e segure o botão de novo"); return; }
+      micBlocked(); return;
+    }
+    // o Android encerra sozinho numa pausa: continua ouvindo enquanto o dedo estiver no botão
+    if (!t.stopping && t.restarts < 8) { t.restarts++; listen(t); return; }
+    finishTalk(t);
   };
-  try { rec.start(); activeRec = rec; btn.classList.add("on"); btn.querySelector("span").textContent = "Ouvindo… toque para parar"; }
-  catch { speechBlocked = true; x.focus(); }
+  try { rec.start(); } catch { micBlocked(); }
+}
+function endTalk(cancel, quiet) {
+  const t = talk; if (!t || t.stopping) return;
+  t.stopping = true; t.cancel = cancel; t.quiet = quiet;
+  clearTimeout(t.watch);
+  if (cancel || !t.rec) { try { t.rec && t.rec.abort(); } catch {} finishTalk(t); return; }
+  try { t.rec.stop(); } catch { finishTalk(t); return; }
+  t.stopWatch = setTimeout(() => finishTalk(t), 2500); // se o celular não avisar que terminou
+}
+function finishTalk(t) {
+  if (talk !== t) return;
+  talk = null; clearTimeout(t.watch); clearTimeout(t.stopWatch);
+  paintMic(t.btn);
+  const text = talkText(t), x = $(`it-x-${t.i}`);
+  if (t.cancel) {
+    if (x) { x.value = ""; x.closest(".dict").hidden = true; }
+    if (!t.quiet) toast("Ditado cancelado");
+    return;
+  }
+  if (text) { applyDictation(t.i, text); return; }
+  // o microfone nem chegou a abrir: na primeira vez pode ser o pedido de permissão; depois, cai no teclado
+  if (!t.alive) {
+    if (micPerm === "prompt" && !micAsked) { micAsked = true; if (x) x.closest(".dict").hidden = true; toast("Permita o microfone quando o celular pedir e segure o botão de novo"); return; }
+    talk = t; micBlocked(); return;
+  }
+  if (x) dictState(t.i, "Não ouvi nada. Segure o botão, fale e só então solte.");
+  toast("Não ouvi nada. Segure o botão enquanto fala.");
+}
+function micBlocked() {
+  const t = talk;
+  setSpeechBlocked();
+  if (!t) return;
+  talk = null; clearTimeout(t.watch); clearTimeout(t.stopWatch);
+  try { t.rec && t.rec.abort(); } catch {}
+  paintMic(t.btn);
+  const why = "O microfone do app está bloqueado aqui.", x = openDictBox(t.i);
+  if (x) { x.value = talkText(t); dictState(t.i, why + " " + kbHint()); }
+  // com o dedo ainda no botão, o teclado abre ao soltar
+  if (press) press.why = why; else toast(why + " Toque no campo e use o 🎤 do teclado.");
 }
 function applyDictation(i, text) {
   const it = quote.items[i]; if (!it || !String(text || "").trim()) return;
@@ -1497,12 +1646,14 @@ $("q-labor").oninput = (e) => { quote.labor = parseNum(e.target.value); renderTo
 $("q-discount").oninput = (e) => { quote.discount = parseNum(e.target.value); renderTotals(); };
 $("q-obs").oninput = (e) => { quote.obs = e.target.value; };
 $("btn-obs-default").onclick = () => { quote.obs = profile.obs || DEFAULT_OBS; $("q-obs").value = quote.obs; };
-$("btn-add-voice").onclick = () => {
+bindMic($("btn-add-voice"), () => {
   const last = quote.items[quote.items.length - 1];
   if (!last || last.desc.trim() || parseNum(last.price)) quote.items.push({ desc: "", un: "un", qty: 1, price: 0 });
   renderItems(); renderTotals();
-  startDictation(quote.items.length - 1);
-};
+  const i = quote.items.length - 1;
+  $(`it-d-${i}`).closest(".item").scrollIntoView({ block: "nearest" });
+  return i;
+});
 $("btn-add").onclick = () => {
   quote.items.push({ desc: "", un: "un", qty: 1, price: 0 });
   renderItems(); renderTotals();
