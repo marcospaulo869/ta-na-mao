@@ -50,8 +50,9 @@ h2 { font-size: 1.1rem; }
 section.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; }
 .stack { display: grid; gap: 14px; margin-top: 12px; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.field { display: grid; gap: 4px; min-width: 0; }
 label { display: grid; gap: 4px; font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; min-width: 0; }
-input, textarea, select { font: 400 1rem var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%; min-width: 0; text-transform: none; letter-spacing: 0; }
+input, textarea, select { touch-action: manipulation; font: 400 1rem var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%; min-width: 0; text-transform: none; letter-spacing: 0; }
 textarea { min-height: 220px; resize: vertical; line-height: 1.5; }
 input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -65,6 +66,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .items { display: grid; gap: 10px; }
 .item { display: grid; grid-template-columns: 1fr 70px 80px 110px 32px; gap: 8px; align-items: end; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
 .item .desc { grid-column: 1 / -1; }
+.login .field { width: 100%; }
 .item .tot { font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; padding-bottom: 9px; }
 .item .rm { border: 0; background: none; color: var(--danger); font-size: 1.3rem; cursor: pointer; padding-bottom: 6px; }
 .ihead { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -264,8 +266,8 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
     <section class="card">
       <h2>Crie sua senha</h2>
       <div class="grid2">
-        <label>Senha<input type="password" id="s-pass" autocomplete="new-password"></label>
-        <label>Confirme a senha<input type="password" id="s-pass2" autocomplete="new-password"></label>
+        <div class="field"><label for="s-pass">Senha</label><input type="password" id="s-pass" autocomplete="new-password"></div>
+        <div class="field"><label for="s-pass2">Confirme a senha</label><input type="password" id="s-pass2" autocomplete="new-password"></div>
       </div>
       <p class="hint">Use pelo menos 6 caracteres.</p>
       <p class="err" id="s-err" hidden></p>
@@ -280,7 +282,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
       <img id="l-logo" class="logo-prev" alt="Logomarca" hidden>
       <h2 id="l-name">Entrar</h2>
       <p class="hint" id="l-email"></p>
-      <label>Senha<input type="password" id="l-pass" autocomplete="current-password"></label>
+      <div class="field"><label for="l-pass">Senha</label><input type="password" id="l-pass" autocomplete="current-password"></div>
       <p class="err" id="l-err" hidden></p>
       <div class="row"><button class="btn primary" id="btn-login">Entrar</button><button class="btn small" id="btn-forgot">Esqueci minha senha</button></div>
       <div id="l-forgot" class="stack0" hidden>
@@ -299,20 +301,20 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
         <button class="btn small" id="btn-new">Novo</button>
       </div>
       <div class="grid2">
-        <label>Data inicial<input type="date" id="q-start"></label>
-        <label>Válido até<input type="date" id="q-valid"></label>
+        <div class="field"><label for="q-start">Data inicial</label><input type="date" id="q-start"></div>
+        <div class="field"><label for="q-valid">Válido até</label><input type="date" id="q-valid"></div>
       </div>
     </section>
 
     <section class="card">
       <h2>Cliente</h2>
       <div class="grid2">
-        <label>Nome<input id="c-name" autocomplete="off"></label>
-        <label>CPF ou CNPJ<input id="c-doc" autocomplete="off"></label>
-        <label>Telefone / WhatsApp<input id="c-phone" inputmode="tel" autocomplete="off"></label>
-        <label>E-mail<input id="c-email" type="email" autocomplete="off"></label>
+        <div class="field"><label for="c-name">Nome</label><input id="c-name" autocomplete="off"></div>
+        <div class="field"><label for="c-doc">CPF ou CNPJ</label><input id="c-doc" autocomplete="off"></div>
+        <div class="field"><label for="c-phone">Telefone / WhatsApp</label><input id="c-phone" inputmode="tel" autocomplete="off"></div>
+        <div class="field"><label for="c-email">E-mail</label><input id="c-email" type="email" autocomplete="off"></div>
       </div>
-      <label>Endereço da obra<input id="c-address" autocomplete="off"></label>
+      <div class="field"><label for="c-address">Endereço da obra</label><input id="c-address" autocomplete="off"></div>
     </section>
 
     <section class="card">
@@ -320,8 +322,8 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
       <div class="items" id="items"></div>
       <div class="row"><button class="btn" id="btn-add">+ Adicionar material</button><button class="mic" id="btn-add-voice" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar novo item</span></button></div>
       <div class="grid2">
-        <label>Mão de obra (R$)<input id="q-labor" class="num" inputmode="decimal"></label>
-        <label>Desconto (R$)<input id="q-discount" class="num" inputmode="decimal"></label>
+        <div class="field"><label for="q-labor">Mão de obra (R$)</label><input id="q-labor" class="num" inputmode="decimal"></div>
+        <div class="field"><label for="q-discount">Desconto (R$)</label><input id="q-discount" class="num" inputmode="decimal"></div>
       </div>
       <div class="totals" id="totals"></div>
     </section>
@@ -365,34 +367,34 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
       </div>
       <p class="linkinfo" id="r-link" hidden></p>
       <div class="grid2">
-        <label>Data do pagamento<input type="date" id="r-date"></label>
-        <label>Tipo<select id="r-kind">
+        <div class="field"><label for="r-date">Data do pagamento</label><input type="date" id="r-date"></div>
+        <div class="field"><label for="r-kind">Tipo</label><select id="r-kind">
           <option value="total">Pagamento total</option>
           <option value="entrada">Entrada</option>
           <option value="parcela">Parcela</option>
           <option value="saldo">Saldo final</option>
-        </select></label>
+        </select></div>
       </div>
     </section>
     <section class="card">
       <h2>Quem pagou</h2>
       <div class="grid2">
-        <label>Nome<input id="r-name" autocomplete="off"></label>
-        <label>CPF ou CNPJ<input id="r-doc" autocomplete="off"></label>
-        <label>Telefone / WhatsApp<input id="r-phone" inputmode="tel" autocomplete="off"></label>
-        <label>E-mail<input id="r-email" type="email" autocomplete="off"></label>
+        <div class="field"><label for="r-name">Nome</label><input id="r-name" autocomplete="off"></div>
+        <div class="field"><label for="r-doc">CPF ou CNPJ</label><input id="r-doc" autocomplete="off"></div>
+        <div class="field"><label for="r-phone">Telefone / WhatsApp</label><input id="r-phone" inputmode="tel" autocomplete="off"></div>
+        <div class="field"><label for="r-email">E-mail</label><input id="r-email" type="email" autocomplete="off"></div>
       </div>
     </section>
     <section class="card">
       <h2>Pagamento</h2>
       <div class="grid2">
-        <label>Valor recebido (R$)<input id="r-amount" class="num" inputmode="decimal"></label>
-        <label>Forma de pagamento<select id="r-method">
+        <div class="field"><label for="r-amount">Valor recebido (R$)</label><input id="r-amount" class="num" inputmode="decimal"></div>
+        <div class="field"><label for="r-method">Forma de pagamento</label><select id="r-method">
           <option>Pix</option><option>Dinheiro</option><option>Cartão de crédito</option><option>Cartão de débito</option><option>Transferência bancária</option><option>Boleto</option><option>Cheque</option>
-        </select></label>
+        </select></div>
       </div>
       <div><div class="amount-big" id="r-amount-show">R$ 0,00</div><div class="extenso" id="r-extenso"></div></div>
-      <label>Referente a<textarea id="r-desc" style="min-height:90px" placeholder="Ex.: entrada do serviço de marcenaria da cozinha planejada"></textarea></label>
+      <div class="field"><label for="r-desc">Referente a</label><textarea id="r-desc" style="min-height:90px" placeholder="Ex.: entrada do serviço de marcenaria da cozinha planejada"></textarea></div>
     </section>
     <section class="card">
       <h2>Assinaturas</h2>
@@ -427,32 +429,32 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
       <h2>Seus dados</h2>
       <p class="hint">Aparecem no topo de todo PDF. Campos com * são obrigatórios.</p>
       <div class="grid2">
-        <label>Seu nome *<input id="p-owner" autocomplete="name"></label>
-        <label>Nome da empresa<input id="p-name" autocomplete="organization"></label>
-        <label>CPF ou CNPJ *<input id="p-doc"></label>
-        <label>Inscrição estadual<input id="p-ie" placeholder="Se tiver"></label>
-        <label>Profissão ou ramo<input id="p-role" placeholder="Ex.: Marcenaria"></label>
-        <label>Telefone / WhatsApp *<input id="p-phone" inputmode="tel" autocomplete="tel"></label>
-        <label>E-mail *<input id="p-email" type="email" autocomplete="email"></label>
-        <label>Instagram<input id="p-instagram" placeholder="@suaempresa"></label>
+        <div class="field"><label for="p-owner">Seu nome *</label><input id="p-owner" autocomplete="name"></div>
+        <div class="field"><label for="p-name">Nome da empresa</label><input id="p-name" autocomplete="organization"></div>
+        <div class="field"><label for="p-doc">CPF ou CNPJ *</label><input id="p-doc"></div>
+        <div class="field"><label for="p-ie">Inscrição estadual</label><input id="p-ie" placeholder="Se tiver"></div>
+        <div class="field"><label for="p-role">Profissão ou ramo</label><input id="p-role" placeholder="Ex.: Marcenaria"></div>
+        <div class="field"><label for="p-phone">Telefone / WhatsApp *</label><input id="p-phone" inputmode="tel" autocomplete="tel"></div>
+        <div class="field"><label for="p-email">E-mail *</label><input id="p-email" type="email" autocomplete="email"></div>
+        <div class="field"><label for="p-instagram">Instagram</label><input id="p-instagram" placeholder="@suaempresa"></div>
       </div>
       <div class="grid2">
-        <label>CEP<input id="p-cep" inputmode="numeric" autocomplete="postal-code"></label>
-        <label>Rua e número<input id="p-street" autocomplete="address-line1"></label>
-        <label>Bairro<input id="p-district"></label>
-        <label>Cidade *<input id="p-city" autocomplete="address-level2"></label>
-        <label>UF<input id="p-uf" maxlength="2" autocomplete="address-level1"></label>
+        <div class="field"><label for="p-cep">CEP</label><input id="p-cep" inputmode="numeric" autocomplete="postal-code"></div>
+        <div class="field"><label for="p-street">Rua e número</label><input id="p-street" autocomplete="address-line1"></div>
+        <div class="field"><label for="p-district">Bairro</label><input id="p-district"></div>
+        <div class="field"><label for="p-city">Cidade *</label><input id="p-city" autocomplete="address-level2"></div>
+        <div class="field"><label for="p-uf">UF</label><input id="p-uf" maxlength="2" autocomplete="address-level1"></div>
       </div>
-      <label>Logomarca<input type="file" id="p-logo" accept="image/*"></label>
+      <div class="field"><label for="p-logo">Logomarca</label><input type="file" id="p-logo" accept="image/*"></div>
       <div class="row"><img id="p-logo-prev" class="logo-prev" alt="Logomarca" hidden><button class="btn small danger" id="p-logo-rm" hidden>Remover logomarca</button></div>
       <div class="qrbox">
         <canvas id="p-qr-prev" width="132" height="132" aria-label="QR Code"></canvas>
         <div class="stack0">
-          <label>QR Code no PDF<select id="p-qr">
+          <div class="field"><label for="p-qr">QR Code no PDF</label><select id="p-qr">
             <option value="whatsapp">Abre seu WhatsApp</option>
             <option value="instagram">Abre seu Instagram</option>
             <option value="none">Sem QR Code</option>
-          </select></label>
+          </select></div>
           <p class="hint" id="p-qr-hint">Aparece ao lado dos seus dados no orçamento. Quem apontar a câmera do celular abre o link na hora.</p>
         </div>
       </div>
@@ -462,8 +464,8 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
     <section class="card">
       <h2>Preferências</h2>
       <div class="grid2">
-        <label>Validade padrão (dias)<input id="p-days" class="num" inputmode="numeric"></label>
-        <label>Próximo número<input id="p-next" class="num" inputmode="numeric"></label>
+        <div class="field"><label for="p-days">Validade padrão (dias)</label><input id="p-days" class="num" inputmode="numeric"></div>
+        <div class="field"><label for="p-next">Próximo número</label><input id="p-next" class="num" inputmode="numeric"></div>
       </div>
     </section>
     <section class="card">
@@ -482,9 +484,9 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
     <section class="card">
       <h2>Trocar senha</h2>
       <div class="grid2">
-        <label>Senha atual<input type="password" id="pw-old" autocomplete="current-password"></label>
-        <label>Nova senha<input type="password" id="pw-new" autocomplete="new-password"></label>
-        <label>Confirme a nova senha<input type="password" id="pw-new2" autocomplete="new-password"></label>
+        <div class="field"><label for="pw-old">Senha atual</label><input type="password" id="pw-old" autocomplete="current-password"></div>
+        <div class="field"><label for="pw-new">Nova senha</label><input type="password" id="pw-new" autocomplete="new-password"></div>
+        <div class="field"><label for="pw-new2">Confirme a nova senha</label><input type="password" id="pw-new2" autocomplete="new-password"></div>
       </div>
       <p class="err" id="pw-err" hidden></p>
       <div class="row"><button class="btn" id="btn-pw">Trocar senha</button></div>
@@ -737,10 +739,10 @@ function renderItems() {
         <p class="hint">Fale assim: "MDF chapa branco TX 18 milímetros, quatro unidades, valor 289,90". Se o app não ouvir, toque no microfone do teclado e fale.</p>
         <div class="row"><input id="it-x-${i}" autocomplete="off" placeholder="O que você ditar aparece aqui"><button class="btn small warm" type="button" data-a="fill">Preencher</button></div>
       </div>
-      <label class="desc">Material<input id="it-d-${i}" autocomplete="off"></label>
-      <label>Un.<input id="it-u-${i}" autocomplete="off"></label>
-      <label>Qtd.<input id="it-q-${i}" class="num" inputmode="decimal"></label>
-      <label>Preço un. (R$)<input id="it-p-${i}" class="num" inputmode="decimal"></label>
+      <div class="field desc"><label for="it-d-${i}">Material</label><input id="it-d-${i}" autocomplete="off"></div>
+      <div class="field"><label for="it-u-${i}">Un.</label><input id="it-u-${i}" autocomplete="off"></div>
+      <div class="field"><label for="it-q-${i}">Qtd.</label><input id="it-q-${i}" class="num" inputmode="decimal"></div>
+      <div class="field"><label for="it-p-${i}">Preço un. (R$)</label><input id="it-p-${i}" class="num" inputmode="decimal"></div>
       <button class="rm" title="Remover material" aria-label="Remover material">×</button>
       <div class="tot" id="it-t-${i}"></div>`;
     box.appendChild(row);
