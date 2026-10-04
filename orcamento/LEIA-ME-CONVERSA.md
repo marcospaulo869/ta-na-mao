@@ -87,6 +87,14 @@ Marcos pediu uma marca discreta (o app vai ser vendido), então **a marca d'águ
 - O selo do QR vem embutido no app. Para um cliente que comprar o app, o selo no QR continua sendo a assinatura discreta da Madeira Forte.
 - Corrigido: cidade repetida no cabeçalho do PDF quando "Rua e número" ficava em branco.
 
+## Atualização (04/10/2026, 11h50): estilo preto e dourado
+
+Marcos achou o azul-petróleo desalinhado com a página e com a logomarca dourada, e pediu uma versão em preto e dourado.
+- Em **Meus dados → "Cores do app e do PDF"** há três estilos: **Preto e dourado** (logomarca nas cores originais), **Azul-petróleo com logomarca em silhueta** e **Azul-petróleo com logomarca original**. A troca aparece na hora; é guardada ao tocar em "Salvar meus dados".
+- **Preto e dourado no PDF:** título e linhas em dourado escuro, cabeçalho da tabela preto com letras douradas, linhas e fundos num tom areia, textos em quase preto.
+- **Preto e dourado no app:** papel claro quente com botões pretos e letras douradas; no modo escuro, fundo preto-quente com dourado vivo nos botões e destaques. O botão verde do WhatsApp continua verde.
+- O azul-petróleo continua disponível, e é o padrão para quem comprar o app.
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.
