@@ -30,7 +30,7 @@ Para continuar, peça ao Claude: "leia a pasta orcamento do ta-na-mao e vamos re
 - No texto do pré-contrato, os campos {CLIENTE}, {TOTAL}, {VALIDADE} e {EMPRESA} são trocados automaticamente pelos dados do orçamento.
 
 ### Envio
-O botão "Gerar PDF" salva o orçamento, baixa o PDF e mostra uma mensagem pronta para colar no WhatsApp ou no e-mail.
+O botão "Enviar PDF" salva o orçamento e leva o PDF ao WhatsApp (veja a atualização de 04/10).
 
 ## Atualização (03/10/2026, à tarde): cadastro e senha
 
@@ -65,9 +65,19 @@ Decidimos fazer **um app só**, com Orçamento e Recibo juntos (mesmo cadastro, 
 
 Marcos vai usar o app no dia a dia com os dados reais da empresa e a logomarca, para validar e anotar ajustes. Só depois de validado é que vamos montar a estrutura para vender (Play Store ou venda online), com contas no servidor, recuperação de senha e cobrança.
 
+## Atualização (04/10/2026, manhã): Enviar PDF pelo WhatsApp e link próprio
+
+- **Enviar PDF:** cada orçamento salvo tem o botão verde **Enviar PDF** (e cada recibo, **Enviar recibo**). O botão laranja da barra de baixo agora também se chama **Enviar PDF** / **Enviar recibo**.
+  - No navegador do celular (Chrome), abre a tela de compartilhar já com o PDF anexado: escolha o WhatsApp e o contato.
+  - Dentro do app do Claude (ou no computador), o app salva o PDF e mostra o botão **Abrir WhatsApp de (cliente)**, que abre a conversa com o número do cliente e a mensagem pronta. Lá você toca no clipe, em Documento, e escolhe o PDF.
+- **Abas fixas:** as abas Orçamento / Salvos e Recibo / Salvos ficam presas no topo ao rolar a tela.
+- **Link próprio (Chrome / Edge):** o app também pode abrir como site pelo GitHub Pages, em https://marcospaulo869.github.io/ta-na-mao/orcamento/ (depois de ativar em Configurações → Pages do repositório, branch `claude/project-thread-o7weyg`, pasta raiz). Ali o microfone do ditado e o compartilhar com o PDF anexado funcionam direto. No Chrome, "Adicionar à tela inicial" cria um ícone como se fosse um app.
+  - Os dados do site ficam guardados no navegador do celular, separados dos dados do app no Claude. Por isso o cadastro é feito de novo lá. Limpar os dados do navegador apaga os orçamentos desse site.
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.
 - Ajustes de dentro do Orçamento e do Recibo que você for pedindo.
+- Cópia de segurança (exportar e importar os dados) para quem usar o link próprio.
 - Para vender: contas de verdade no servidor (o backend do ta-na-mao já tem cadastro, planos e Stripe).
 - Revisar o texto padrão do pré-contrato (forma de pagamento, prazo e garantia).

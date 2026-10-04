@@ -1,4 +1,11 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
 <title>Orçamento e Recibo</title>
+<meta name="theme-color" content="#1C5A63">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="img/icone-32.png">
+<link rel="apple-touch-icon" href="img/icone-180.png">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;600;700&display=swap">
@@ -115,7 +122,14 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .brand { display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 0; cursor: pointer; color: var(--ink); min-width: 0; }
 .brand img { height: 40px; width: auto; max-width: 90px; border-radius: 6px; object-fit: contain; }
 .brand span { font: 700 1.15rem var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.subnav { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.subnav { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; margin-top: 0; }
+.btn.wa { background: #1FA855; border-color: #1FA855; color: #FFFFFF; text-decoration: none; display: inline-flex; align-items: center; }
+a.btn { text-decoration: none; display: inline-flex; align-items: center; }
+.sheet-bg { position: fixed; inset: 0; z-index: 20; background: rgba(10, 20, 24, 0.55); display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--surface); color: var(--ink); width: 100%; max-width: 560px; border-radius: 18px 18px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 12px; max-height: 90%; overflow-y: auto; }
+.shsteps { margin: 0; padding-left: 1.3em; display: grid; gap: 12px; }
+.shsteps li { display: grid; gap: 4px; }
+.shsteps li::marker { font-weight: 700; color: var(--accent); }
 .back { border: 0; background: none; color: var(--accent); font: 600 0.95rem var(--font-body); cursor: pointer; padding: 6px 0; }
 /* Início: foto real + chamada + dois botões grandes */
 .hero { position: relative; border-radius: 18px; overflow: hidden; min-height: 300px; display: flex; align-items: flex-end; background: #0F2A30; }
@@ -344,12 +358,6 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
       </div>
     </section>
 
-    <section class="card" id="send-card" hidden>
-      <h2>Mensagem para o cliente</h2>
-      <p class="hint">Copie e cole no WhatsApp ou e-mail junto com o PDF.</p>
-      <div class="msgbox" id="send-msg"></div>
-      <div class="row"><button class="btn small" id="btn-copy">Copiar mensagem</button></div>
-    </section>
   </div>
 
   <!-- SALVOS -->
@@ -409,11 +417,6 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
         <canvas id="sig-r-payer" aria-label="Assinatura de quem pagou"></canvas>
         <div class="row"><button class="btn small" id="sig-r-payer-clear">Limpar</button></div>
       </div>
-    </section>
-    <section class="card" id="r-send-card" hidden>
-      <h2>Mensagem para o cliente</h2>
-      <div class="msgbox" id="r-send-msg"></div>
-      <div class="row"><button class="btn small" id="btn-r-copy">Copiar mensagem</button></div>
     </section>
   </div>
 
@@ -504,7 +507,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
     <div><div class="hint">Total</div><div class="total" id="bar-total">R$ 0,00</div></div>
     <div class="row">
       <button class="btn" id="btn-save">Salvar</button>
-      <button class="btn primary" id="btn-pdf">Gerar PDF</button>
+      <button class="btn primary" id="btn-pdf">Enviar PDF</button>
     </div>
   </div>
 </div>
@@ -513,8 +516,21 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
     <div><div class="hint">Valor do recibo</div><div class="total" id="rbar-total">R$ 0,00</div></div>
     <div class="row">
       <button class="btn" id="btn-r-save">Salvar</button>
-      <button class="btn warm" id="btn-r-pdf">Gerar recibo em PDF</button>
+      <button class="btn warm" id="btn-r-pdf">Enviar recibo</button>
     </div>
+  </div>
+</div>
+<div class="sheet-bg" id="sheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-title">
+    <h2 id="sh-title">Enviar pelo WhatsApp</h2>
+    <ol class="shsteps">
+      <li><b id="sh-saved">Salvando o PDF…</b><span class="hint" id="sh-file"></span>
+        <div class="row"><button class="btn small" id="sh-save" type="button">Salvar o PDF de novo</button></div></li>
+      <li><b>Abra a conversa e anexe o PDF.</b><span class="hint">No WhatsApp, toque no clipe, depois em Documento, e escolha o PDF salvo.</span>
+        <div class="row"><a class="btn wa" id="sh-wa" target="_blank" rel="noopener">Abrir WhatsApp</a><a class="btn small" id="sh-wa-any" target="_blank" rel="noopener">Escolher outro contato</a></div></li>
+    </ol>
+    <div class="msgbox" id="sh-msg"></div>
+    <div class="row"><button class="btn small" id="sh-copy" type="button">Copiar mensagem</button><button class="btn small" id="sh-close" type="button">Fechar</button></div>
   </div>
 </div>
 <div class="toast" id="toast" hidden></div>
@@ -898,7 +914,6 @@ function renderEditor() {
   $("q-labor").value = numIn(quote.labor); $("q-discount").value = numIn(quote.discount);
   $("q-obs").value = quote.obs;
   sigClient.set(quote.clientSig);
-  $("send-card").hidden = true;
   renderItems(); renderTotals();
 }
 $("q-start").onchange = () => {
@@ -1067,38 +1082,72 @@ function buildPdf(q) {
   }
   return doc;
 }
-const fileName = (q) => `Orcamento-${String(q.number || 0).padStart(4, "0")}-${(q.client.name || "cliente").normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
+const fileName = (q) => `Orcamento-${String(q.number || 0).padStart(4, "0")}-${(q.client.name || "cliente").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
 const clientMessage = (q) => {
   const t = calc(q);
   const first = (q.client.name || "").split(" ")[0];
   return `Olá${first ? " " + first : ""}! Segue o orçamento nº ${String(q.number).padStart(4, "0")} no valor de ${money(t.total)}, válido até ${fmtDate(q.valid)}. No PDF está também o pré-contrato com as condições. Qualquer dúvida, estou à disposição.${bizName(profile) ? "\n" + bizName(profile) : ""}`;
 };
 
-async function deliverPdf(doc, name) {
-  const blob = doc.output("blob");
+/* ---------- Enviar: compartilhar direto (navegador do celular) ou salvar + abrir WhatsApp ---------- */
+const waNumber = (phone) => {
+  let d = String(phone || "").replace(/\D/g, "");
+  if (d.length === 10 || d.length === 11) d = "55" + d;
+  return d.length >= 12 ? d : "";
+};
+let sending = null;
+async function savePdfFile(blob, name) {
   try {
     const dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
-    if (dl) { await dl.save({ filename: name, data: blob }); toast("PDF pronto"); return; }
-  } catch (e) { if (e && e.code === "declined") return; }
-  try {
-    const file = new File([blob], name, { type: "application/pdf" });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
-  } catch (e) { if (e && e.name === "AbortError") return; }
-  doc.save(name);
+    if (dl) { await dl.save({ filename: name, data: blob }); return "saved"; }
+  } catch (e) { return e && e.code === "declined" ? "declined" : "failed"; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+  return "saved";
 }
+// doc: jsPDF; who: nome do cliente; phone: telefone do cliente; message: texto para o WhatsApp
+async function sendDoc({ doc, name, who, phone, message }) {
+  const blob = doc.output("blob");
+  const file = new File([blob], name, { type: "application/pdf" });
+  // 1) No celular, onde o navegador deixa, abre a tela de compartilhar já com o PDF (escolha WhatsApp e o contato)
+  try {
+    if (navigator.canShare && matchMedia("(pointer: coarse)").matches && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], text: message });
+      return;
+    }
+  } catch (e) { if (e && e.name === "AbortError") return; }
+  // 2) Senão: salva o PDF e mostra o atalho para a conversa no WhatsApp
+  sending = { blob, name };
+  const num = waNumber(phone), text = encodeURIComponent(message);
+  $("sh-file").textContent = name;
+  $("sh-msg").textContent = message;
+  $("sh-wa").hidden = !num;
+  if (num) { $("sh-wa").href = `https://wa.me/${num}?text=${text}`; $("sh-wa").textContent = `Abrir WhatsApp de ${(who || "cliente").split(" ")[0]}`; }
+  $("sh-wa-any").href = `https://wa.me/?text=${text}`;
+  $("sh-wa-any").textContent = num ? "Escolher outro contato" : "Abrir WhatsApp e escolher o contato";
+  $("sh-wa-any").className = num ? "btn small" : "btn wa";
+  $("sh-saved").textContent = "Salvando o PDF…";
+  $("sheet").hidden = false;
+  const r = await savePdfFile(blob, name);
+  $("sh-saved").textContent = r === "saved" ? "PDF salvo no celular." : r === "declined" ? "O PDF não foi salvo." : "Não consegui salvar o PDF.";
+}
+$("sh-save").onclick = async () => {
+  if (!sending) return;
+  const r = await savePdfFile(sending.blob, sending.name);
+  $("sh-saved").textContent = r === "saved" ? "PDF salvo no celular." : "O PDF não foi salvo.";
+};
+$("sh-close").onclick = () => { $("sheet").hidden = true; };
+$("sheet").onclick = (e) => { if (e.target.id === "sheet") $("sheet").hidden = true; };
+$("sh-copy").onclick = async () => {
+  try { await navigator.clipboard.writeText($("sh-msg").textContent); toast("Mensagem copiada"); }
+  catch { const rg = document.createRange(); rg.selectNodeContents($("sh-msg")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(rg); toast("Texto selecionado. Copie pelo menu."); }
+};
+const sendQuote = (q) => sendDoc({ doc: buildPdf(q), name: fileName(q), who: q.client.name, phone: q.client.phone, message: clientMessage(q) });
 $("btn-pdf").onclick = async () => {
   if (!window.jspdf) { toast("O gerador de PDF não carregou. Verifique a internet e abra de novo."); return; }
   if (!quote.client.name.trim()) { toast("Preencha o nome do cliente"); $("c-name").focus(); return; }
   await saveQuote(true);
-  const doc = buildPdf(quote);
-  $("send-msg").textContent = clientMessage(quote);
-  $("send-card").hidden = false;
-  await deliverPdf(doc, fileName(quote));
-};
-$("btn-copy").onclick = async () => {
-  const txt = $("send-msg").textContent;
-  try { await navigator.clipboard.writeText(txt); toast("Mensagem copiada"); }
-  catch { const r = document.createRange(); r.selectNodeContents($("send-msg")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Texto selecionado. Copie pelo menu."); }
+  await sendQuote(quote);
 };
 
 /* ---------- Salvos ---------- */
@@ -1117,6 +1166,7 @@ function renderSaved() {
       <div class="meta">Nº ${String(q.number).padStart(4, "0")} · ${fmtDate(q.start)} até ${fmtDate(q.valid)}</div></div>
       <div class="val">${money(calc(q).total)}</div>
       <div class="row" style="grid-column:1/-1">
+        <button class="btn small wa" data-a="send">Enviar PDF</button>
         <button class="btn small" data-a="open">Abrir</button>
         <button class="btn small" data-a="rec">Gerar recibo</button>
         <button class="btn small" data-a="copy">Duplicar</button>
@@ -1125,6 +1175,7 @@ function renderSaved() {
     el.querySelector("strong").textContent = q.client.name || "Sem nome";
     el.querySelector('[data-a="open"]').onclick = () => { quote = JSON.parse(JSON.stringify(q)); show("editor"); renderEditor(); };
     el.querySelector('[data-a="rec"]').onclick = () => receiptFromQuote(q);
+    el.querySelector('[data-a="send"]').onclick = () => { if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet."); sendQuote(q); };
     el.querySelector('[data-a="copy"]').onclick = () => {
       const start = todayISO();
       quote = { ...JSON.parse(JSON.stringify(q)), id: "", number: 0, start, valid: addDays(start, parseNum(profile.days) || 15), clientSig: "" };
@@ -1330,7 +1381,6 @@ function renderReceipt() {
   for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).value = receipt.payer[k] || "";
   $("r-amount").value = numIn(receipt.amount); $("r-desc").value = receipt.desc;
   sigRMe.set(receipt.mySig); sigRPayer.set(receipt.payerSig);
-  $("r-send-card").hidden = true;
   renderReceiptAmount();
 }
 $("r-date").onchange = (e) => { receipt.date = e.target.value; };
@@ -1427,17 +1477,14 @@ $("btn-r-pdf").onclick = async () => {
   if (!window.jspdf) { toast("O gerador de PDF não carregou. Verifique a internet e abra de novo."); return; }
   if (receiptProblem()) return;
   await saveReceipt(true);
-  const doc = buildReceiptPdf(receipt);
-  const first = (receipt.payer.name || "").split(" ")[0];
-  $("r-send-msg").textContent = `Olá${first ? " " + first : ""}! Segue o recibo nº ${pad4(receipt.number)} do pagamento de ${money(parseNum(receipt.amount))} recebido em ${fmtDate(receipt.date)}. Obrigado pela confiança!${bizName(profile) ? "\n" + bizName(profile) : ""}`;
-  $("r-send-card").hidden = false;
-  const name = `Recibo-${pad4(receipt.number)}-${(receipt.payer.name || "cliente").normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
-  await deliverPdf(doc, name);
+  await sendReceipt(receipt);
 };
-$("btn-r-copy").onclick = async () => {
-  try { await navigator.clipboard.writeText($("r-send-msg").textContent); toast("Mensagem copiada"); }
-  catch { const rg = document.createRange(); rg.selectNodeContents($("r-send-msg")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(rg); toast("Texto selecionado. Copie pelo menu."); }
-};
+function sendReceipt(r) {
+  const first = (r.payer.name || "").split(" ")[0];
+  const message = `Olá${first ? " " + first : ""}! Segue o recibo nº ${pad4(r.number)} do pagamento de ${money(parseNum(r.amount))} recebido em ${fmtDate(r.date)}. Obrigado pela confiança!${bizName(profile) ? "\n" + bizName(profile) : ""}`;
+  const name = `Recibo-${pad4(r.number)}-${(r.payer.name || "cliente").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
+  return sendDoc({ doc: buildReceiptPdf(r), name, who: r.payer.name, phone: r.payer.phone, message });
+}
 
 function renderReceipts() {
   $("receipts-where").textContent = store.mode === "db" ? "Guardados na sua conta. Só você vê esta lista." : "Guardados neste aparelho e navegador.";
@@ -1450,11 +1497,13 @@ function renderReceipts() {
       <div class="meta">Nº ${pad4(r.number)} · ${fmtDate(r.date)} · ${r.method}${r.quoteNumber ? " · Orçamento nº " + pad4(r.quoteNumber) : ""}</div></div>
       <div class="val">${money(parseNum(r.amount))}</div>
       <div class="row" style="grid-column:1/-1">
+        <button class="btn small wa" data-a="send">Enviar recibo</button>
         <button class="btn small" data-a="open">Abrir</button>
         <button class="btn small danger" data-a="del">Excluir</button>
       </div>`;
     el.querySelector("strong").textContent = r.payer.name || "Sem nome";
     el.querySelector('[data-a="open"]').onclick = () => { receipt = JSON.parse(JSON.stringify(r)); show("receipt"); renderReceipt(); };
+    el.querySelector('[data-a="send"]').onclick = () => { if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet."); sendReceipt(r); };
     const del = el.querySelector('[data-a="del"]');
     del.onclick = async () => {
       if (del.dataset.confirm !== "1") { del.dataset.confirm = "1"; del.textContent = "Toque de novo para excluir"; return; }
