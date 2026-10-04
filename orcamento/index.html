@@ -58,6 +58,7 @@ section.card { background: var(--surface); border: 1px solid var(--line); border
 .stack { display: grid; gap: 14px; margin-top: 12px; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
 .field { display: grid; gap: 4px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
 label { display: grid; gap: 4px; font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; min-width: 0; }
 input, textarea, select { touch-action: manipulation; font: 400 1rem var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%; min-width: 0; text-transform: none; letter-spacing: 0; }
 textarea { min-height: 220px; resize: vertical; line-height: 1.5; }
@@ -354,7 +355,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
         <div class="field"><label for="c-name">Nome</label><input id="c-name" autocomplete="off" data-fix="name" autocapitalize="words" autocorrect="on" spellcheck="true"></div>
         <div class="field"><label for="c-doc">CPF ou CNPJ</label><input id="c-doc" autocomplete="off"></div>
         <div class="field"><label for="c-phone">Telefone / WhatsApp</label><input id="c-phone" inputmode="tel" autocomplete="off"></div>
-        <div class="field"><label for="c-email">E-mail</label><input id="c-email" type="email" autocomplete="off"></div>
+        <div class="field wide"><label for="c-email">E-mail</label><input id="c-email" type="email" autocomplete="off" data-fit></div>
       </div>
       <div class="field"><label for="c-address">Endereço da obra</label><input id="c-address" autocomplete="off" data-fix="address" autocapitalize="words" autocorrect="on" spellcheck="true"></div>
     </section>
@@ -419,7 +420,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
         <div class="field"><label for="r-name">Nome</label><input id="r-name" autocomplete="off" data-fix="name" autocapitalize="words" autocorrect="on" spellcheck="true"></div>
         <div class="field"><label for="r-doc">CPF ou CNPJ</label><input id="r-doc" autocomplete="off"></div>
         <div class="field"><label for="r-phone">Telefone / WhatsApp</label><input id="r-phone" inputmode="tel" autocomplete="off"></div>
-        <div class="field"><label for="r-email">E-mail</label><input id="r-email" type="email" autocomplete="off"></div>
+        <div class="field wide"><label for="r-email">E-mail</label><input id="r-email" type="email" autocomplete="off" data-fit></div>
       </div>
     </section>
     <section class="card">
@@ -468,7 +469,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
         <div class="field"><label for="p-ie">Inscrição estadual</label><input id="p-ie" placeholder="Se tiver"></div>
         <div class="field"><label for="p-role">Profissão ou ramo</label><input id="p-role" placeholder="Ex.: Marcenaria"></div>
         <div class="field"><label for="p-phone">Telefone / WhatsApp *</label><input id="p-phone" inputmode="tel" autocomplete="tel"></div>
-        <div class="field"><label for="p-email">E-mail *</label><input id="p-email" type="email" autocomplete="email"></div>
+        <div class="field wide"><label for="p-email">E-mail *</label><input id="p-email" type="email" autocomplete="email" data-fit></div>
         <div class="field"><label for="p-instagram">Instagram</label><input id="p-instagram" placeholder="@suaempresa"></div>
       </div>
       <div class="grid2">
@@ -768,6 +769,23 @@ const normalizeQuote = (q) => {
 };
 const normalizeReceipt = (r) => { r.payer.name = fixCase(r.payer.name, "name"); r.desc = fixCase(r.desc, "text"); };
 
+/* ---------- Campos que se ajustam: a letra diminui até caber todo o texto (e-mail longo) ---------- */
+const fitCtx = document.createElement("canvas").getContext("2d");
+function fitInput(el) {
+  el.style.fontSize = "";
+  if (!el.clientWidth || !el.value) return;
+  const cs = getComputedStyle(el), base = parseFloat(cs.fontSize);
+  fitCtx.font = `${cs.fontWeight} ${base}px ${cs.fontFamily}`;
+  const need = fitCtx.measureText(el.value).width + 2;
+  const room = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2;
+  if (need > room) el.style.fontSize = Math.max(12, Math.floor(base * room / need * 10) / 10) + "px";
+}
+let fitTimer = 0;
+const fitSoon = () => { cancelAnimationFrame(fitTimer); fitTimer = requestAnimationFrame(() => document.querySelectorAll("input[data-fit]").forEach(fitInput)); };
+document.addEventListener("input", (e) => { if (e.target && e.target.matches && e.target.matches("input[data-fit]")) fitInput(e.target); });
+window.addEventListener("resize", fitSoon);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitSoon);
+
 /* ---------- Estado ---------- */
 let profile = blankProfile();
 let quote = sampleQuote();
@@ -996,6 +1014,7 @@ function renderTotals() {
   $("bar-total").textContent = money(t.total);
 }
 function renderEditor() {
+  fitSoon();
   $("sample-note").hidden = !quote.sample;
   $("q-title").textContent = quote.number ? `Orçamento nº ${String(quote.number).padStart(4, "0")}` : "Novo orçamento";
   $("q-start").value = quote.start; $("q-valid").value = quote.valid;
@@ -1370,6 +1389,7 @@ for (const id of ["p-qr", "p-phone", "p-instagram"]) $(id).addEventListener("inp
 // Troca de estilo: mostra na hora (só fica guardada ao tocar em "Salvar meus dados")
 $("p-tone").addEventListener("change", () => { profile.tone = $("p-tone").value; renderBrand(); });
 function renderProfile() {
+  fitSoon();
   if (!profile.street && !profile.city && profile.address) profile.street = profile.address; // cadastro antigo, só com endereço
   for (const k of PROFILE_FIELDS) $("p-" + k).value = profile[k] || "";
   $("p-days").value = profile.days; $("p-next").value = profile.next; $("p-obs").value = profile.obs;
@@ -1536,6 +1556,7 @@ function renderReceiptAmount() {
   $("r-link").hidden = !receipt.quoteId;
 }
 function renderReceipt() {
+  fitSoon();
   $("r-title").textContent = receipt.number ? `Recibo nº ${pad4(receipt.number)}` : "Novo recibo";
   $("r-date").value = receipt.date; $("r-kind").value = receipt.kind; $("r-method").value = receipt.method;
   for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).value = receipt.payer[k] || "";
@@ -1717,6 +1738,7 @@ $("tab-profile").onclick = () => show("profile");
 const APP_VIEWS = ["home", "editor", "saved", "receipt", "receipts", "profile"];
 function gate(which) {
   for (const v of [...APP_VIEWS, "loading", "welcome", "signup", "login"]) $("view-" + v).hidden = v !== which;
+  fitSoon();
   $("topbar").hidden = true; $("subnav").hidden = true; $("bar").hidden = true; $("rbar").hidden = true;
   if (which === "signup") { $("signup-slot").appendChild($("company-card")); renderProfile(); }
   if (which === "login") {
@@ -1736,6 +1758,7 @@ function enterApp() {
   show("home");
 }
 function show(view) {
+  fitSoon();
   for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", String(b.dataset.view === view));
   for (const v of APP_VIEWS) $("view-" + v).hidden = v !== view;
   $("subnav").hidden = view === "home";

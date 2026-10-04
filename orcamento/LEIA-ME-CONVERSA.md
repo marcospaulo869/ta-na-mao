@@ -110,6 +110,13 @@ Pedido do Marcos: as palavras iniciais começarem com maiúscula nos campos do o
 - **Teclado do celular:** os campos pedem maiúscula automática ao teclado (nomes: cada palavra; textos: início da frase) e ligam a correção ortográfica do próprio celular.
 - Limite: o app não tem dicionário próprio de português. A correção de erros de digitação é a do teclado do celular (ou o sublinhado do Chrome no notebook).
 
+## Atualização (04/10/2026, 16h): campo de e-mail que cabe tudo
+
+Pedido do Marcos: o campo de e-mail mostrar a informação inteira.
+- O campo de **e-mail** (cliente no orçamento, quem pagou no recibo e Meus dados / cadastro) agora ocupa a **linha inteira**.
+- Se o e-mail ainda for maior que o campo, a **letra diminui sozinha** até caber tudo (até 12 px no mínimo). Num celular de 360 px, um e-mail de uns 35 caracteres cabe com letra de uns 13 px. Acima de uns 45 caracteres no celular, o texto rola dentro do campo.
+- Se quiser o mesmo ajuste em nome ou endereço, é só pedir.
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.
