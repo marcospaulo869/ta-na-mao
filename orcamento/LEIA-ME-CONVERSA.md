@@ -101,6 +101,15 @@ Marcos aprovou o estilo preto e dourado e decidiu:
 - Limite honesto: o selo está dentro do próprio arquivo do app. Quem tiver o arquivo pode editá-lo. Na versão de venda (loja de aplicativos ou servidor), o PDF e o selo devem ser gerados pelo servidor, aí o selo fica realmente travado.
 - Teste com leitor automático: o QR continua lendo o WhatsApp. Falta o teste no celular de verdade (apontar a câmera para o PDF de exemplo).
 
+## Atualização (04/10/2026, 15h30): maiúsculas automáticas
+
+Pedido do Marcos: as palavras iniciais começarem com maiúscula nos campos do orçamento e do recibo, mesmo com o caps lock ligado, e correção de digitação.
+- **Nomes (cliente e quem pagou) e endereço da obra:** cada palavra com inicial maiúscula, "da/de/do/dos/das/e" em minúscula (ex.: "JOÃO DA SILVA" vira "João da Silva"). No endereço a sigla do estado no fim fica em maiúsculas ("... - SP"). Nomes com maiúscula no meio ("McDonald", "iFood") não são mexidos.
+- **Material e "Referente a":** só a primeira letra da frase em maiúscula. Se vier tudo em caps lock, o app passa para minúsculas e preserva siglas (MDF, MDP, PVC, LED, TX...). Medidas como "18MM" viram "18mm". No texto do recibo ("referente a ...") a primeira palavra volta para minúscula no meio da frase.
+- **Quando corrige:** ao sair do campo e também ao salvar ou enviar. A correção não acontece enquanto digita, para não mexer no cursor (problema que já tivemos no celular).
+- **Teclado do celular:** os campos pedem maiúscula automática ao teclado (nomes: cada palavra; textos: início da frase) e ligam a correção ortográfica do próprio celular.
+- Limite: o app não tem dicionário próprio de português. A correção de erros de digitação é a do teclado do celular (ou o sublinhado do Chrome no notebook).
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.

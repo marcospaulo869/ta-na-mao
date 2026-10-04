@@ -351,12 +351,12 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <section class="card">
       <h2>Cliente</h2>
       <div class="grid2">
-        <div class="field"><label for="c-name">Nome</label><input id="c-name" autocomplete="off"></div>
+        <div class="field"><label for="c-name">Nome</label><input id="c-name" autocomplete="off" data-fix="name" autocapitalize="words" autocorrect="on" spellcheck="true"></div>
         <div class="field"><label for="c-doc">CPF ou CNPJ</label><input id="c-doc" autocomplete="off"></div>
         <div class="field"><label for="c-phone">Telefone / WhatsApp</label><input id="c-phone" inputmode="tel" autocomplete="off"></div>
         <div class="field"><label for="c-email">E-mail</label><input id="c-email" type="email" autocomplete="off"></div>
       </div>
-      <div class="field"><label for="c-address">Endereço da obra</label><input id="c-address" autocomplete="off"></div>
+      <div class="field"><label for="c-address">Endereço da obra</label><input id="c-address" autocomplete="off" data-fix="address" autocapitalize="words" autocorrect="on" spellcheck="true"></div>
     </section>
 
     <section class="card">
@@ -416,7 +416,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <section class="card">
       <h2>Quem pagou</h2>
       <div class="grid2">
-        <div class="field"><label for="r-name">Nome</label><input id="r-name" autocomplete="off"></div>
+        <div class="field"><label for="r-name">Nome</label><input id="r-name" autocomplete="off" data-fix="name" autocapitalize="words" autocorrect="on" spellcheck="true"></div>
         <div class="field"><label for="r-doc">CPF ou CNPJ</label><input id="r-doc" autocomplete="off"></div>
         <div class="field"><label for="r-phone">Telefone / WhatsApp</label><input id="r-phone" inputmode="tel" autocomplete="off"></div>
         <div class="field"><label for="r-email">E-mail</label><input id="r-email" type="email" autocomplete="off"></div>
@@ -431,7 +431,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
         </select></div>
       </div>
       <div><div class="amount-big" id="r-amount-show">R$ 0,00</div><div class="extenso" id="r-extenso"></div></div>
-      <div class="field"><label for="r-desc">Referente a</label><textarea id="r-desc" style="min-height:90px" placeholder="Ex.: entrada do serviço de marcenaria da cozinha planejada"></textarea></div>
+      <div class="field"><label for="r-desc">Referente a</label><textarea id="r-desc" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true" style="min-height:90px" placeholder="Ex.: entrada do serviço de marcenaria da cozinha planejada"></textarea></div>
     </section>
     <section class="card">
       <h2>Assinaturas</h2>
@@ -714,6 +714,60 @@ const store = {
   },
 };
 
+/* ---------- Maiúsculas automáticas (nomes, endereços e textos), mesmo com o caps lock ligado ---------- */
+const NAME_LOWER = new Set(["de", "da", "do", "das", "dos", "e", "di", "du", "del"]);
+const ACRONYMS = new Set(["MDF", "MDP", "HDF", "OSB", "PVC", "LED", "TX", "ABS", "PU", "EPS", "ABNT", "CPF", "CNPJ", "RG", "WC", "TV", "LTDA", "ME", "EPP", "MEI", "SA", "UF", "CEP"]);
+const capWord = (w) => w.replace(/(^|[^\p{L}\p{N}])(\p{L})/gu, (m, a, b) => a + b.toLocaleUpperCase("pt-BR"));
+const hasLetter = (s) => /\p{L}/u.test(s);
+const isUp = (w) => hasLetter(w) && w === w.toLocaleUpperCase("pt-BR") && w !== w.toLocaleLowerCase("pt-BR");
+const isLow = (w) => hasLetter(w) && w === w.toLocaleLowerCase("pt-BR");
+const isInverted = (w) => { const a = Array.from(w); return a.length > 1 && hasLetter(a[0]) && isLow(a[0]) && isUp(a.slice(1).join("")); }; // "jOÃO", "bRANCO"
+const UFS = new Set("ac al am ap ba ce df es go ma mg ms mt pa pb pe pi pr rj rn ro rr rs sc se sp to".split(" "));
+// kind: "name" (cada palavra com inicial maiúscula), "address" (idem, preserva siglas de 2 letras como UF) ou "text" (só a primeira letra da frase)
+function fixCase(value, kind) {
+  const s = String(value == null ? "" : value);
+  if (!hasLetter(s)) return s;
+  const letters = Array.from(s).filter((c) => /\p{L}/u.test(c));
+  const allUp = letters.length >= 3 && letters.every((c) => c === c.toLocaleUpperCase("pt-BR"));
+  if (kind === "text") {
+    const out = s.split(/(\s+)/).map((tok) => {
+      if (!hasLetter(tok)) return tok;
+      const bare = tok.replace(/[^\p{L}\p{N}]/gu, "").toLocaleUpperCase("pt-BR");
+      if (ACRONYMS.has(bare)) return tok.toLocaleUpperCase("pt-BR");
+      if (allUp || isInverted(tok)) return tok.toLocaleLowerCase("pt-BR");
+      return tok;
+    }).join("");
+    return out.replace(/^(\s*)(\p{Ll})/u, (m, a, b) => a + b.toLocaleUpperCase("pt-BR")).replace(/([.!?]\s+)(\p{Ll})/gu, (m, a, b) => a + b.toLocaleUpperCase("pt-BR"));
+  }
+  let first = true;
+  const res = s.split(/(\s+)/).map((tok) => {
+    if (!hasLetter(tok)) return tok;
+    const low = tok.toLocaleLowerCase("pt-BR"), bare = low.replace(/[^\p{L}\p{N}]/gu, "");
+    const wasFirst = first; first = false;
+    if (NAME_LOWER.has(bare) && (isLow(tok) || isUp(tok) || isInverted(tok))) return wasFirst ? capWord(low) : low;
+    const upBare = bare.toLocaleUpperCase("pt-BR");
+    if (isUp(tok) && ACRONYMS.has(upBare)) return tok;
+    const wrong = isLow(tok) || isInverted(tok) || (isUp(tok) && Array.from(bare).length >= 3);
+    if (wrong) return capWord(low);
+    if (isUp(tok) && kind === "name") return capWord(low); // nome em caps lock, mesmo palavras curtas ("ZÉ")
+    return tok;
+  }).join("");
+  // Endereço terminando em UF ("..., sp" ou "... - SP"): sigla sempre em maiúsculas
+  return kind === "address" ? res.replace(/([-,\/]\s*)(\p{L}{2})\s*$/u, (m, a, uf) => (UFS.has(uf.toLowerCase()) ? a + uf.toUpperCase() : m)) : res;
+}
+// Ao sair do campo, corrige as maiúsculas (a correção na digitação mexeria no cursor, que já deu problema no celular)
+document.addEventListener("focusout", (e) => {
+  const el = e.target, kind = el && el.dataset && el.dataset.fix;
+  if (!kind) return;
+  const fixed = fixCase(el.value, kind);
+  if (fixed !== el.value) { el.value = fixed; el.dispatchEvent(new Event("input", { bubbles: true })); }
+});
+const normalizeQuote = (q) => {
+  q.client.name = fixCase(q.client.name, "name"); q.client.address = fixCase(q.client.address, "address");
+  for (const it of q.items) it.desc = fixCase(it.desc, "text");
+};
+const normalizeReceipt = (r) => { r.payer.name = fixCase(r.payer.name, "name"); r.desc = fixCase(r.desc, "text"); };
+
 /* ---------- Estado ---------- */
 let profile = blankProfile();
 let quote = sampleQuote();
@@ -790,7 +844,7 @@ function renderItems() {
         <p class="hint">Fale assim: "MDF chapa branco TX 18 milímetros, quatro unidades, valor 289,90". Se o app não ouvir, toque no microfone do teclado e fale.</p>
         <div class="row"><input id="it-x-${i}" autocomplete="off" placeholder="O que você ditar aparece aqui"><button class="btn small warm" type="button" data-a="fill">Preencher</button></div>
       </div>
-      <div class="field desc"><label for="it-d-${i}">Material</label><input id="it-d-${i}" autocomplete="off"></div>
+      <div class="field desc"><label for="it-d-${i}">Material</label><input id="it-d-${i}" autocomplete="off" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true"></div>
       <div class="field"><label for="it-u-${i}">Un.</label><input id="it-u-${i}" autocomplete="off"></div>
       <div class="field"><label for="it-q-${i}">Qtd.</label><input id="it-q-${i}" class="num" inputmode="decimal"></div>
       <div class="field"><label for="it-p-${i}">Preço un. (R$)</label><input id="it-p-${i}" class="num" inputmode="decimal"></div>
@@ -923,7 +977,7 @@ function applyDictation(i, text) {
   const it = quote.items[i]; if (!it || !String(text || "").trim()) return;
   const r = parseDictation(text);
   if (!r.desc && r.qty == null && r.price == null) { toast("Não entendi. Tente: material, quantidade e valor."); return; }
-  if (r.desc) it.desc = r.desc;
+  if (r.desc) it.desc = fixCase(r.desc, "text");
   if (r.un) it.un = r.un;
   if (r.qty != null && !Number.isNaN(r.qty)) it.qty = r.qty;
   if (r.price != null && !Number.isNaN(r.price)) it.price = r.price;
@@ -996,13 +1050,14 @@ $("btn-new").onclick = () => confirmNew($("btn-new"), "Novo orçamento", quoteDr
 $("btn-new-2").onclick = () => confirmNew($("btn-new-2"), "Novo orçamento", quoteDraft(), () => { show("editor"); newQuote(); });
 
 async function saveQuote(silent) {
-  if (quote.sample) { quote.sample = false; quote.client.name = quote.client.name.replace(" (exemplo)", ""); }
+  if (quote.sample) { quote.sample = false; quote.client.name = quote.client.name.replace(/\s*\(exemplo\)/i, ""); }
   if (!quote.id) {
     quote.id = uid();
     quote.number = parseNum(profile.next) || 1;
     profile.next = quote.number + 1;
     try { await store.saveProfile(profile); } catch {}
   }
+  normalizeQuote(quote);
   quote.items = quote.items.filter((it) => it.desc.trim() || parseNum(it.price));
   quote.clientSig = sigClient.value();
   quote.updated = new Date().toISOString();
@@ -1514,6 +1569,7 @@ async function saveReceipt(silent) {
     profile.nextReceipt = receipt.number + 1;
     try { await store.saveProfile(profile); } catch {}
   }
+  normalizeReceipt(receipt);
   receipt.mySig = sigRMe.value(); receipt.payerSig = sigRPayer.value();
   receipt.updated = new Date().toISOString();
   try { await store.saveReceipt(receipt); if (!silent) toast("Recibo salvo"); }
@@ -1545,7 +1601,8 @@ function buildReceiptPdf(r) {
   y += 34;
   const who = bizName(profile) || "o prestador";
   const payer = r.payer.name + (r.payer.doc ? `, CPF/CNPJ ${r.payer.doc}` : "");
-  const ref = (r.desc || "serviços prestados").trim().replace(/\.$/, "");
+  // No meio da frase do recibo ("referente a ..."), a primeira palavra volta para minúscula, menos siglas e nomes em maiúsculas
+  const ref = (r.desc || "serviços prestados").trim().replace(/\.$/, "").replace(/^(\p{Lu})(?=\p{Ll})/u, (c) => c.toLocaleLowerCase("pt-BR"));
   const body = `Recebi(emos) de ${payer}, a importância de ${money(v)} (${extenso(v)}), referente a ${ref}, paga por ${r.method.toLowerCase()}.\n\nPara maior clareza, firmo(amos) o presente recibo, dando quitação do valor acima recebido.`;
   doc.setFontSize(11.5);
   for (const ln of doc.splitTextToSize(body, W - 2 * M)) { doc.text(ln, M, y); y += 6.2; }
