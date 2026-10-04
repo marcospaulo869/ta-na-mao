@@ -147,6 +147,13 @@ Pedido do Marcos: ao tocar em Orçamento na tela inicial, ver o botão "+ Novo o
 - **Recibo** ficou igual: "+ Novo recibo" em cima e "Recibos salvos" embaixo.
 - A aba "Orçamento" lá em cima continua levando ao formulário (por exemplo, para voltar a um orçamento que ainda não foi salvo).
 
+## Atualização (04/10/2026, 21h): microfone como no WhatsApp
+
+Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem segurando) e pediu o jeito do WhatsApp.
+- **Segure e fale**: segure o botão do microfone enquanto fala; ao soltar, o item é preenchido (material, unidade, quantidade, valor). Arrastar o dedo para longe do botão cancela. Toque rápido mostra o aviso "Segure o botão enquanto fala".
+- **Por que não ouvia**: dentro do link do Claude a página não recebe permissão para usar o microfone (não existe essa permissão para apps publicados lá). O app agora detecta isso: o botão vira "Ditar", um toque abre o campo já com o teclado e a mensagem "O microfone do app está bloqueado aqui. Toque no 🎤 do teclado e fale. Depois toque em Preencher." No notebook com Windows a dica é "Windows + H".
+- O "segurar e falar" de verdade funciona onde o navegador libera o microfone: o app aberto como site próprio ou a futura versão da Play Store.
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.
