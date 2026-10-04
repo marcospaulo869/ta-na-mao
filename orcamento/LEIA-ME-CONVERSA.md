@@ -131,12 +131,13 @@ Pedidos do Marcos: um endereço completo com botão de copiar (para nota fiscal 
 ## Atualização (04/10/2026, 17h): memória de materiais e aba Materiais
 
 Pedidos do Marcos: (1) ao digitar um material (ex.: "chapa MDF branco"), abrir sozinha uma janela com o que já foi usado e, com um toque, preencher tudo; (2) um "banco de dados" separado, ao lado de Orçamento e Salvos, para atualizar nomes e preços (MDFs que saem de linha, preços que mudam na planilha do fornecedor).
-- **Sugestões ao digitar:** no campo Material, a partir de 2 letras aparece a janela "Da sua memória" com até 6 materiais. Pode digitar só o começo das palavras, em qualquer ordem e sem acento ("mdf br" acha "Chapa MDF branco TX 18 mm"). Um toque preenche material, unidade e preço e o cursor vai para a quantidade. No notebook também dá para usar as setas e o Enter. O "×" ao lado de uma sugestão tira esse material da memória.
+- **Sugestões ao digitar:** no campo Material, a partir de 2 letras aparece a janela "Da sua memória" com até 6 materiais. Pode digitar só o começo das palavras, em qualquer ordem e sem acento ("mdf br" acha "Chapa MDF branco TX 18 mm"). Um toque preenche material, unidade e preço e o cursor vai para a quantidade. No notebook também dá para usar as setas e o Enter (Tab fecha a janela e vai para Un.). A janela fica logo abaixo do campo e empurra Un./Qtd./Preço para baixo, sem cobrir nada. Se o material não tiver preço na lista, o preço fica vazio e o cursor vai para ele.
 - **Aba Materiais** (Orçamento | Salvos | Materiais): a lista completa em ordem alfabética, com busca. Dá para mudar nome, unidade e preço de cada material, criar um material novo ("+ Novo material") e apagar (dois toques). Mostra em quantos orçamentos cada um foi usado e a data do último uso.
 - **Como a lista se enche:** ao salvar um orçamento, os materiais novos entram na lista. A lista manda: salvar um orçamento não muda nome nem preço de um material que já está nela (só completa unidade ou preço se estiverem vazios). Preço novo, você muda na aba Materiais. Orçamentos já salvos não mudam.
 - Materiais apagados ou renomeados na lista não voltam sozinhos quando você salva de novo um orçamento antigo ou faz uma cópia dele.
 - Na primeira vez que o app abre com essa versão, a lista é montada com os materiais dos orçamentos que você já tinha salvo.
-- A lista fica na sua conta: é a mesma no celular e no notebook. "Apagar tudo e recomeçar" também apaga a lista.
+- A lista fica na sua conta: é a mesma no celular e no notebook. O app busca a versão mais nova ao abrir um orçamento, ao tocar no campo Material e ao abrir a aba Materiais. Se a internet falhar, nenhuma mudança grava por cima da lista guardada: ela fica esperando e é guardada na próxima vez. "Apagar tudo e recomeçar" também apaga a lista.
+- Antes de publicar, a versão passou por uma revisão com cinco revisores (celular, dados entre aparelhos, aba Materiais, integração e busca); os problemas encontrados foram corrigidos e conferidos com os próprios testes deles.
 
 ## Próximos passos (a combinar)
 

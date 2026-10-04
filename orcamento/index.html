@@ -79,24 +79,22 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .items { display: grid; gap: 10px; }
 .item { display: grid; grid-template-columns: 1fr 70px 80px 110px 32px; gap: 8px; align-items: end; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
 .item .desc { grid-column: 1 / -1; position: relative; }
-.sugg { position: absolute; left: 0; right: 0; z-index: 4; background: var(--surface); border: 1px solid var(--accent); border-radius: 10px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18); overflow-y: auto; overscroll-behavior: contain; max-height: 300px; padding: 4px; }
+.sugg { background: var(--surface); border: 1px solid var(--accent); border-radius: 10px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18); overflow-y: auto; overscroll-behavior: contain; max-height: 300px; padding: 4px; }
 .sugg-cap { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 8px 2px; }
-.sugg .opt { display: flex; align-items: center; gap: 8px; padding: 6px 4px 6px 8px; border-radius: 8px; cursor: pointer; min-height: 46px; }
+.sugg .opt { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; min-height: 46px; }
 .sugg .opt:hover, .sugg .opt.on { background: var(--accent-soft); }
 .sugg .o-main { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .sugg .o-desc { font-size: 0.98rem; color: var(--ink); overflow-wrap: anywhere; }
 .sugg .o-desc b { color: var(--accent); font-weight: 700; }
 .sugg .o-meta { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.sugg .o-del { flex: none; width: 36px; height: 36px; border: 0; border-radius: 8px; background: none; color: var(--muted); font-size: 1.25rem; line-height: 1; cursor: pointer; }
-.sugg .o-del:hover { color: var(--danger); background: var(--bg); }
 .mat-tools { display: flex; gap: 8px; flex-wrap: wrap; }
 .mat-tools input { flex: 1 1 200px; }
 .mats { display: grid; gap: 10px; }
-.mat { display: grid; grid-template-columns: minmax(0, 1fr) 80px 130px 40px; gap: 8px; align-items: end; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
+.mat { display: grid; grid-template-columns: minmax(0, 1fr) 80px 130px minmax(40px, max-content); gap: 8px; align-items: end; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
 .mat .meta { grid-column: 1 / -1; font-size: 0.8rem; color: var(--muted); }
 .mat .rm { height: 40px; border: 0; border-radius: 8px; background: none; color: var(--danger); font: 600 1.3rem var(--font-body); cursor: pointer; white-space: nowrap; }
-.mat .rm.confirm { grid-column: auto; font-size: 0.78rem; background: var(--bg); border: 1px solid var(--danger); }
-@media (max-width: 560px) { .mat { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 64px; } .mat .name { grid-column: 1 / -1; } }
+.mat .rm.confirm { font-size: 0.78rem; padding-inline: 8px; background: var(--bg); border: 1px solid var(--danger); }
+@media (max-width: 560px) { .mat { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(64px, max-content); } .mat .name { grid-column: 1 / -1; } }
 .login .field { width: 100%; }
 .item .tot { font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; padding-bottom: 9px; }
 .item .rm { border: 0; background: none; color: var(--danger); font-size: 1.3rem; cursor: pointer; padding-bottom: 6px; }
@@ -131,7 +129,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
 .bar .in { max-width: 760px; margin: 0 auto; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .bar .total { font-family: var(--font-display); font-size: 1.2rem; font-variant-numeric: tabular-nums; }
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 90px; background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-weight: 600; max-width: calc(100% - 32px); }
+.toast { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: 90px; background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-weight: 600; max-width: calc(100% - 32px); }
 .msgbox { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; white-space: pre-wrap; font-size: 0.95rem; user-select: all; }
 .logo-prev { max-height: 60px; max-width: 160px; }
 .qrbox { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
@@ -980,7 +978,7 @@ const fillVars = (text, q, t) => String(text || "")
 /* ---------- Memória de materiais: o que já foi usado vira sugestão ao digitar ---------- */
 let catalog = { items: [] }, catalogOk = false;
 const CAT_MAX = 500, CAT_DESC_MAX = 200;
-const catKey = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+const catKey = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
 const catWords = (k) => k.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
 let catIdx = null;
 const catIndex = () => catIdx || (catIdx = catalog.items.map((e) => { const k = catKey(e.desc); return { e, k, w: catWords(k) }; }));
@@ -1002,43 +1000,64 @@ function addToCatalog(items, before, when, overwrite) {
     const un = String(it.un || "").trim(), price = parseNum(it.price) > 0 ? parseNum(it.price) : 0;
     let e = byKey.get(k);
     if (!e) {
-      if (same.has(k) || orig.has(k)) continue;
+      if (same.has(k) || orig.has(k) || it.cat === k) continue; // it.cat: veio de uma sugestão e foi apagado ou renomeado na lista
+
       e = { desc, un, price, uses: 0, last: "" }; catalog.items.push(e); byKey.set(k, e);
     } else if (overwrite) { e.desc = desc; if (un) e.un = un; if (price) e.price = price; }
     else { if (!e.un && un) e.un = un; if (!(e.price > 0) && price) e.price = price; }
     if (!same.has(k)) e.uses = (e.uses || 0) + 1;
     if (when > (e.last || "")) e.last = when;
   }
-  if (catalog.items.length > CAT_MAX) { catalog.items.sort((a, b) => String(b.last).localeCompare(String(a.last))); catalog.items.length = CAT_MAX; }
+  if (catalog.items.length > CAT_MAX) pruneCatalog();
   catIdx = null;
 }
-// Toda mudança na memória passa por aqui, uma de cada vez: lê o que está guardado (o celular e o notebook
-// usam a mesma lista), aplica a mudança e guarda de novo. fn precisa funcionar pela chave do material.
-let catQueue = Promise.resolve();
-function mutateCatalog(fn) {
-  fn(); catIdx = null; // na tela, na hora
-  const job = async () => {
-    const fresh = await store.loadCatalog();
-    if (fresh.ok && fresh.data) { catSet(fresh.data); fn(); catIdx = null; }
-    else if (!fresh.ok && !catalogOk) return; // sem conseguir ler, não sobrescreve o que está guardado
-    catalogOk = true;
-    try { await store.saveCatalog(catalog); } catch { toast("Não consegui guardar a lista de materiais. Tente de novo."); }
-  };
-  return (catQueue = catQueue.then(job, job));
+// Passou do limite: saem os que estão há mais tempo sem uso e sem edição
+const touchedAt = (e) => { const a = String(e.last || ""), b = String(e.edited || ""); return a > b ? a : b; };
+function pruneCatalog() { catalog.items.sort((a, b) => touchedAt(b).localeCompare(touchedAt(a))); catalog.items.length = CAT_MAX; catIdx = null; }
+// Toda mudança na memória passa por aqui, uma de cada vez: aplica na tela na hora e fica pendente; depois
+// lê o que está guardado (o celular e o notebook usam a mesma lista), reaplica as pendentes e guarda.
+// Se não der para ler, nada é guardado por cima: as mudanças ficam pendentes para a próxima vez.
+// fn precisa funcionar pela chave do material.
+let catQueue = Promise.resolve(), catPending = [], catSyncAt = 0;
+const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
+async function readCatalog() {
+  let r = await store.loadCatalog();
+  if (!r.ok) { await wait(300 + Math.random() * 500); r = await store.loadCatalog(); }
+  return r;
 }
-// Primeira vez: monta a memória com os orçamentos que já estão salvos
-async function loadCatalog() {
-  const r = await store.loadCatalog();
-  if (!r.ok) return false;
-  if (r.data) { catSet(r.data); return true; }
+// Primeira vez (ainda não há lista guardada): monta com os orçamentos que já estão salvos
+function seedFromQuotes() {
   catSet(null);
   const list = [...quotes].sort((a, b) => String(a.updated || a.start || "").localeCompare(String(b.updated || b.start || "")));
   for (const q of list) addToCatalog(q.items || [], {}, q.updated || (q.start ? q.start + "T12:00:00.000Z" : ""), true);
-  if (catalog.items.length) await store.saveCatalog(catalog).catch(() => {});
+}
+async function syncCatalog() {
+  catSyncAt = Date.now();
+  const fresh = await readCatalog();
+  if (!fresh.ok) { if (catPending.length) toast("Não consegui guardar a lista de materiais agora. Ela será guardada na próxima vez."); return false; }
+  let save = catPending.length > 0;
+  const before = JSON.stringify(catalog.items);
+  if (fresh.data) catSet(fresh.data); else { seedFromQuotes(); save = save || catalog.items.length > 0; }
+  const fns = catPending; catPending = [];
+  for (const f of fns) f();
+  catIdx = null; catalogOk = true;
+  if (save) { try { await store.saveCatalog(catalog); } catch { catPending = fns.concat(catPending); toast("Não consegui guardar a lista de materiais. Tente de novo."); } }
+  if (JSON.stringify(catalog.items) !== before && materialsIdle()) drawMaterials();
   return true;
+}
+function mutateCatalog(fn) {
+  fn(); catIdx = null; catPending.push(fn);
+  return (catQueue = catQueue.then(syncCatalog, syncCatalog));
+}
+// Traz o que o outro aparelho mudou (no máximo a cada 4 s, a não ser que force)
+function refreshCatalog(force) {
+  if (!force && Date.now() - catSyncAt < 4000) return catQueue;
+  catSyncAt = Date.now();
+  return (catQueue = catQueue.then(syncCatalog, syncCatalog));
 }
 const rememberItems = (items, before) => { const when = new Date().toISOString(); return mutateCatalog(() => addToCatalog(items, before, when)); };
 const forgetMaterial = (k) => mutateCatalog(() => { catalog.items = catalog.items.filter((e) => catKey(e.desc) !== k); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshCatalog(); });
 // Sugestões: cada pedaço digitado precisa ser o começo de uma palavra do material ("mdf br" acha "MDF branco 18 mm")
 function suggest(text) {
   const qk = catKey(text), toks = catWords(qk);
@@ -1078,9 +1097,10 @@ function openSugg(i, input) {
     input.parentElement.appendChild(box); input.setAttribute("aria-controls", box.id);
     sug = { i, input, box, list: [], active: -1 };
   }
+  const opening = !sug.list.length;
   sug.list = list; sug.active = -1;
   input.setAttribute("aria-expanded", "true"); input.removeAttribute("aria-activedescendant");
-  drawSugg(); placeSugg();
+  drawSugg(); if (opening) placeSugg();
 }
 function drawSugg() {
   const { box, list, i } = sug; box.textContent = "";
@@ -1094,50 +1114,39 @@ function drawSugg() {
     const m = document.createElement("div"); m.className = "o-meta";
     m.textContent = [x.e.un, x.e.price ? money(x.e.price) : "sem preço", x.e.uses > 1 ? `usado ${x.e.uses} vezes` : ""].filter(Boolean).join(" · ");
     main.append(t, m);
-    const del = document.createElement("button");
-    del.type = "button"; del.className = "o-del"; del.textContent = "×"; del.title = "Esquecer este material"; del.setAttribute("aria-label", `Esquecer ${x.e.desc}`);
-    del.onclick = (ev) => {
-      ev.stopPropagation();
-      const input = sug && sug.input, at = sug && sug.i;
-      forgetMaterial(x.k); toast("Material tirado da memória");
-      if (input) openSugg(at, input);
-    };
-    o.append(main, del);
+    o.append(main);
     o.onclick = () => pickSugg(x.e);
     box.appendChild(o);
   });
 }
-// Abre a lista para baixo; se não couber (teclado do celular, barra de baixo), abre para cima
+// A lista fica logo abaixo do campo, empurrando Un./Qtd./Preço (não cobre nada). Se ela ficar escondida
+// atrás do teclado do celular ou da barra de baixo, a página sobe só o necessário.
 function placeSugg() {
   if (!sug) return;
-  const { box, input } = sug;
-  const r = input.getBoundingClientRect(), vv = window.visualViewport;
+  const { box, input } = sug, vv = window.visualViewport;
   let bottom = vv ? vv.offsetTop + vv.height : innerHeight;
   for (const bar of document.querySelectorAll(".bar")) { const br = bar.getBoundingClientRect(); if (br.height && br.top < bottom) bottom = br.top; }
   const sub = $("subnav"), top = sub && !sub.hidden ? Math.max(0, sub.getBoundingClientRect().bottom) : 0;
-  const below = bottom - r.bottom - 8, above = r.top - top - 8;
-  box.style.maxHeight = ""; const need = Math.min(box.scrollHeight + 2, 300);
-  const up = need > below && above > below;
-  box.style.top = up ? "auto" : input.offsetTop + input.offsetHeight + 4 + "px";
-  box.style.bottom = up ? input.parentElement.clientHeight - input.offsetTop + 4 + "px" : "auto";
-  box.style.maxHeight = Math.max(120, Math.min(300, up ? above : below)) + "px";
+  const over = box.getBoundingClientRect().bottom - bottom + 8, room = input.getBoundingClientRect().top - top - 8;
+  if (over > 0 && room > 0) window.scrollBy(0, Math.min(over, room));
 }
 if (window.visualViewport) visualViewport.addEventListener("resize", placeSugg);
-window.addEventListener("resize", placeSugg);
 function pickSugg(e) {
   if (!sug) return;
   const i = sug.i, it = quote.items[i]; closeSugg();
   if (!it) return;
-  it.desc = e.desc; if (e.un) it.un = e.un; if (e.price) it.price = e.price; if (!parseNum(it.qty)) it.qty = 1;
+  it.desc = e.desc; it.cat = catKey(e.desc); if (e.un) it.un = e.un; it.price = e.price > 0 ? e.price : 0; if (!parseNum(it.qty)) it.qty = 1;
   const d = $(`it-d-${i}`), u = $(`it-u-${i}`), q = $(`it-q-${i}`), p = $(`it-p-${i}`);
   if (d) d.value = it.desc;
   if (u) u.value = it.un;
   if (p) p.value = it.price ? Number(it.price).toFixed(2).replace(".", ",") : "";
   if (q) q.value = numIn(it.qty);
   renderTotals();
-  if (q) { q.focus(); q.select(); } // falta só a quantidade
+  const next = it.price ? q : p; // falta a quantidade (ou o preço, se o material ainda não tem)
+  if (next) { next.focus(); next.select(); }
 }
 function suggKey(e, input, i) {
+  if (e.key === "Tab") { closeSugg(); return; }
   if (!sug || sug.input !== input) { if (e.key === "ArrowDown") openSugg(i, input); return; }
   const n = sug.list.length;
   if (e.key === "ArrowDown") sug.active = (sug.active + 1) % n;
@@ -1152,13 +1161,13 @@ function suggKey(e, input, i) {
 
 /* ---------- Aba Materiais: a lista que alimenta as sugestões (nome, unidade, preço) ---------- */
 const priceIn = (n) => (n ? Number(n).toFixed(2).replace(".", ",") : "");
-let matSeq = 0;
-async function renderMaterials() {
-  drawMaterials();
-  // traz o que o outro aparelho guardou, sem atropelar mudanças que ainda estão sendo gravadas
-  catQueue = catQueue.then(async () => { const r = await store.loadCatalog(); if (r.ok && r.data) catSet(r.data); }).catch(() => {});
-  await catQueue;
-  if (!$("view-materials").hidden && !$("mat-list").contains(document.activeElement)) drawMaterials();
+const MAT_PAGE = 80;
+let matSeq = 0, matLimit = MAT_PAGE;
+// A aba está aberta e ninguém está digitando nela nem com um material novo pela metade: dá para redesenhar
+const materialsIdle = () => !$("view-materials").hidden && !$("mat-list").contains(document.activeElement) && ![...$("mat-list").querySelectorAll(".mat")].some((r) => !r.key);
+function renderMaterials() {
+  matLimit = MAT_PAGE; drawMaterials();
+  refreshCatalog(true); // traz o que o outro aparelho mudou (redesenha sozinho se algo mudou)
 }
 function matCount() {
   const n = catalog.items.length;
@@ -1171,14 +1180,21 @@ function drawMaterials() {
   const toks = catWords(catKey($("mat-search").value));
   const list = catIndex().filter((x) => toks.every((t) => x.k.includes(t))).map((x) => x.e)
     .sort((a, b) => a.desc.localeCompare(b.desc, "pt-BR", { sensitivity: "base", numeric: true }));
+  if (!catalog.items.length && !catalogOk) { box.innerHTML = `<p class="hint">Não consegui abrir a lista de materiais agora. Verifique a internet e abra esta aba de novo.</p>`; return; }
   if (!catalog.items.length) { box.innerHTML = `<p class="hint">Ainda não há materiais. Eles entram aqui quando você salva um orçamento, ou toque em "+ Novo material".</p>`; return; }
   if (!list.length) { box.innerHTML = `<p class="hint">Nenhum material com esse nome.</p>`; return; }
-  for (const e of list) box.appendChild(matRow(e));
+  for (const e of list.slice(0, matLimit)) box.appendChild(matRow(e));
+  if (list.length > matLimit) {
+    const more = document.createElement("button");
+    more.type = "button"; more.className = "btn small"; more.textContent = `Mostrar mais (${list.length - matLimit})`;
+    more.onclick = () => { matLimit += MAT_PAGE; drawMaterials(); };
+    box.appendChild(more);
+  }
 }
 function matMeta(e) {
   if (!e) return "Novo: digite o nome para guardar.";
   const used = e.uses > 0 ? `Usado em ${e.uses} ${e.uses === 1 ? "orçamento" : "orçamentos"}` : "Ainda não usado em orçamento";
-  return e.last ? `${used} · último uso ${fmtDate(e.last.slice(0, 10))}` : used;
+  return e.last ? `${used} · último uso ${new Date(e.last).toLocaleDateString("pt-BR")}` : used;
 }
 function matRow(e) {
   const n = ++matSeq, row = document.createElement("div");
@@ -1194,42 +1210,58 @@ function matRow(e) {
   meta.textContent = matMeta(e);
   const find = () => catalog.items.find((x) => catKey(x.desc) === row.key);
   d.onchange = () => {
+    if (row.cancel) return; // tocou no × de um material novo: não guarda
     const desc = fixCase(d.value.replace(/\s+/g, " ").trim(), "text"), k = catKey(desc);
     if (!desc) { if (row.key) { d.value = find() ? find().desc : ""; toast("O nome do material não pode ficar vazio"); } return; }
     if (desc.length > CAT_DESC_MAX) { toast("Nome muito comprido"); d.value = row.key && find() ? find().desc : ""; return; }
     const other = catalog.items.find((x) => catKey(x.desc) === k);
     if (other && k !== row.key) { toast(`"${other.desc}" já está na lista`); d.value = row.key && find() ? find().desc : ""; return; }
     d.value = desc;
+    if (row.key === k && find() && find().desc === desc) return; // nada mudou
     if (row.key) {
       const old = row.key; row.key = k;
-      mutateCatalog(() => { const x = catalog.items.find((y) => catKey(y.desc) === old); if (x) x.desc = desc; });
+      const when = new Date().toISOString(); let gone = false;
+      mutateCatalog(() => { const x = catalog.items.find((y) => catKey(y.desc) === old); gone = !x; if (x) { x.desc = desc; x.edited = when; } }).then(() => lostEdit(gone));
     } else {
       row.key = k;
-      const fresh = { desc, un: u.value.trim(), price: parseNum(p.value) > 0 ? parseNum(p.value) : 0, uses: 0, last: "" };
-      mutateCatalog(() => { if (!catalog.items.some((y) => catKey(y.desc) === k)) catalog.items.push({ ...fresh }); });
+      const fresh = { desc, un: u.value.trim(), price: parseNum(p.value) > 0 ? parseNum(p.value) : 0, uses: 0, last: "", edited: new Date().toISOString() };
+      mutateCatalog(() => { if (!catalog.items.some((y) => catKey(y.desc) === k)) { catalog.items.push({ ...fresh }); if (catalog.items.length > CAT_MAX) pruneCatalog(); } });
       matCount();
     }
     meta.textContent = matMeta(find());
   };
-  u.onchange = () => { const un = u.value.trim(); u.value = un; if (row.key) mutateCatalog(() => { const x = catalog.items.find((y) => catKey(y.desc) === row.key); if (x) x.un = un; }); };
-  p.onchange = () => {
-    const price = parseNum(p.value) > 0 ? parseNum(p.value) : 0; p.value = priceIn(price);
-    if (row.key) mutateCatalog(() => { const x = catalog.items.find((y) => catKey(y.desc) === row.key); if (x) x.price = price; });
+  const edit = (apply) => {
+    if (!row.key) return;
+    const k = row.key, when = new Date().toISOString(); let gone = false;
+    mutateCatalog(() => { const x = catalog.items.find((y) => catKey(y.desc) === k); gone = !x; if (x) { apply(x); x.edited = when; } }).then(() => lostEdit(gone));
   };
+  // o nome arrumado ao sair do campo (maiúsculas) também é guardado
+  d.addEventListener("input", (ev) => { if (!ev.isTrusted && row.key) d.onchange(); });
+  rm.addEventListener("pointerdown", () => { if (!row.key) row.cancel = true; });
+  u.onchange = () => { const un = u.value.trim(); u.value = un; edit((x) => { x.un = un; }); };
+  p.onchange = () => { const price = parseNum(p.value) > 0 ? parseNum(p.value) : 0; p.value = priceIn(price); edit((x) => { x.price = price; }); };
   rm.onclick = () => {
-    if (!row.key) { row.remove(); return; }
+    if (!row.key) { row.remove(); if (!$("mat-list").querySelector(".mat")) drawMaterials(); return; }
     if (rm.dataset.confirm !== "1") {
       rm.dataset.confirm = "1"; rm.textContent = "Apagar?"; rm.classList.add("confirm");
       clearTimeout(rm.undo); rm.undo = setTimeout(() => { rm.dataset.confirm = ""; rm.textContent = "×"; rm.classList.remove("confirm"); }, 4000);
       return;
     }
     const k = row.key; row.remove(); forgetMaterial(k); matCount(); toast("Material apagado da lista");
+    if (!$("mat-list").querySelector(".mat")) drawMaterials();
   };
   return row;
 }
-$("mat-search").addEventListener("input", drawMaterials);
+function lostEdit(gone) {
+  if (!gone) return;
+  toast("Esse material foi mudado no outro aparelho. Confira a lista atualizada.");
+  if (!$("view-materials").hidden) drawMaterials();
+}
+let matSearchT = 0;
+$("mat-search").addEventListener("input", () => { clearTimeout(matSearchT); matSearchT = setTimeout(() => { matSearchT = 0; matLimit = MAT_PAGE; drawMaterials(); }, 150); });
 $("mat-add").onclick = () => {
-  if (!catalog.items.length) $("mat-list").textContent = "";
+  if (matSearchT) { clearTimeout(matSearchT); matSearchT = 0; drawMaterials(); } // busca ainda pendente: aplica antes, para não apagar o material novo
+  $("mat-list").querySelectorAll(":scope > .hint").forEach((h) => h.remove());
   const row = matRow(null); $("mat-list").prepend(row);
   row.querySelector("input").focus();
 };
@@ -1269,6 +1301,7 @@ function renderItems() {
     d.value = it.desc; u.value = it.un; q.value = numIn(it.qty); p.value = it.price ? Number(it.price).toFixed(2).replace(".", ",") : "";
     d.oninput = (e) => { it.desc = d.value; if (e.isTrusted) openSugg(i, d); };
     d.onkeydown = (e) => suggKey(e, d, i);
+    d.onfocus = () => refreshCatalog();
     d.addEventListener("blur", () => setTimeout(() => { if (sug && sug.input === d && document.activeElement !== d) closeSugg(); }, 200));
     u.oninput = () => { it.un = u.value; };
     q.oninput = () => { it.qty = parseNum(q.value); renderTotals(); };
@@ -1470,6 +1503,7 @@ const newQuote = () => {
     client: { name: "", doc: "", phone: "", email: "", cep: "", street: "", number: "", comp: "", district: "", city: "", uf: "", address: "" },
     items: [{ desc: "", un: "un", qty: 1, price: 0 }], labor: 0, discount: 0, obs: profile.obs || DEFAULT_OBS, clientSig: "" };
   renderEditor(); window.scrollTo(0, 0);
+  refreshCatalog(true);
 };
 // Botão grande "Novo": se o atual ainda não foi salvo, pede um segundo toque para não perder o que foi digitado
 function confirmNew(btn, label, isDraft, run) {
@@ -1905,7 +1939,7 @@ function confirmReset(btn) {
   if (btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.dataset.label = btn.textContent; btn.textContent = "Toque de novo para apagar tudo"; return; }
   btn.disabled = true; btn.textContent = "Apagando…";
   store.resetAll().catch(() => {}).then(() => {
-    profile = blankProfile(); quotes = []; receipts = []; catSet(null); catalogOk = true; catQueue = Promise.resolve();
+    profile = blankProfile(); quotes = []; receipts = []; catSet(null); catPending = []; catQueue = Promise.resolve();
     quote = sampleQuote(); receipt = blankReceipt();
     renderEditor(); renderReceipt();
     session.set(false);
@@ -2197,6 +2231,7 @@ function show(view) {
   if (view === "home") renderHome();
   if (view === "saved") renderSaved();
   if (view === "materials") renderMaterials();
+  if (view === "editor") refreshCatalog();
   if (view === "receipt") renderReceiptAmount();
   if (view === "receipts") renderReceipts();
   if (view === "profile") renderProfile();
@@ -2212,7 +2247,7 @@ renderEditor();
   applyBrand(); prepLogo();
   quotes = await store.listQuotes().catch(() => []);
   receipts = await store.listReceipts().catch(() => []);
-  catalogOk = await loadCatalog().catch(() => false);
+  await refreshCatalog(true);
   if (quotes.length && quote.sample) newQuote();
   receipt = blankReceipt(); renderReceipt();
   if (!profile.registered || !profile.pwHash) gate("welcome");
