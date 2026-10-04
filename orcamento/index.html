@@ -429,6 +429,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
   <!-- SALVOS -->
   <div id="view-saved" class="stack" hidden>
     <button class="btn primary new" id="btn-new-2" type="button"><span class="plus" aria-hidden="true">+</span>Novo orçamento</button>
+    <h2 id="saved-h">Orçamentos salvos</h2>
     <p class="hint" id="saved-where"></p>
     <div class="list" id="saved-list"></div>
   </div>
@@ -503,6 +504,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 
   <div id="view-receipts" class="stack" hidden>
     <button class="btn warm new" id="btn-r-new-2" type="button"><span class="plus" aria-hidden="true">+</span>Novo recibo</button>
+    <h2 id="receipts-h">Recibos salvos</h2>
     <p class="hint" id="receipts-where"></p>
     <div class="list" id="receipts-list"></div>
   </div>
@@ -1787,7 +1789,8 @@ function renderSaved() {
     : "Guardados neste aparelho e navegador.";
   const box = $("saved-list"); box.textContent = "";
   const list = [...quotes].sort((a, b) => (b.number || 0) - (a.number || 0));
-  if (!list.length) { box.innerHTML = `<p class="hint">Nenhum orçamento salvo ainda. Preencha a aba Orçamento e toque em Salvar.</p>`; return; }
+  $("saved-h").textContent = list.length ? `Orçamentos salvos (${list.length})` : "Orçamentos salvos";
+  if (!list.length) { box.innerHTML = `<p class="hint">Nenhum orçamento salvo ainda. Toque em "+ Novo orçamento" para fazer o primeiro.</p>`; return; }
   const today = todayISO();
   for (const q of list) {
     const el = document.createElement("div"); el.className = "q";
@@ -2147,7 +2150,8 @@ function renderReceipts() {
   $("receipts-where").textContent = store.mode === "db" ? "Guardados na sua conta. Só você vê esta lista." : "Guardados neste aparelho e navegador.";
   const box = $("receipts-list"); box.textContent = "";
   const list = [...receipts].sort((a, b) => (b.number || 0) - (a.number || 0));
-  if (!list.length) { box.innerHTML = `<p class="hint">Nenhum recibo ainda. Crie um na aba Recibo ou use "Gerar recibo" num orçamento salvo.</p>`; return; }
+  $("receipts-h").textContent = list.length ? `Recibos salvos (${list.length})` : "Recibos salvos";
+  if (!list.length) { box.innerHTML = `<p class="hint">Nenhum recibo ainda. Toque em "+ Novo recibo" ou use "Gerar recibo" num orçamento salvo.</p>`; return; }
   for (const r of list) {
     const el = document.createElement("div"); el.className = "q";
     el.innerHTML = `<div><strong></strong><span class="pill">${KIND[r.kind] || ""}</span>
@@ -2199,8 +2203,9 @@ function renderHome() {
   const open = quotes.reduce((s, q) => { const got = receivedFor(q.id, ""); return got > 0 ? s + Math.max(0, calc(q).total - got) : s; }, 0);
   $("st-open").textContent = money(open);
 }
-$("go-quote").onclick = () => show("editor");
-$("go-receipt").onclick = () => show("receipt");
+// Orçamento e Recibo abrem na lista: o botão "+ Novo" em cima e os salvos logo abaixo (pedido do Marcos)
+$("go-quote").onclick = () => show("saved");
+$("go-receipt").onclick = () => show("receipts");
 $("btn-home").onclick = () => show("home");
 $("btn-back").onclick = () => show("home");
 $("tab-profile").onclick = () => show("profile");

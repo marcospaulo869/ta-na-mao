@@ -140,6 +140,13 @@ Pedidos do Marcos: (1) ao digitar um material (ex.: "chapa MDF branco"), abrir s
 - A lista fica na sua conta: é a mesma no celular e no notebook. O app busca a versão mais nova ao abrir um orçamento, ao tocar no campo Material e ao abrir a aba Materiais. Se a internet falhar, nenhuma mudança grava por cima da lista guardada: ela fica esperando e é guardada na próxima vez. "Apagar tudo e recomeçar" também apaga a lista.
 - Antes de publicar, a versão passou por uma revisão com cinco revisores (celular, dados entre aparelhos, aba Materiais, integração e busca); os problemas encontrados foram corrigidos e conferidos com os próprios testes deles.
 
+## Atualização (04/10/2026, 17h30): Orçamento e Recibo abrem na lista
+
+Pedido do Marcos: ao tocar em Orçamento na tela inicial, ver o botão "+ Novo orçamento" e, logo abaixo, todos os orçamentos já salvos, em vez de cair direto no formulário.
+- **Orçamento** (tela inicial) abre a aba Salvos: "+ Novo orçamento" em cima e a lista "Orçamentos salvos (N)" embaixo, do mais novo para o mais antigo. "Abrir" leva ao formulário daquele orçamento.
+- **Recibo** ficou igual: "+ Novo recibo" em cima e "Recibos salvos" embaixo.
+- A aba "Orçamento" lá em cima continua levando ao formulário (por exemplo, para voltar a um orçamento que ainda não foi salvo).
+
 ## Próximos passos (a combinar)
 
 - Você testar o app e dizer o que ajustar.
