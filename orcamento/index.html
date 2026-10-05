@@ -1340,8 +1340,10 @@ function renderItems() {
       renderItems(); renderTotals(); $(`it-d-${j}`).closest(".item").scrollIntoView({ block: "center" });
     };
     const x = row.querySelector(`#it-x-${i}`);
-    row.querySelector('[data-a="fill"]').onclick = () => applyDictation(i, x.value);
-    x.onkeydown = (e) => { if (e.key === "Enter") applyDictation(i, x.value); };
+    // Preencher no meio de um ditado ligado pelo teclado: desliga o microfone antes, sem apagar o que está na caixa
+    const fill = () => { if (talk && talk.i === i) dropTalk(); applyDictation(i, x.value); };
+    row.querySelector('[data-a="fill"]').onclick = fill;
+    x.onkeydown = (e) => { if (e.key === "Enter") fill(); };
     row.querySelector('[data-a="close"]').onclick = () => { if (talk && talk.i === i) endTalk(true, true); x.value = ""; x.closest(".dict").hidden = true; };
   });
 }
@@ -1468,14 +1470,16 @@ function bindMic(btn, prepare) {
   btn.addEventListener("pointerdown", (e) => {
     if (e.button !== 0 || press) return;
     e.preventDefault();
-    if (talk) { endTalk(false); return; }
+    // tocar no botão enquanto ouve: para; o click desse toque também é descartado ao soltar (stop)
+    if (talk) { endTalk(false); press = { id: e.pointerId, x: e.clientX, y: e.clientY, prepare, far: false, stop: true }; return; }
     press = { id: e.pointerId, x: e.clientX, y: e.clientY, prepare, far: false };
     try { btn.setPointerCapture(e.pointerId); } catch {}
     if (!speechBlocked) press.timer = setTimeout(() => { if (press && !press.far && !talk) { press.started = true; press.i = prepare(); beginTalk(press.i, btn); } }, HOLD_MS);
   });
   // teclado (Enter ou Espaço) ou leitor de tela: um aperto começa a ouvir, outro para.
   // O click que vem do próprio toque/mouse é descartado logo abaixo (ghostUntil), então aqui só chega o de teclado.
-  btn.addEventListener("click", () => {
+  btn.addEventListener("click", (e) => {
+    if (e.pointerType || (e.pointerType === undefined && e.detail !== 0)) return; // toque e mouse: já tratados acima
     if (talk) { endTalk(false); return; }
     const i = prepare();
     if (speechBlocked) keyboardDictation(i); else beginTalk(i, btn, true);
@@ -1495,6 +1499,7 @@ function release(e) {
   if (!press || e.pointerId !== press.id) return;
   const p = press; press = null; clearTimeout(p.timer);
   if (e.type === "pointerup") ghostUntil = performance.now() + 500;
+  if (p.stop) return;
   // se o celular "roubar" o toque (pointercancel), preenche com o que já ouviu em vez de jogar fora
   if (talk && !talk.stopping) { endTalk(p.far); return; }
   if (e.type === "pointercancel" || talk || p.far) return;
@@ -1508,6 +1513,12 @@ addEventListener("pointercancel", release);
 // teclado). Se a página mudou (caixa abriu, item novo), esse click cairia em outro lugar (outro campo, Enviar PDF) e
 // tiraria o foco da caixa do ditado; no próprio botão, ligaria o ditado de novo. Ele é ignorado.
 let ghostUntil = 0;
+// um toque novo começa: o click do toque anterior já veio ou não vem mais (toque longo, dedo arrastado), então a
+// trava sai; e um aperto que ficou sem "soltar" (evento perdido) é encerrado
+addEventListener("pointerdown", (e) => {
+  ghostUntil = 0;
+  if (press && press.id === e.pointerId) release({ type: "pointercancel", pointerId: e.pointerId });
+}, true);
 for (const type of ["mousedown", "click"]) addEventListener(type, (e) => {
   if (performance.now() > ghostUntil) return;
   if (type === "click") ghostUntil = 0;
@@ -1589,17 +1600,24 @@ function finishTalk(t) {
   if (x) dictState(t.i, "Não ouvi nada. Segure o botão, fale e só então solte.");
   toast("Não ouvi nada. Segure o botão enquanto fala.");
 }
-function micBlocked(why) {
-  const t = talk;
-  setSpeechBlocked(why);
-  if (!t) return;
+// desliga o microfone na hora, sem preencher nem apagar a caixa
+function dropTalk() {
+  const t = talk; if (!t) return null;
   talk = null; clearTimeout(t.watch); clearTimeout(t.stopWatch);
   try { t.rec && t.rec.abort(); } catch {}
   paintMic(t.btn);
+  return t;
+}
+function micBlocked(why) {
+  setSpeechBlocked(why);
+  const t = dropTalk(); if (!t) return;
   const x = openDictBox(t.i);
-  if (x) { x.value = talkText(t); dictState(t.i, MIC_OFF + " " + kbHint(), false, micWhy); }
+  if (x) {
+    x.value = talkText(t); dictState(t.i, MIC_OFF + " " + kbHint(), false, micWhy);
+    if (t.toggle) x.focus(); // começou pelo teclado: o cursor vai para a caixa
+  }
   // com o dedo ainda no botão, o teclado abre ao soltar; senão, avisa
-  if (!press) toast(MIC_OFF + " Toque no campo e use o 🎤 do teclado.");
+  if (!press) toast(MIC_OFF + " " + kbHint());
 }
 function applyDictation(i, text) {
   const it = quote.items[i]; if (!it || !String(text || "").trim()) return;
