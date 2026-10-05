@@ -84,7 +84,10 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .sugg .opt { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; min-height: 46px; }
 .sugg .opt:hover, .sugg .opt.on { background: var(--accent-soft); }
 .sugg .o-main { flex: 1; min-width: 0; display: grid; gap: 1px; }
-.sugg .o-desc { font-size: 0.98rem; color: var(--ink); overflow-wrap: anywhere; }
+.sugg .o-desc { font-size: 0.98rem; color: var(--ink); overflow-wrap: anywhere; text-transform: uppercase; }
+/* nome do material: aparece em MAIÚSCULAS já enquanto digita; ao sair do campo o texto é gravado assim, com os acentos */
+input.caps { text-transform: uppercase; }
+input.caps::placeholder { text-transform: none; }
 .sugg .o-desc b { color: var(--accent); font-weight: 700; }
 .sugg .o-meta { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .mat-tools { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -153,6 +156,14 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .intro { display: grid; gap: 6px; }
 .login { justify-items: start; }
 .login label { width: 100%; }
+.pw { position: relative; display: block; }
+.pw input { width: 100%; padding-right: 48px; }
+.pw .eye { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); width: 44px; height: 40px; display: grid; place-items: center; border: 0; background: none; color: var(--muted); cursor: pointer; border-radius: 8px; padding: 0; }
+.pw .eye:hover { color: var(--ink); }
+.pw .eye svg { width: 22px; height: 22px; }
+.bio-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.bio-btn svg { width: 22px; height: 22px; flex: none; }
+#btn-bio-login { width: 100%; padding: 14px; font-size: 1.05rem; }
 .btn.warm { background: var(--warm); border-color: var(--warm); color: var(--warm-ink); }
 /* Botão "Novo": grande e chamativo, na cor de cada função (orçamento azul-petróleo, recibo laranja) */
 .btn.new { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 58px; padding: 14px 18px; border-radius: 14px; font: 700 1.15rem var(--font-display); letter-spacing: -0.01em; box-shadow: 0 10px 22px -14px rgba(16, 40, 46, 0.85); }
@@ -374,6 +385,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <img id="l-logo" class="logo-prev" alt="Logomarca" hidden>
       <h2 id="l-name">Entrar</h2>
       <p class="hint" id="l-email"></p>
+      <button class="btn primary bio-btn" id="btn-bio-login" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11v3a8 8 0 0 1-1.5 4.7"/><path d="M8.5 9.5A3.5 3.5 0 0 1 15.5 11v1.5"/><path d="M5.5 15.5A12 12 0 0 0 6 11a6 6 0 0 1 9.4-4.9"/><path d="M18 9.5c.3.5.5 1 .5 1.5v1a14 14 0 0 1-1 5"/><path d="M14.5 15a17 17 0 0 1-1.6 5.5"/><path d="M3.5 12a8.5 8.5 0 0 1 1.7-6.3"/></svg>Entrar com a digital</button>
       <div class="field"><label for="l-pass">Senha</label><input type="password" id="l-pass" autocomplete="current-password"></div>
       <p class="err" id="l-err" hidden></p>
       <div class="row"><button class="btn primary" id="btn-login">Entrar</button><button class="btn small" id="btn-forgot">Esqueci minha senha</button></div>
@@ -599,6 +611,12 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <textarea id="p-obs"></textarea>
     </section>
     <div class="row"><button class="btn primary" id="btn-save-profile">Salvar meus dados</button></div>
+    <section class="card" id="bio-card">
+      <h2>Entrar com a digital</h2>
+      <p class="hint" id="bio-st"></p>
+      <p class="err" id="bio-err" hidden></p>
+      <div class="row"><button class="btn bio-btn" id="btn-bio" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11v3a8 8 0 0 1-1.5 4.7"/><path d="M8.5 9.5A3.5 3.5 0 0 1 15.5 11v1.5"/><path d="M5.5 15.5A12 12 0 0 0 6 11a6 6 0 0 1 9.4-4.9"/><path d="M18 9.5c.3.5.5 1 .5 1.5v1a14 14 0 0 1-1 5"/><path d="M14.5 15a17 17 0 0 1-1.6 5.5"/><path d="M3.5 12a8.5 8.5 0 0 1 1.7-6.3"/></svg><span>Ativar a digital neste aparelho</span></button></div>
+    </section>
     <section class="card">
       <h2>Trocar senha</h2>
       <div class="grid2">
@@ -833,7 +851,7 @@ const store = {
       await this.profileRef.delete();
       return;
     }
-    try { for (const k of ["orc.profile", "orc.quotes", "orc.receipts", "orc.catalog"]) localStorage.removeItem(k); } catch {}
+    try { for (const k of ["orc.profile", "orc.quotes", "orc.receipts", "orc.catalog", "orc.draft", "orc.bio"]) localStorage.removeItem(k); } catch {}
   },
 };
 
@@ -846,8 +864,49 @@ const isUp = (w) => hasLetter(w) && w === w.toLocaleUpperCase("pt-BR") && w !== 
 const isLow = (w) => hasLetter(w) && w === w.toLocaleLowerCase("pt-BR");
 const isInverted = (w) => { const a = Array.from(w); return a.length > 1 && hasLetter(a[0]) && isLow(a[0]) && isUp(a.slice(1).join("")); }; // "jOÃO", "bRANCO"
 const UFS = new Set("ac al am ap ba ce df es go ma mg ms mt pa pb pe pi pr rj rn ro rr rs sc se sp to".split(" "));
-// kind: "name" (cada palavra com inicial maiúscula), "address" (idem, preserva siglas de 2 letras como UF) ou "text" (só a primeira letra da frase)
+/* Nome de material: tudo em MAIÚSCULAS e com os acentos que faltaram ("DOBRADICA" -> "DOBRADIÇA", "INSTALACAO" -> "INSTALAÇÃO").
+   Primeiro um dicionário de palavras de marcenaria e obra (inclui erros comuns de digitação), depois as terminações que o português sempre acentua. */
+const ACCENT_WORDS = Object.fromEntries(`
+  ACO:AÇO ACOS:AÇOS ACRILICO:ACRÍLICO ACRILICA:ACRÍLICA ACESSORIO:ACESSÓRIO ACESSORIOS:ACESSÓRIOS AEREO:AÉREO AEREOS:AÉREOS AEREA:AÉREA AEREAS:AÉREAS
+  AGUA:ÁGUA ALCA:ALÇA ALCAS:ALÇAS ALUMINIO:ALUMÍNIO AMENDOA:AMÊNDOA ANEIS:ANÉIS AREA:ÁREA AREAS:ÁREAS AUTOMATICO:AUTOMÁTICO AUTOMATICA:AUTOMÁTICA
+  BALCAO:BALCÃO BALCOES:BALCÕES BASICO:BÁSICO BASICA:BÁSICA BAU:BAÚ BAUS:BAÚS BERCO:BERÇO BRACO:BRAÇO BRACOS:BRAÇOS CABECA:CABEÇA
+  CENTIMETRO:CENTÍMETRO CENTIMETROS:CENTÍMETROS CERAMICA:CERÂMICA CERAMICO:CERÂMICO CLASSICO:CLÁSSICO CLASSICA:CLÁSSICA COMODA:CÔMODA COMODAS:CÔMODAS
+  CORREDICA:CORREDIÇA CORREDICAS:CORREDIÇAS CORREDISSA:CORREDIÇA CORREDISSAS:CORREDIÇAS DIAMETRO:DIÂMETRO DOBRADICA:DOBRADIÇA DOBRADICAS:DOBRADIÇAS
+  DOBRADISSA:DOBRADIÇA DOBRADISSAS:DOBRADIÇAS ELASTICO:ELÁSTICO ELETRICO:ELÉTRICO ELETRICA:ELÉTRICA ELETRICOS:ELÉTRICOS ELETRONICO:ELETRÔNICO ELETRONICA:ELETRÔNICA
+  ERGONOMICO:ERGONÔMICO ERGONOMICA:ERGONÔMICA ESPACO:ESPAÇO ESPACOS:ESPAÇOS FACIL:FÁCIL FIEIS:FIÉIS FORMICA:FÓRMICA FREIJO:FREIJÓ FUME:FUMÊ GRAPIA:GRÁPIA
+  HIDRAULICO:HIDRÁULICO HIDRAULICA:HIDRÁULICA IPE:IPÊ ITAUBA:ITAÚBA JATOBA:JATOBÁ LAMINA:LÂMINA LAMINAS:LÂMINAS LAMPADA:LÂMPADA LAMPADAS:LÂMPADAS
+  LOUCA:LOUÇA LUMINARIA:LUMINÁRIA LUMINARIAS:LUMINÁRIAS MACANETA:MAÇANETA MACANETAS:MAÇANETAS MACARANDUBA:MAÇARANDUBA MAGNETICO:MAGNÉTICO MAGNETICA:MAGNÉTICA
+  MARMORE:MÁRMORE MAXIMO:MÁXIMO MAXIMA:MÁXIMA MECANICO:MECÂNICO MECANICA:MECÂNICA MELAMINICO:MELAMÍNICO MELAMINICA:MELAMÍNICA METALICO:METÁLICO METALICA:METÁLICA
+  MILIMETRO:MILÍMETRO MILIMETROS:MILÍMETROS MILIMITRO:MILÍMETRO MILIMITROS:MILÍMETROS MINIMO:MÍNIMO MINIMA:MÍNIMA NIQUEL:NÍQUEL OLEO:ÓLEO ORCAMENTO:ORÇAMENTO
+  PECA:PEÇA PECAS:PEÇAS PEDACO:PEDAÇO PES:PÉS PLASTICO:PLÁSTICO PLASTICA:PLÁSTICA PNEUMATICO:PNEUMÁTICO POLIESTER:POLIÉSTER PRATICO:PRÁTICO PRATICA:PRÁTICA
+  PRECO:PREÇO RODAPE:RODAPÉ RODAPES:RODAPÉS RODIZIO:RODÍZIO RODIZIOS:RODÍZIOS RUSTICO:RÚSTICO RUSTICA:RÚSTICA SERVICO:SERVIÇO SERVICOS:SERVIÇOS SINTETICO:SINTÉTICO
+  SINTETICA:SINTÉTICA SOFA:SOFÁ SOFAS:SOFÁS SUITE:SUÍTE TABUA:TÁBUA TABUAS:TÁBUAS TAMBEM:TAMBÉM TECNICO:TÉCNICO TECNICA:TÉCNICA TELESCOPICO:TELESCÓPICO
+  TELESCOPICA:TELESCÓPICA TELESCOPICAS:TELESCÓPICAS TERMICO:TÉRMICO TERMICA:TÉRMICA TITANIO:TITÂNIO TRES:TRÊS ULTIMO:ÚLTIMO ULTIMA:ÚLTIMA UNICO:ÚNICO UNICA:ÚNICA
+  VIDRACARIA:VIDRAÇARIA VINILICO:VINÍLICO VINILICA:VINÍLICA ACUSTICO:ACÚSTICO ACUSTICA:ACÚSTICA ESPECIFICO:ESPECÍFICO OPTICO:ÓPTICO PORCELANATO:PORCELANATO
+  PUCHADOR:PUXADOR PUCHADORES:PUXADORES PARAFUZO:PARAFUSO PARAFUZOS:PARAFUSOS CANTONERA:CANTONEIRA CANTONERAS:CANTONEIRAS PRATELERA:PRATELEIRA PRATELERAS:PRATELEIRAS
+  MADERA:MADEIRA FERAGEM:FERRAGEM FERAGENS:FERRAGENS GAVETERO:GAVETEIRO SAPATERA:SAPATEIRA ARMARO:ARMÁRIO VERNIS:VERNIZ COMPENSSADO:COMPENSADO`.trim().split(/\s+/).map((x) => x.split(":")));
+const NO_ACCENT_RULE = new Set(["CAOS", "CIAO"]);
+function accentWord(w) {
+  if (!/^[A-Z]+$/.test(w)) return w; // já tem acento, ç ou número: não mexe
+  if (ACCENT_WORDS[w]) return ACCENT_WORDS[w];
+  if (w.length < 3 || NO_ACCENT_RULE.has(w)) return w;
+  let m;
+  if ((m = w.match(/^(.*[^L])CAO$/))) return m[1] + "ÇÃO";      // INSTALACAO, MEDICAO (BALCAO fica com C)
+  if ((m = w.match(/^(.*[^L])COES$/))) return m[1] + "ÇÕES";    // GUARNICOES
+  if ((m = w.match(/^(.*)AO(S?)$/))) return m[1] + "ÃO" + m[2];  // PISTAO, MAO, VAOS
+  if ((m = w.match(/^(.+)OES$/))) return m[1] + "ÕES";          // TAMPOES, PORTOES
+  if ((m = w.match(/^(.*)([AIO])VE(L|IS)$/)) && w.length >= 5) return m[1] + { A: "Á", I: "Í", O: "Ó" }[m[2]] + "VE" + m[3]; // REGULÁVEL, MÓVEIS
+  if ((m = w.match(/^(.+)ARIO(S?)$/))) return m[1] + "ÁRIO" + m[2]; // ARMÁRIO
+  if ((m = w.match(/^(.+)ORIO(S?)$/))) return m[1] + "ÓRIO" + m[2]; // DORMITÓRIO
+  if ((m = w.match(/^(.+)ENCIA(S?)$/))) return m[1] + "ÊNCIA" + m[2]; // RESISTÊNCIA
+  if ((m = w.match(/^(.+)ANCIA(S?)$/))) return m[1] + "ÂNCIA" + m[2]; // DISTÂNCIA
+  if (w.length >= 6 && (m = w.match(/^(.+)EIS$/))) return m[1] + "ÉIS"; // PAINÉIS, PAPÉIS
+  return w;
+}
+const upperName = (v) => String(v == null ? "" : v).toLocaleUpperCase("pt-BR").replace(/\p{L}+/gu, accentWord);
+// kind: "name" (cada palavra com inicial maiúscula), "address" (idem, preserva siglas de 2 letras como UF), "text" (só a primeira letra da frase) ou "upper" (material)
 function fixCase(value, kind) {
+  if (kind === "upper") return upperName(value);
   const s = String(value == null ? "" : value);
   if (!hasLetter(s)) return s;
   const letters = Array.from(s).filter((c) => /\p{L}/u.test(c));
@@ -897,7 +956,7 @@ const normalizeClient = (c) => {
 };
 const normalizeQuote = (q) => {
   normalizeClient(q.client);
-  for (const it of q.items) it.desc = fixCase(it.desc, "text");
+  for (const it of q.items) it.desc = fixCase(it.desc, "upper");
 };
 const normalizeReceipt = (r) => { r.payer.name = fixCase(r.payer.name, "name"); r.desc = fixCase(r.desc, "text"); };
 
@@ -925,6 +984,27 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitSoon);
 let profile = blankProfile();
 let quote = sampleQuote();
 let quotes = [];
+
+/* Rascunho: o orçamento e o recibo que estão na tela ficam guardados neste aparelho; atualizar a página não apaga o que foi digitado */
+const DRAFT_KEY = "orc.draft";
+let draftTimer = 0;
+function saveDraft() {
+  clearTimeout(draftTimer); draftTimer = 0;
+  if (!profile.registered) return;
+  local.set(DRAFT_KEY, { quote: quote && !quote.sample ? quote : null, receipt });
+}
+const draftSoon = () => { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 400); };
+for (const t of ["input", "change", "click"]) document.addEventListener(t, draftSoon, true);
+addEventListener("pagehide", saveDraft);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveDraft(); });
+// Volta o rascunho, a não ser que ele seja de um documento apagado ou salvo depois em outro aparelho
+function draftOk(d, list, listOk) {
+  if (!d || typeof d !== "object") return false;
+  if (!d.id) return true;
+  const saved = list.find((x) => x.id === d.id);
+  if (!saved) return !listOk;
+  return !(saved.updated && (!d.updated || saved.updated > d.updated));
+}
 
 const toast = (msg) => { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (t.hidden = true), 2600); };
 
@@ -1235,7 +1315,7 @@ function matRow(e) {
   const n = ++matSeq, row = document.createElement("div");
   row.className = "mat"; row.key = e ? catKey(e.desc) : null;
   row.innerHTML = `
-    <div class="field name"><label for="m-d-${n}">Material</label><input id="m-d-${n}" autocomplete="off" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true"></div>
+    <div class="field name"><label for="m-d-${n}">Material</label><input id="m-d-${n}" class="caps" autocomplete="off" data-fix="upper" autocapitalize="characters" autocorrect="on" spellcheck="true" lang="pt-BR"></div>
     <div class="field"><label for="m-u-${n}">Un.</label><input id="m-u-${n}" autocomplete="off"></div>
     <div class="field"><label for="m-p-${n}">Preço un. (R$)</label><input id="m-p-${n}" class="num" inputmode="decimal"></div>
     <button class="rm" type="button" title="Apagar material" aria-label="Apagar material">×</button>
@@ -1246,7 +1326,7 @@ function matRow(e) {
   const find = () => catalog.items.find((x) => catKey(x.desc) === row.key);
   d.onchange = () => {
     if (row.cancel) return; // tocou no × de um material novo: não guarda
-    const desc = fixCase(d.value.replace(/\s+/g, " ").trim(), "text"), k = catKey(desc);
+    const desc = fixCase(d.value.replace(/\s+/g, " ").trim(), "upper"), k = catKey(desc);
     if (!desc) { if (row.key) { d.value = find() ? find().desc : ""; toast("O nome do material não pode ficar vazio"); } return; }
     if (desc.length > CAT_DESC_MAX) { toast("Nome muito comprido"); d.value = row.key && find() ? find().desc : ""; return; }
     const other = catalog.items.find((x) => catKey(x.desc) === k);
@@ -1328,7 +1408,7 @@ function renderItems() {
         <div class="row"><input id="it-x-${i}" autocomplete="off" placeholder="O que você ditar aparece aqui"><button class="btn small warm" type="button" data-a="fill">Preencher</button><button class="btn small" type="button" data-a="close">Fechar</button></div>
         <p class="hint dict-why"></p>
       </div>
-      <div class="field desc"><label for="it-d-${i}">Material</label><input id="it-d-${i}" autocomplete="off" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true" role="combobox" aria-autocomplete="list" aria-expanded="false"></div>
+      <div class="field desc"><label for="it-d-${i}">Material</label><input id="it-d-${i}" class="caps" autocomplete="off" data-fix="upper" autocapitalize="characters" autocorrect="on" spellcheck="true" lang="pt-BR" role="combobox" aria-autocomplete="list" aria-expanded="false"></div>
       <div class="field"><label for="it-u-${i}">Un.</label><input id="it-u-${i}" autocomplete="off"></div>
       <div class="field"><label for="it-q-${i}">Qtd.</label><input id="it-q-${i}" class="num" inputmode="decimal"></div>
       <div class="field"><label for="it-p-${i}">Preço un. (R$)</label><input id="it-p-${i}" class="num" inputmode="decimal"></div>
@@ -1635,7 +1715,7 @@ function applyDictation(i, text) {
   const it = quote.items[i]; if (!it || !String(text || "").trim()) return;
   const r = parseDictation(text);
   if (!r.desc && r.qty == null && r.price == null) { toast("Não entendi. Tente: material, quantidade e valor."); return; }
-  if (r.desc) it.desc = fixCase(r.desc, "text");
+  if (r.desc) it.desc = fixCase(r.desc, "upper");
   if (r.un) it.un = r.un;
   if (r.qty != null && !Number.isNaN(r.qty)) it.qty = r.qty;
   if (r.price != null && !Number.isNaN(r.price)) it.price = r.price;
@@ -2052,6 +2132,7 @@ for (const id of ["p-qr", "p-phone", "p-instagram"]) $(id).addEventListener("inp
 $("p-tone").addEventListener("change", () => { profile.tone = $("p-tone").value; renderBrand(); });
 function renderProfile() {
   fitSoon();
+  if ($("bio-card")) renderBio();
   if (!profile.street && !profile.city && profile.address) profile.street = profile.address; // cadastro antigo, só com endereço
   for (const k of PROFILE_FIELDS) $("p-" + k).value = profile[k] || "";
   $("p-days").value = profile.days; $("p-next").value = profile.next; $("p-obs").value = profile.obs;
@@ -2161,7 +2242,87 @@ function confirmReset(btn) {
 }
 $("btn-reset").onclick = (e) => confirmReset(e.currentTarget);
 $("btn-reset-login").onclick = (e) => confirmReset(e.currentTarget);
-$("btn-logout").onclick = () => { session.set(false); gate("login"); };
+$("btn-logout").onclick = () => { session.set(false); bioAuto = false; gate("login"); }; // depois de Sair, a digital só abre se tocar no botão
+
+/* ---------- Entrar com a digital (ou rosto/PIN do aparelho), pelo leitor do próprio celular ou notebook ----------
+   A digital fica só no aparelho: o app guarda apenas o código da chave criada nele ("orc.bio") e pede ao aparelho que confirme a pessoa. */
+const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const unb64u = (t) => Uint8Array.from(atob(t.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+const rnd = (n) => crypto.getRandomValues(new Uint8Array(n));
+const bioGet = () => { const b = local.get("orc.bio", null); return b && b.id ? b : null; };
+let bioAvail = null;
+async function bioCan() {
+  if (bioAvail === null) {
+    try { bioAvail = !!(window.PublicKeyCredential && window.isSecureContext && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); }
+    catch { bioAvail = false; }
+  }
+  return bioAvail;
+}
+const bioMsg = (e) => !e ? "não deu certo"
+  : e.name === "NotAllowedError" ? "a confirmação foi cancelada, demorou demais ou esta página não libera a digital"
+  : e.name === "SecurityError" ? "esta página não libera a digital (abra pelo link próprio no Chrome)"
+  : e.name === "InvalidStateError" ? "a digital já está ativada neste aparelho"
+  : e.name === "NotSupportedError" ? "este aparelho não tem leitor de digital ou bloqueio de tela"
+  : "erro " + e.name;
+async function bioEnable() {
+  const who = profile.email || bizName(profile) || "usuario";
+  const cred = await navigator.credentials.create({ publicKey: {
+    challenge: rnd(32), rp: { name: "Orçamento e Recibo" },
+    user: { id: rnd(16), name: who, displayName: profile.owner || bizName(profile) || "Usuário" },
+    pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+    authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged" },
+    timeout: 60000, attestation: "none" } });
+  if (!cred) throw new Error("sem chave");
+  local.set("orc.bio", { id: b64u(cred.rawId), at: new Date().toISOString() });
+}
+async function bioCheck() {
+  const b = bioGet(); if (!b) return false;
+  const a = await navigator.credentials.get({ publicKey: { challenge: rnd(32), allowCredentials: [{ type: "public-key", id: unb64u(b.id) }], userVerification: "required", timeout: 60000 } });
+  const flags = a && a.response && a.response.authenticatorData ? new Uint8Array(a.response.authenticatorData)[32] : 0;
+  return !!(flags & 4); // o aparelho confirmou a pessoa (digital, rosto ou PIN)
+}
+async function renderBio() {
+  const on = !!bioGet(), can = await bioCan();
+  $("bio-st").textContent = on ? "Ativada neste aparelho. Ao abrir o app, toque em \"Entrar com a digital\". A senha continua valendo."
+    : can ? "Abra o app com a digital (ou o rosto/PIN do aparelho) em vez de digitar a senha. Vale só para este aparelho."
+    : "Este aparelho ou esta página não permite usar a digital. No celular, abra o app pelo link próprio no Chrome.";
+  $("btn-bio").hidden = !on && !can;
+  $("btn-bio").querySelector("span").textContent = on ? "Desativar a digital neste aparelho" : "Ativar a digital neste aparelho";
+  showErr("bio-err", "");
+}
+$("btn-bio").onclick = async () => {
+  if (bioGet()) { try { localStorage.removeItem("orc.bio"); } catch {} renderBio(); toast("Digital desativada neste aparelho"); return; }
+  try { await bioEnable(); renderBio(); toast("Digital ativada. Na próxima vez, é só tocar em Entrar com a digital."); }
+  catch (e) { renderBio(); showErr("bio-err", "Não consegui ativar: " + bioMsg(e) + "."); }
+};
+let bioAuto = true;
+
+/* Olhinho ao lado de cada senha: mostra ou esconde o que foi digitado */
+const EYE_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.8 9.8 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+const setEye = (inp, btn, show) => { inp.type = show ? "text" : "password"; btn.innerHTML = show ? EYE_OFF : EYE_ON; btn.setAttribute("aria-pressed", String(show)); btn.setAttribute("aria-label", show ? "Esconder senha" : "Mostrar senha"); btn.title = btn.getAttribute("aria-label"); };
+for (const inp of document.querySelectorAll('input[type="password"]')) {
+  const wrap = document.createElement("span"), btn = document.createElement("button");
+  wrap.className = "pw"; btn.type = "button"; btn.className = "eye";
+  inp.replaceWith(wrap); wrap.append(inp, btn);
+  setEye(inp, btn, false);
+  btn.addEventListener("pointerdown", (e) => e.preventDefault()); // não tira o cursor do campo
+  btn.onclick = () => setEye(inp, btn, inp.type === "password");
+}
+const hidePasswords = () => { for (const w of document.querySelectorAll(".pw")) setEye(w.querySelector("input"), w.querySelector(".eye"), false); };
+async function bioLogin() {
+  try {
+    if (await bioCheck()) { showErr("l-err", ""); session.set(true); enterApp(); return; }
+    showErr("l-err", "O aparelho não confirmou a digital. Tente de novo ou use a senha.");
+  } catch (e) { showErr("l-err", "Não consegui usar a digital: " + bioMsg(e) + ". Use a senha."); }
+}
+$("btn-bio-login").onclick = bioLogin;
+async function prepBioLogin() {
+  const show = !!bioGet() && await bioCan();
+  $("btn-bio-login").hidden = !show;
+  if (!show) return;
+  if (bioAuto) { bioAuto = false; bioLogin(); } // abre o leitor sozinho na primeira vez; se o navegador não deixar, o botão fica
+}
 
 $("btn-pw").onclick = async () => {
   if (!(await checkPassword($("pw-old").value))) return showErr("pw-err", "A senha atual está incorreta.");
@@ -2422,19 +2583,22 @@ function gate(which) {
     $("l-email").textContent = profile.email ? "Conta: " + profile.email : "";
     $("l-logo").hidden = !profile.logo; if (profile.logo) $("l-logo").src = profile.logo;
     $("l-forgot").hidden = true; showErr("l-err", "");
-    setTimeout(() => $("l-pass").focus(), 50);
+    if (bioGet()) prepBioLogin(); else setTimeout(() => $("l-pass").focus(), 50);
   }
   window.scrollTo(0, 0);
 }
 function enterApp() {
+  hidePasswords();
   $("profile-slot").appendChild($("company-card"));
   for (const v of ["loading", "welcome", "signup", "login"]) $("view-" + v).hidden = true;
   $("topbar").hidden = false;
   renderBrand();
-  show("home");
+  let last = ""; try { last = sessionStorage.getItem("orc.view") || ""; } catch {}
+  show(APP_VIEWS.includes(last) ? last : "home");
 }
 function show(view) {
   fitSoon();
+  try { sessionStorage.setItem("orc.view", view); } catch {}
   for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", String(b.dataset.view === view));
   for (const v of APP_VIEWS) $("view-" + v).hidden = v !== view;
   $("subnav").hidden = view === "home";
@@ -2462,8 +2626,10 @@ renderEditor();
   quotes = await store.listQuotes().then((r) => { quotesOk = true; return r; }).catch(() => []);
   receipts = await store.listReceipts().catch(() => []);
   await refreshCatalog(true);
-  if (quotes.length && quote.sample) newQuote();
-  receipt = blankReceipt(); renderReceipt();
+  const draft = local.get(DRAFT_KEY, null) || {};
+  if (draft.quote && Array.isArray(draft.quote.items) && draft.quote.client && draftOk(draft.quote, quotes, quotesOk)) { quote = draft.quote; renderEditor(); }
+  else if (quotes.length && quote.sample) newQuote();
+  receipt = draft.receipt && draft.receipt.payer && draftOk(draft.receipt, receipts, true) ? draft.receipt : blankReceipt(); renderReceipt();
   if (!profile.registered || !profile.pwHash) gate("welcome");
   else if (session.get()) enterApp();
   else gate("login");
