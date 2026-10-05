@@ -3,6 +3,37 @@
 Este arquivo guarda o resumo da conversa com o Claude para retomarmos depois.
 Para continuar, peça ao Claude: "leia a pasta orcamento do ta-na-mao e vamos retomar de onde paramos".
 
+## Panorama (05/10/2026, noite)
+
+### Onde o app está
+- **Link próprio (o do celular):** https://marcospaulo869.github.io/ta-na-mao/orcamento/ . Aqui funcionam o "Segure e fale", a digital e o envio do PDF anexado. Os dados ficam só no aparelho em que foram feitos.
+- **Link no Claude:** https://claude.ai/artifact/7yzK28BqRJmSpzt61nXdLG . Os dados ficam na sua conta do Claude (usado no notebook), mas ali o microfone e a digital são bloqueados.
+- **Código:** `orcamento/index.html` no GitHub (`marcospaulo869/ta-na-mao`, branch `claude/project-thread-o7weyg`, PR #1 aberto e ainda não juntado na branch principal).
+
+### O que já está pronto
+1. **Entrada:** tela de boas-vindas com o selo da Madeira Forte e reflexo de luz; cadastro completo da empresa (CPF/CNPJ, IE, Instagram, endereço, logomarca, assinatura); senha com olhinho; entrar com a digital; apagar tudo e recomeçar.
+2. **Orçamento:** cliente com endereço em campos e botões de copiar; validade em dias úteis; materiais com sugestões da aba Materiais; nome do material em MAIÚSCULAS com acentos automáticos; ditado "Segure e fale"; inserir e reordenar itens; mão de obra; desconto em %; pré-contrato; assinatura do cliente.
+3. **Recibo:** valor por extenso; tipo (total, entrada, parcela, saldo); forma de pagamento; assinaturas; gerar a partir de um orçamento com o saldo que falta.
+4. **PDF:** cabeçalho com logomarca e dados; QR Code (WhatsApp ou Instagram) com o selo dourado no meio; estilo preto e dourado ou verde; assinaturas em azul BIC.
+5. **Envio:** tela de compartilhar do celular com o PDF anexado (botão verde "Enviar o PDF"); no notebook, salva o PDF e abre a conversa no WhatsApp.
+6. **Facilidades:** o que está na tela fica guardado ao atualizar a página; tocar num campo seleciona o que já está nele; listas de salvos; aba Materiais com os preços.
+
+### O que falta para terminar a validação
+- Testar no celular: "Segure e fale", digital, botão "Enviar o PDF" e ler o QR Code com outro celular.
+- No celular: colocar a logomarca, escolher preto e dourado e corrigir o campo IE (saiu o e-mail nele).
+- Revisar o texto padrão do pré-contrato (forma de pagamento, prazo e garantia).
+- Celular e notebook não se enxergam: escolher um aparelho principal ou fazermos a cópia de segurança (exportar e importar).
+- Atualizar a cópia da pasta do PC (Documentos\ta-na-mao\orcamento), que está antiga.
+- Juntar o PR #1 na branch principal quando você estiver satisfeito.
+
+### O que falta para vender
+- Contas no servidor: login de verdade, recuperar senha por e-mail e os mesmos dados no celular e no notebook (o backend do ta-na-mao já tem cadastro e planos).
+- Cobrança dos planos (Stripe, que o ta-na-mao já usa).
+- PDF gerado no servidor, com o selo travado de verdade.
+- Termos de uso e política de privacidade (LGPD).
+- Publicar na Play Store.
+- Opcional: envio automático pelo WhatsApp (API oficial do WhatsApp Business, paga) e importar a lista de preços do fornecedor por planilha.
+
 ## O que você pediu (03/10/2026)
 
 > Quero criar um app em que eu consiga gerar um orçamento de materiais, com quantidades e preços, e enviar para o cliente. Tem que ter data inicial e data de validade, tem que salvar em PDF, tem que ter assinatura no final e uma página "Obs" para já inserir o pré-contrato e enviar junto com o orçamento.
@@ -161,10 +192,18 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - Corrigido: o total do item saía do painel na tela larga (versão 20); o toque no Ditar às vezes caía em outro botão logo depois de a caixa abrir (versão 21).
 - Em aberto: escolher entre ficar no Claude (recomendado enquanto valida) ou abrir um link próprio (GitHub Pages), onde o "Segure e fale" funciona no Chrome, mas os dados ficam só no aparelho.
 
-## Próximos passos (a combinar)
+## Atualização (05/10/2026): link próprio no celular e ajustes do dia
 
-- Você testar o app e dizer o que ajustar.
-- Ajustes de dentro do Orçamento e do Recibo que você for pedindo.
-- Cópia de segurança (exportar e importar os dados) para quem usar o link próprio.
-- Para vender: contas de verdade no servidor (o backend do ta-na-mao já tem cadastro, planos e Stripe).
-- Revisar o texto padrão do pré-contrato (forma de pagamento, prazo e garantia).
+- **Link próprio ligado** (GitHub Pages). Cada vez que o app muda, ele se atualiza sozinho em cerca de 1 minuto.
+- **Tela inicial:** selo da Madeira Forte acima do título, com um reflexo de luz passando (testamos no canto e voltamos para cima).
+- **Material em MAIÚSCULAS** com acentos e erros comuns corrigidos ao sair do campo ("dobradica" vira DOBRADIÇA).
+- **Rascunho:** atualizar a página não apaga mais os itens; o app volta na mesma tela.
+- **Digital** para entrar (ativa em Meus dados) e **olhinho** para ver a senha. A senha continua valendo.
+- **Tocar num campo** seleciona o que já está nele; tocar de novo põe o cursor no lugar.
+- **Desconto em %** sobre materiais + mão de obra.
+- **Assinaturas em azul BIC**, inclusive as antigas.
+- **Envio do PDF:** o WhatsApp não deixa site nenhum anexar arquivo direto na conversa; o PDF só vai pela tela de compartilhar do celular. Quando ela não abre sozinha, aparece o botão verde "Enviar o PDF".
+
+## Próximos passos
+
+Veja "O que falta" no Panorama, no começo deste arquivo.
