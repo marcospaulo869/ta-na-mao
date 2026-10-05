@@ -228,8 +228,9 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .gate-hero { min-height: 210px; }
 .welcome-hero { min-height: 420px; }
 .welcome-hero img { object-position: 50% 30%; }
-.hero .txt img.hero-seal { position: static; justify-self: start; width: auto; height: 72px; object-fit: contain; margin-bottom: 6px; filter: drop-shadow(0 2px 10px rgba(0,0,0,0.45)); }
-@media (min-width: 720px) { .hero .txt img.hero-seal { height: 104px; } }
+.hero img.hero-seal { position: absolute; z-index: 1; inset: auto 16px 16px auto; width: auto; height: 76px; object-fit: contain; filter: drop-shadow(0 2px 10px rgba(0,0,0,0.5)); }
+.welcome-hero .txt p { padding-right: 52px; }
+@media (min-width: 720px) { .hero img.hero-seal { left: auto; inset: auto 22px 22px auto; width: auto; height: 104px; } .welcome-hero .txt p { padding-right: 0; } }
 @media (min-width: 720px) { .welcome-hero img { object-position: 35% 25%; } }
 .benefits { display: grid; gap: 10px; }
 .benefit { display: grid; grid-template-columns: 48px 1fr; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
@@ -313,11 +314,11 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <div class="hero welcome-hero">
       <img src="img/arquiteta.jpg" alt="Profissional sorrindo com o celular na mão">
       <div class="txt">
-        <img class="hero-seal" src="img/selo-madeira-forte.png" alt="Selo Madeira Forte, desde 2007">
         <span class="eyebrow">Orçamento e Recibo</span>
         <h2>Feche mais serviços com orçamentos que passam confiança.</h2>
         <p>Monte o orçamento no celular, envie em PDF com a sua marca e registre cada pagamento com recibo assinado.</p>
       </div>
+      <img class="hero-seal" src="img/selo-madeira-forte.png" alt="Selo Madeira Forte, desde 2007">
     </div>
     <div class="benefits">
       <div class="benefit"><span class="bic quote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg></span><div><b>Orçamento profissional</b><small>Materiais, validade, pré-contrato e sua logomarca num PDF pronto para o WhatsApp.</small></div></div>
