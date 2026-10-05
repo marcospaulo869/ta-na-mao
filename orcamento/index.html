@@ -201,6 +201,10 @@ input.caps::placeholder { text-transform: none; }
 a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .sheet-bg { position: fixed; inset: 0; z-index: 20; background: rgba(10, 20, 24, 0.55); display: flex; align-items: flex-end; justify-content: center; }
 .sheet { background: var(--surface); color: var(--ink); width: 100%; max-width: 560px; border-radius: 18px 18px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 12px; max-height: 90%; overflow-y: auto; }
+.shshare { display: grid; gap: 8px; }
+.shshare p { margin: 0; }
+.shshare .btn.big { max-width: none; justify-content: center; }
+.sh-why:empty, #sh-share-why:empty { display: none; }
 .shsteps { margin: 0; padding-left: 1.3em; display: grid; gap: 12px; }
 .shsteps li { display: grid; gap: 4px; }
 .shsteps li::marker { font-weight: 700; color: var(--accent); }
@@ -656,6 +660,12 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 <div class="sheet-bg" id="sheet" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-title">
     <h2 id="sh-title">Enviar pelo WhatsApp</h2>
+    <div class="shshare" id="sh-share-box" hidden>
+      <p>Toque em <b>Enviar o PDF</b>, escolha o <b>WhatsApp</b> e depois a conversa de <b id="sh-who">cliente</b>. O PDF vai anexado.</p>
+      <div class="row"><button class="btn wa big" id="sh-share" type="button">Enviar o PDF</button></div>
+      <p class="hint" id="sh-share-why"></p>
+      <p class="hint"><b>Outro jeito:</b> salve o PDF, abra a conversa e anexe pelo clipe.</p>
+    </div>
     <ol class="shsteps">
       <li><b id="sh-saved">Salvando o PDF…</b><span class="hint" id="sh-file"></span>
         <div class="row"><button class="btn small" id="sh-save" type="button">Salvar o PDF de novo</button></div></li>
@@ -2086,31 +2096,49 @@ async function savePdfFile(blob, name) {
   return "saved";
 }
 // doc: jsPDF; who: nome do cliente; phone: telefone do cliente; message: texto para o WhatsApp
+// O WhatsApp não deixa um site anexar arquivo direto na conversa de um contato. O único jeito de o PDF ir junto é a tela de
+// compartilhar do celular (escolhe WhatsApp e o contato). O link wa.me abre a conversa certa, mas só com o texto.
+// só conta como bloqueado quando o navegador conhece a regra "web-share" e ela está negada (ex.: dentro do Claude)
+const shareAllowed = () => { try { const fp = document.permissionsPolicy || document.featurePolicy; if (!fp || typeof fp.allowsFeature !== "function") return true; const known = typeof fp.features === "function" ? fp.features() : null; return known && !known.includes("web-share") ? true : fp.allowsFeature("web-share"); } catch { return true; } };
+const canShareFile = (file) => { try { return matchMedia("(pointer: coarse)").matches && shareAllowed() && !!navigator.canShare && navigator.canShare({ files: [file] }); } catch { return false; } };
+const shareWhy = (e) => !e ? "" : e.name === "NotAllowedError" ? "o celular só abre o compartilhamento logo depois de um toque" : "o celular respondeu " + e.name;
 async function sendDoc({ doc, name, who, phone, message }) {
   const blob = doc.output("blob");
   const file = new File([blob], name, { type: "application/pdf" });
-  // 1) No celular, onde o navegador deixa, abre a tela de compartilhar já com o PDF (escolha WhatsApp e o contato)
-  try {
-    if (navigator.canShare && matchMedia("(pointer: coarse)").matches && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], text: message });
-      return;
-    }
-  } catch (e) { if (e && e.name === "AbortError") return; }
-  // 2) Senão: salva o PDF e mostra o atalho para a conversa no WhatsApp
-  sending = { blob, name };
-  const num = waNumber(phone), text = encodeURIComponent(message);
+  const share = canShareFile(file);
+  let why = "";
+  // 1) No celular: abre direto a tela de compartilhar com o PDF (escolha WhatsApp e o contato)
+  if (share && !(navigator.userActivation && !navigator.userActivation.isActive)) {
+    try { await navigator.share({ files: [file], text: message }); return; }
+    catch (e) { if (e && e.name === "AbortError") return; why = shareWhy(e); }
+  } else if (share) why = "o PDF demorou para ficar pronto";
+  // 2) Mostra as opções: no celular, o botão Enviar o PDF (um toque novo abre o compartilhamento); senão salva o PDF e
+  //    dá o atalho para a conversa (aí o PDF é anexado pelo clipe)
+  sending = { blob, name, file, message };
+  const num = waNumber(phone), text = encodeURIComponent(message), first = (who || "cliente").split(" ")[0];
+  $("sh-share-box").hidden = !share;
+  $("sh-who").textContent = first;
+  $("sh-share-why").textContent = why ? "Não abriu sozinho porque " + why + "." : "";
   $("sh-file").textContent = name;
   $("sh-msg").textContent = message;
   $("sh-wa").hidden = !num;
-  if (num) { $("sh-wa").href = `https://wa.me/${num}?text=${text}`; $("sh-wa").textContent = `Abrir WhatsApp de ${(who || "cliente").split(" ")[0]}`; }
+  if (num) { $("sh-wa").href = `https://wa.me/${num}?text=${text}`; $("sh-wa").textContent = `Abrir WhatsApp de ${first}`; }
+  $("sh-wa").className = share ? "btn small" : "btn wa";
   $("sh-wa-any").href = `https://wa.me/?text=${text}`;
   $("sh-wa-any").textContent = num ? "Escolher outro contato" : "Abrir WhatsApp e escolher o contato";
-  $("sh-wa-any").className = num ? "btn small" : "btn wa";
-  $("sh-saved").textContent = "Salvando o PDF…";
+  $("sh-wa-any").className = num || share ? "btn small" : "btn wa";
+  $("sh-save").textContent = share ? "Salvar o PDF" : "Salvar o PDF de novo";
   $("sheet").hidden = false;
+  if (share) { $("sh-saved").textContent = "Salve o PDF no celular."; return; }
+  $("sh-saved").textContent = "Salvando o PDF…";
   const r = await savePdfFile(blob, name);
   $("sh-saved").textContent = r === "saved" ? "PDF salvo no celular." : r === "declined" ? "O PDF não foi salvo." : "Não consegui salvar o PDF.";
 }
+$("sh-share").onclick = async () => {
+  if (!sending || !sending.file) return;
+  try { await navigator.share({ files: [sending.file], text: sending.message }); $("sheet").hidden = true; }
+  catch (e) { if (e && e.name === "AbortError") return; $("sh-share-why").textContent = "Não abriu: " + shareWhy(e) + ". Use o outro jeito abaixo."; }
+};
 $("sh-save").onclick = async () => {
   if (!sending) return;
   const r = await savePdfFile(sending.blob, sending.name);
