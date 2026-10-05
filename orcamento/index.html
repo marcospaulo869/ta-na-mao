@@ -440,7 +440,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <div class="row"><button class="btn" id="btn-add">+ Adicionar material</button><button class="mic" id="btn-add-voice" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar novo item</span></button></div>
       <div class="grid2">
         <div class="field"><label for="q-labor">Mão de obra (R$)</label><input id="q-labor" class="num" inputmode="decimal"></div>
-        <div class="field"><label for="q-discount">Desconto (R$)</label><input id="q-discount" class="num" inputmode="decimal"></div>
+        <div class="field"><label for="q-discount">Desconto (%)</label><input id="q-discount" class="num" inputmode="decimal" placeholder="0"></div>
       </div>
       <div class="totals" id="totals"></div>
     </section>
@@ -765,7 +765,7 @@ const sampleQuote = () => {
       { desc: "Corrediça telescópica 45 cm", un: "par", qty: 4, price: 42 },
       { desc: "Fita de borda branca 22 mm", un: "m", qty: 50, price: 1.2 },
     ],
-    labor: 1200, discount: 100, obs: DEFAULT_OBS, clientSig: "",
+    labor: 1200, discount: 0, discountPct: 5, obs: DEFAULT_OBS, clientSig: "",
   };
 };
 
@@ -980,6 +980,32 @@ document.addEventListener("input", (e) => { if (e.target && e.target.matches && 
 window.addEventListener("resize", fitSoon);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitSoon);
 
+/* ---------- Ao tocar num campo, o que já está nele fica selecionado: é só digitar o novo valor por cima.
+   Um segundo toque no mesmo campo posiciona o cursor normalmente, para corrigir só um pedaço. ---------- */
+const SELECT_TYPES = new Set(["text", "search", "tel", "email", "url", "number", "password"]);
+const selectAll = (el) => { try { el.select(); } catch {} };
+document.addEventListener("focusin", (e) => {
+  const el = e.target;
+  if (!(el instanceof HTMLInputElement) || !SELECT_TYPES.has(el.type) || el.readOnly || !el.value) return;
+  el.selPending = true;
+  selectAll(el);
+  setTimeout(() => { if (el.selPending && document.activeElement === el) selectAll(el); }, 0);
+});
+// o soltar do dedo/mouse colocaria o cursor no ponto tocado e desfaria a seleção: nesse primeiro toque, mantém tudo selecionado
+for (const t of ["mouseup", "pointerup"]) document.addEventListener(t, (e) => {
+  const el = e.target;
+  if (!(el instanceof HTMLInputElement) || !el.selPending) return;
+  if (document.activeElement === el) { e.preventDefault(); selectAll(el); }
+}, true);
+document.addEventListener("click", (e) => {
+  const el = e.target;
+  if (!(el instanceof HTMLInputElement) || !el.selPending) return;
+  el.selPending = false;
+  if (document.activeElement === el) selectAll(el);
+}, true);
+document.addEventListener("focusout", (e) => { if (e.target) e.target.selPending = false; }, true);
+document.addEventListener("keydown", (e) => { if (e.target) e.target.selPending = false; }, true);
+
 /* ---------- Estado ---------- */
 let profile = blankProfile();
 let quote = sampleQuote();
@@ -1027,7 +1053,30 @@ async function copyText(text, box, okMsg) {
   return false;
 }
 
-/* ---------- Assinatura desenhada ---------- */
+/* ---------- Assinatura desenhada: sempre em azul de caneta BIC ---------- */
+const INK_BLUE = "#1A3C9C", INK_RGB = [0x1A, 0x3C, 0x9C];
+// Pinta de azul o traço que já está no desenho (assinaturas antigas em preto); fundo claro vira transparente. Pode repetir sem desbotar.
+function tintInk(ctx, w, h) {
+  if (!w || !h) return;
+  const im = ctx.getImageData(0, 0, w, h), d = im.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (!d[i + 3]) continue;
+    const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
+    d[i + 3] = Math.round(d[i + 3] * Math.min(1, Math.max(0, (0.85 - lum) / 0.5)));
+    d[i] = INK_RGB[0]; d[i + 1] = INK_RGB[1]; d[i + 2] = INK_RGB[2];
+  }
+  ctx.putImageData(im, 0, 0);
+}
+const inkBlue = (url) => new Promise((res) => {
+  if (!url || !/^data:image\//.test(url)) return res(url);
+  const img = new Image();
+  img.onload = () => {
+    try { const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight; const x = c.getContext("2d"); x.drawImage(img, 0, 0); tintInk(x, c.width, c.height); res(c.toDataURL("image/png")); }
+    catch { res(url); }
+  };
+  img.onerror = () => res(url);
+  img.src = url;
+});
 function SigPad(canvas, onChange) {
   const ctx = canvas.getContext("2d");
   let drawing = false, dirty = false, last = null;
@@ -1036,7 +1085,7 @@ function SigPad(canvas, onChange) {
     if (!r.width) return;
     const keep = dirty ? canvas.toDataURL() : null;
     canvas.width = Math.round(r.width * 2); canvas.height = Math.round(r.height * 2);
-    ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#111";
+    ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = INK_BLUE;
     if (keep) load(keep, true);
   };
   const pos = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) * canvas.width / r.width, y: (e.clientY - r.top) * canvas.height / r.height }; };
@@ -1049,7 +1098,7 @@ function SigPad(canvas, onChange) {
   canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
   function load(url, silent) {
     const img = new Image();
-    img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); dirty = true; };
+    img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); try { tintInk(ctx, canvas.width, canvas.height); } catch {} ctx.strokeStyle = INK_BLUE; dirty = true; };
     img.src = url;
   }
   const api = {
@@ -1068,10 +1117,14 @@ $("sig-me-clear").onclick = () => sigMe.clear();
 
 /* ---------- Cálculo ---------- */
 const lineTotal = (it) => parseNum(it.qty) * parseNum(it.price);
+// Desconto em % sobre materiais + mão de obra (discountPct). Orçamentos antigos guardam o desconto em R$ (discount) e continuam valendo até mudar o campo.
+const clampPct = (n) => Math.min(100, Math.max(0, Number.isFinite(n) ? n : 0));
+const fmtPct = (n) => String(Math.round(n * 100) / 100).replace(".", ",");
 const calc = (q) => {
   const materials = q.items.reduce((s, it) => s + lineTotal(it), 0);
-  const labor = parseNum(q.labor), discount = parseNum(q.discount);
-  return { materials, labor, discount, total: Math.max(0, materials + labor - discount) };
+  const labor = parseNum(q.labor), pct = typeof q.discountPct === "number" ? clampPct(q.discountPct) : null;
+  const discount = pct != null ? cents((materials + labor) * pct / 100) : parseNum(q.discount);
+  return { materials, labor, discount, pct, total: Math.max(0, materials + labor - discount) };
 };
 const fillVars = (text, q, t) => String(text || "")
   .replaceAll("{CLIENTE}", q.client.name || "o cliente")
@@ -1729,7 +1782,7 @@ function renderTotals() {
   $("totals").innerHTML = `
     <div><span>Materiais</span><span>${money(t.materials)}</span></div>
     <div><span>Mão de obra</span><span>${money(t.labor)}</span></div>
-    <div><span>Desconto</span><span>− ${money(t.discount)}</span></div>
+    <div><span>Desconto${t.pct ? ` (${fmtPct(t.pct)}%)` : ""}</span><span>− ${money(t.discount)}</span></div>
     <div class="grand"><span>Total</span><span>${money(t.total)}</span></div>`;
   $("bar-total").textContent = money(t.total);
 }
@@ -1742,7 +1795,7 @@ function renderEditor() {
   migrateClient(quote.client);
   for (const k of ["name", "doc", "phone", "email", ...CLIENT_ADDR]) $("c-" + k).value = quote.client[k] || "";
   setFull(quote.client.address);
-  $("q-labor").value = numIn(quote.labor); $("q-discount").value = numIn(quote.discount);
+  $("q-labor").value = numIn(quote.labor); $("q-discount").value = discountField(quote);
   $("q-obs").value = quote.obs;
   sigClient.set(quote.clientSig);
   renderItems(); renderTotals();
@@ -1772,7 +1825,19 @@ function copyClient(whole) {
 $("c-copy-addr").onclick = () => copyClient(false);
 $("c-copy-all").onclick = () => copyClient(true);
 $("q-labor").oninput = (e) => { quote.labor = parseNum(e.target.value); renderTotals(); };
-$("q-discount").oninput = (e) => { quote.discount = parseNum(e.target.value); renderTotals(); };
+// Campo de desconto em %; orçamento antigo (desconto em R$) mostra a porcentagem equivalente
+function discountField(q) {
+  if (typeof q.discountPct === "number") return q.discountPct ? fmtPct(q.discountPct) : "";
+  const t = calc(q), base = t.materials + t.labor;
+  return t.discount > 0 && base > 0 ? fmtPct(t.discount / base * 100) : "";
+}
+$("q-discount").oninput = (e) => {
+  const v = parseNum(e.target.value);
+  quote.discountPct = clampPct(v); quote.discount = 0;
+  if (v > 100) toast("O desconto vai até 100%");
+  renderTotals();
+};
+$("q-discount").addEventListener("change", (e) => { e.target.value = discountField(quote); });
 $("q-obs").oninput = (e) => { quote.obs = e.target.value; };
 $("btn-obs-default").onclick = () => { quote.obs = profile.obs || DEFAULT_OBS; $("q-obs").value = quote.obs; };
 bindMic($("btn-add-voice"), () => {
@@ -1792,7 +1857,7 @@ const newQuote = () => {
   const start = todayISO();
   quote = { id: "", number: 0, start, valid: addBizDays(start, validDays()),
     client: { name: "", doc: "", phone: "", email: "", cep: "", street: "", number: "", comp: "", district: "", city: "", uf: "", address: "" },
-    items: [{ desc: "", un: "un", qty: 1, price: 0 }], labor: 0, discount: 0, obs: profile.obs || DEFAULT_OBS, clientSig: "" };
+    items: [{ desc: "", un: "un", qty: 1, price: 0 }], labor: 0, discount: 0, discountPct: 0, obs: profile.obs || DEFAULT_OBS, clientSig: "" };
   renderEditor(); window.scrollTo(0, 0);
   refreshCatalog(true);
 };
@@ -1958,7 +2023,7 @@ function buildPdf(q) {
   };
   row("Materiais", money(t.materials));
   if (t.labor) row("Mão de obra", money(t.labor));
-  if (t.discount) row("Desconto", "- " + money(t.discount));
+  if (t.discount) row(t.pct ? `Desconto (${fmtPct(t.pct)}%)` : "Desconto", "- " + money(t.discount));
   doc.setDrawColor(...LINE); doc.line(130, y - 3.5, W - M, y - 3.5); y += 1.5;
   row("TOTAL", money(t.total), true);
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...MUT);
@@ -2054,7 +2119,11 @@ $("sh-save").onclick = async () => {
 $("sh-close").onclick = () => { $("sheet").hidden = true; };
 $("sheet").onclick = (e) => { if (e.target.id === "sheet") $("sheet").hidden = true; };
 $("sh-copy").onclick = () => copyText($("sh-msg").textContent, $("sh-msg"), "Mensagem copiada");
-const sendQuote = async (q) => { await prepLogo(); return sendDoc({ doc: buildPdf(q), name: fileName(q), who: q.client.name, phone: q.client.phone, message: clientMessage(q) }); };
+const sendQuote = async (q) => {
+  await prepLogo();
+  const pq = { ...q, clientSig: await inkBlue(q.clientSig) }; // assinatura antiga em preto sai azul
+  return sendDoc({ doc: buildPdf(pq), name: fileName(q), who: q.client.name, phone: q.client.phone, message: clientMessage(q) });
+};
 $("btn-pdf").onclick = async () => {
   if (!window.jspdf) { toast("O gerador de PDF não carregou. Verifique a internet e abra de novo."); return; }
   if (!quote.client.name.trim()) { toast("Preencha o nome do cliente"); $("c-name").focus(); return; }
@@ -2504,7 +2573,8 @@ async function sendReceipt(r) {
   const message = `Olá${first ? " " + first : ""}! Segue o recibo nº ${pad4(r.number)} do pagamento de ${money(parseNum(r.amount))} recebido em ${fmtDate(r.date)}. Obrigado pela confiança!${bizName(profile) ? "\n" + bizName(profile) : ""}`;
   const name = `Recibo-${pad4(r.number)}-${(r.payer.name || "cliente").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
   await prepLogo();
-  return sendDoc({ doc: buildReceiptPdf(r), name, who: r.payer.name, phone: r.payer.phone, message });
+  const pr = { ...r, mySig: await inkBlue(r.mySig), payerSig: await inkBlue(r.payerSig) }; // assinaturas antigas em preto saem azuis
+  return sendDoc({ doc: buildReceiptPdf(pr), name, who: r.payer.name, phone: r.payer.phone, message });
 }
 
 function renderReceipts() {
@@ -2621,6 +2691,7 @@ renderEditor();
 (async () => {
   await store.init();
   profile = await store.loadProfile();
+  if (profile.signature) profile.signature = await inkBlue(profile.signature); // assinatura antiga (preta) sai azul no PDF
   if (!profile.bizDays) { if (!parseNum(profile.days) || parseNum(profile.days) === 15) profile.days = 10; profile.bizDays = true; } // validade passou a ser em dias úteis (padrão 10)
   applyBrand(); prepLogo();
   quotes = await store.listQuotes().then((r) => { quotesOk = true; return r; }).catch(() => []);
