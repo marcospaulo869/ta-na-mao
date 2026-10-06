@@ -19,7 +19,7 @@ Para continuar, peça ao Claude: "leia a pasta orcamento do ta-na-mao e vamos re
 6. **Facilidades:** o que está na tela fica guardado ao atualizar a página; tocar num campo seleciona o que já está nele; listas de salvos; aba Materiais com os preços.
 
 ### O que falta para terminar a validação
-- Colar em Meus dados o link do autoatendimento da Madeira Forte (opção "Orçamento com valor estimado" do QR Code, criada em 06/10/2026).
+- Em Meus dados, escolher no QR Code a opção "Orçamento com valor estimado" (criada em 06/10/2026). O link do autoatendimento, https://orcamento.madeiraforteplanejados.com.br, já vem preenchido e pode ser trocado. Antes de vender, tirar esse link padrão para cada comprador colocar o seu.
 - Testar no celular: "Segure e fale", digital, botão "Enviar o PDF" e ler o QR Code com outro celular.
 - No celular: colocar a logomarca, escolher preto e dourado e corrigir o campo IE (saiu o e-mail nele).
 - Revisar o texto padrão do pré-contrato (forma de pagamento, prazo e garantia).

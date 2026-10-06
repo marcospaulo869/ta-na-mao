@@ -752,6 +752,9 @@ const clientCopyText = (c) => [
 ].filter(Boolean).join("\n");
 const bizName = (p) => p.name || p.owner;
 const igHandle = (p) => (p.instagram || "").trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/^@/, "").replace(/\/.*$/, "");
+// Autoatendimento da Madeira Forte: o cliente monta o móvel e vê um orçamento com valor estimado.
+// Vem preenchido ao escolher a opção; cada usuário pode trocar pelo seu link em Meus dados.
+const URL_AUTOATENDIMENTO = "https://orcamento.madeiraforteplanejados.com.br";
 // Link colado pelo usuário: aceita sem o "https://" e recusa o que não parece endereço de site
 const webLink = (v) => {
   let t = String(v || "").trim(); if (!t || /\s/.test(t)) return "";
@@ -2235,6 +2238,7 @@ function renderQr() {
   seal.onload = () => { cx.globalAlpha = SEAL_OPACITY; cx.drawImage(seal, off + (size - sw) / 2, off + (size - sh) / 2, sw, sh); cx.globalAlpha = 1; };
   seal.src = SEAL;
 }
+$("p-qr").addEventListener("change", () => { if ($("p-qr").value === "link" && !$("p-qrlink").value.trim()) { $("p-qrlink").value = URL_AUTOATENDIMENTO; renderQr(); } });
 for (const id of ["p-qr", "p-qrlink", "p-phone", "p-instagram"]) $(id).addEventListener("input", renderQr);
 // Troca de estilo: mostra na hora (só fica guardada ao tocar em "Salvar meus dados")
 $("p-tone").addEventListener("change", () => { profile.tone = $("p-tone").value; renderBrand(); });
@@ -2732,6 +2736,7 @@ renderEditor();
   await store.init();
   profile = await store.loadProfile();
   if (profile.signature) profile.signature = await inkBlue(profile.signature); // assinatura antiga (preta) sai azul no PDF
+  if (profile.qr === "autoatendimento") { profile.qr = "link"; profile.qrlink = profile.qrlink || URL_AUTOATENDIMENTO; } // versão que só tinha o autoatendimento
   if (!profile.bizDays) { if (!parseNum(profile.days) || parseNum(profile.days) === 15) profile.days = 10; profile.bizDays = true; } // validade passou a ser em dias úteis (padrão 10)
   applyBrand(); prepLogo();
   quotes = await store.listQuotes().then((r) => { quotesOk = true; return r; }).catch(() => []);
