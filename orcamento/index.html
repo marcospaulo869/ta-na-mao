@@ -65,7 +65,7 @@ h2 { font-size: 1.1rem; }
 section.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; }
 .stack { display: grid; gap: 14px; margin-top: 12px; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-.field { display: grid; gap: 4px; min-width: 0; }
+.field { display: grid; gap: 4px; min-width: 0; align-content: start; }
 .field.wide { grid-column: 1 / -1; }
 label { display: grid; gap: 4px; font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; min-width: 0; }
 input, textarea, select { touch-action: manipulation; font: 400 1rem var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%; min-width: 0; text-transform: none; letter-spacing: 0; }
@@ -193,6 +193,10 @@ input.caps::placeholder { text-transform: none; }
 .stack0 { display: grid; gap: 6px; flex: 1 1 200px; min-width: 0; }
 .err { color: var(--danger); font-weight: 600; margin: 0; font-size: 0.92rem; }
 .err.own { margin-top: 6px; }
+/* Mão de obra e Desconto lado a lado, do mesmo tamanho, também no celular; a explicação fica embaixo dos dois */
+.grid2.pair { grid-template-columns: 1fr 1fr; align-items: end; }
+@media (max-width: 400px) { .grid2.pair label { font-size: 0.76rem; letter-spacing: 0.02em; } }
+@media (max-width: 340px) { .grid2.pair label { font-size: 0.7rem; } }
 .labhint { margin-top: 6px; }
 #q-labor-auto { margin-top: 6px; }
 #sh-own { margin-bottom: 10px; }
@@ -517,10 +521,11 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <p class="hint">Digite o começo do nome (ex.: "mdf br") e toque na sugestão para preencher unidade e preço. Os materiais vêm da aba Materiais, e os novos entram lá quando você salva o orçamento.</p>
       <div class="items" id="items"></div>
       <div class="row addrow" id="add-row"><button class="btn" id="btn-add">+ Adicionar<span class="wide"> material</span></button><button class="btn out" id="btn-add-out" type="button">COMPRAR FORA</button><button class="mic" id="btn-add-voice" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar novo item</span></button></div>
-      <div class="grid2">
-        <div class="field"><label for="q-labor">Mão de obra (R$)</label><input id="q-labor" class="num" inputmode="decimal" placeholder="0"><p class="hint labhint" id="q-labor-hint"></p><button class="btn small" id="q-labor-auto" type="button" hidden>Igualar ao valor dos materiais</button></div>
+      <div class="grid2 pair">
+        <div class="field"><label for="q-labor">Mão de obra (R$)</label><input id="q-labor" class="num" inputmode="decimal" placeholder="0"></div>
         <div class="field"><label for="q-discount">Desconto (%)</label><input id="q-discount" class="num" inputmode="decimal" placeholder="0"></div>
       </div>
+      <p class="hint labhint" id="q-labor-hint"></p><button class="btn small" id="q-labor-auto" type="button" hidden>Igualar ao valor dos materiais</button>
       <div class="totals" id="totals"></div>
     </section>
 
@@ -2069,7 +2074,7 @@ function renderTotals() {
     <div class="grand"><span>Total</span><span>${money(t.total)}</span></div>`;
   $("bar-total").textContent = money(t.total);
   if (quote.laborAuto) { quote.labor = t.labor; if (document.activeElement !== $("q-labor")) $("q-labor").value = t.labor ? t.labor.toFixed(2).replace(".", ",") : ""; }
-  $("q-labor-hint").textContent = quote.laborAuto ? (quote.items.some((it) => it.out) ? "Automático: igual ao valor dos materiais, com o Comprar fora. Digite outro valor se quiser mudar." : "Automático: igual ao valor dos materiais. Digite outro valor se quiser mudar.") : "Valor digitado por você.";
+  $("q-labor-hint").textContent = quote.laborAuto ? (quote.items.some((it) => it.out) ? "Mão de obra automática: igual ao valor dos materiais, com o Comprar fora. Digite outro valor se quiser mudar." : "Mão de obra automática: igual ao valor dos materiais. Digite outro valor se quiser mudar.") : "Mão de obra digitada por você.";
   $("q-labor-auto").hidden = !!quote.laborAuto;
 }
 function renderEditor() {
