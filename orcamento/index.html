@@ -131,8 +131,11 @@ input.caps::placeholder { text-transform: none; }
 .dict-st.live::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: #D93025; vertical-align: 1px; animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .mic.on svg, .dict-st.live::before { animation: none; } }
-.ins { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; color: var(--accent); font: 600 0.88rem var(--font-body); cursor: pointer; padding: 2px 0; }
-.ins::before, .ins::after { content: ""; flex: 1; border-top: 1px dashed var(--accent); opacity: 0.45; }
+/* "+ Inserir item entre X e Y": botão em destaque no meio da linha tracejada */
+.ins { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; color: var(--accent); font: 700 0.92rem var(--font-body); cursor: pointer; padding: 4px 0; }
+.ins::before, .ins::after { content: ""; flex: 1; border-top: 2px dashed var(--accent); opacity: 0.7; }
+.ins span { border: 1.5px solid var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 6px 16px; white-space: nowrap; }
+.ins:hover span, .ins:focus-visible span { background: var(--accent); color: var(--accent-ink); }
 .ins:hover::before, .ins:hover::after { opacity: 1; }
 .itools { display: flex; gap: 6px; align-items: center; }
 /* Comprar fora: botão, item e soma em vermelho */
@@ -145,6 +148,7 @@ input.caps::placeholder { text-transform: none; }
 @media (max-width: 560px) {
   .addrow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .addrow .btn, .addrow .mic { min-height: 44px; padding: 6px; border-radius: 10px; font-size: 0.82rem; line-height: 1.15; white-space: normal; text-align: center; justify-content: center; }
+  .addrow .btn { padding-inline: 4px; }
   .addrow .mic { gap: 4px; }
   .addrow .mic svg { flex: none; }
   .addrow .btn.out { letter-spacing: 0; }
@@ -1527,7 +1531,7 @@ function renderItems() {
   quote.items.forEach((it, i) => {
     if (i > 0) {
       const ins = document.createElement("button");
-      ins.className = "ins"; ins.type = "button"; ins.textContent = `+ Inserir item entre ${i} e ${i + 1}`;
+      ins.className = "ins"; ins.type = "button"; ins.append(Object.assign(document.createElement("span"), { textContent: `+ Inserir item entre ${i} e ${i + 1}` }));
       ins.onclick = () => insertItemAt(i);
       box.appendChild(ins);
     }
