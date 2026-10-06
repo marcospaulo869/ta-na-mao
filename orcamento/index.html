@@ -184,6 +184,8 @@ input.caps::placeholder { text-transform: none; }
 .qrbox canvas { width: 110px; height: 110px; background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px; flex: none; }
 .stack0 { display: grid; gap: 6px; flex: 1 1 200px; min-width: 0; }
 .err { color: var(--danger); font-weight: 600; margin: 0; font-size: 0.92rem; }
+.err.own { margin-top: 6px; }
+#sh-own { margin-bottom: 10px; }
 .gate { max-width: 560px; margin-inline: auto; padding-top: 16px; }
 .intro { display: grid; gap: 6px; }
 .login { justify-items: start; }
@@ -474,7 +476,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <div class="grid2">
         <div class="field"><label for="c-name">Nome</label><input id="c-name" autocomplete="off" data-fix="name" autocapitalize="words" autocorrect="on" spellcheck="true"></div>
         <div class="field"><label for="c-doc">CPF ou CNPJ</label><input id="c-doc" autocomplete="off"></div>
-        <div class="field"><label for="c-phone">Telefone / WhatsApp</label><input id="c-phone" inputmode="tel" autocomplete="off"></div>
+        <div class="field"><label for="c-phone">Telefone / WhatsApp</label><input id="c-phone" inputmode="tel" autocomplete="off"><p class="err own" id="c-phone-own" hidden>Este é o seu número (o mesmo de Meus dados). Coloque aqui o WhatsApp do cliente.</p></div>
         <div class="field wide"><label for="c-email">E-mail</label><input id="c-email" type="email" autocomplete="off" data-fit></div>
       </div>
       <h3 class="sub">Endereço da obra</h3>
@@ -567,7 +569,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <div class="grid2">
         <div class="field"><label for="r-name">Nome</label><input id="r-name" autocomplete="off" data-fix="name" autocapitalize="words" autocorrect="on" spellcheck="true"></div>
         <div class="field"><label for="r-doc">CPF ou CNPJ</label><input id="r-doc" autocomplete="off"></div>
-        <div class="field"><label for="r-phone">Telefone / WhatsApp</label><input id="r-phone" inputmode="tel" autocomplete="off"></div>
+        <div class="field"><label for="r-phone">Telefone / WhatsApp</label><input id="r-phone" inputmode="tel" autocomplete="off"><p class="err own" id="r-phone-own" hidden>Este é o seu número (o mesmo de Meus dados). Coloque aqui o WhatsApp de quem pagou.</p></div>
         <div class="field wide"><label for="r-email">E-mail</label><input id="r-email" type="email" autocomplete="off" data-fit></div>
       </div>
     </section>
@@ -717,6 +719,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 <div class="sheet-bg" id="sheet" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-title">
     <h2 id="sh-title">Enviar pelo WhatsApp</h2>
+    <p class="err" id="sh-own" hidden></p>
     <div class="shshare" id="sh-share-box" hidden>
       <p>Toque em <b>Enviar o PDF</b>, escolha o <b>WhatsApp</b> e depois a conversa de <b id="sh-who">cliente</b>. O PDF vai anexado.</p>
       <div class="row"><button class="btn wa big" id="sh-share" type="button">Enviar o PDF</button></div>
@@ -1939,6 +1942,7 @@ function renderEditor() {
   $("q-start").value = quote.start; $("q-valid").value = quote.valid;
   migrateClient(quote.client);
   for (const k of ["name", "doc", "phone", "email", ...CLIENT_ADDR]) $("c-" + k).value = quote.client[k] || "";
+  markOwnPhone("c-phone");
   setFull(quote.client.address);
   $("q-labor").value = numIn(quote.labor); $("q-discount").value = discountField(quote);
   $("q-obs").value = quote.obs;
@@ -1953,7 +1957,7 @@ $("q-start").onchange = () => {
   $("q-valid").value = quote.valid;
 };
 $("q-valid").onchange = () => { quote.valid = $("q-valid").value; quote.datesSet = true; };
-for (const k of ["name", "doc", "phone", "email"]) $("c-" + k).oninput = (e) => { quote.client[k] = e.target.value; };
+for (const k of ["name", "doc", "phone", "email"]) $("c-" + k).oninput = (e) => { quote.client[k] = e.target.value; if (k === "phone") markOwnPhone("c-phone"); };
 for (const k of CLIENT_ADDR) $("c-" + k).oninput = (e) => {
   quote.client[k] = e.target.value;
   setFull(quote.client.address = composeClientAddress(quote.client));
@@ -2260,6 +2264,9 @@ const waNumber = (phone) => {
   if (d.length === 10 || d.length === 11) d = "55" + d;
   return d.length >= 12 ? d : "";
 };
+// telefone do cliente igual ao da empresa (Meus dados): o link do WhatsApp abriria a conversa com você mesmo
+const isOwnPhone = (phone) => { const n = waNumber(phone); return !!n && n === waNumber(profile.phone); };
+const markOwnPhone = (id) => { $(id + "-own").hidden = !isOwnPhone($(id).value); };
 let sending = null;
 async function savePdfFile(blob, name) {
   try {
@@ -2290,7 +2297,10 @@ async function sendDoc({ doc, name, who, phone, message }) {
   // 2) Mostra as opções: no celular, o botão Enviar o PDF (um toque novo abre o compartilhamento); senão salva o PDF e
   //    dá o atalho para a conversa (aí o PDF é anexado pelo clipe)
   sending = { blob, name, file, message };
-  const num = waNumber(phone), text = encodeURIComponent(message), first = (who || "cliente").split(" ")[0];
+  const mine = isOwnPhone(phone), first = (who || "cliente").split(" ")[0];
+  const num = mine ? "" : waNumber(phone), text = encodeURIComponent(message);
+  $("sh-own").hidden = !mine;
+  $("sh-own").textContent = mine ? `O telefone de ${first} está igual ao seu (o de Meus dados), por isso o WhatsApp abriria a conversa com você mesmo. Corrija o telefone de ${first} ou escolha o contato no WhatsApp.` : "";
   $("sh-share-box").hidden = !share;
   $("sh-who").textContent = first;
   $("sh-share-why").textContent = why ? "Não abriu sozinho porque " + why + "." : "";
@@ -2673,6 +2683,7 @@ function renderReceipt() {
   $("r-title").textContent = receipt.number ? `Recibo nº ${pad4(receipt.number)}` : "Novo recibo";
   $("r-date").value = receipt.date; $("r-kind").value = receipt.kind; $("r-method").value = receipt.method;
   for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).value = receipt.payer[k] || "";
+  markOwnPhone("r-phone");
   $("r-amount").value = numIn(receipt.amount); $("r-desc").value = receipt.desc;
   sigRMe.set(receipt.mySig); sigRPayer.set(receipt.payerSig);
   renderReceiptAmount();
@@ -2680,7 +2691,7 @@ function renderReceipt() {
 $("r-date").onchange = (e) => { receipt.date = e.target.value; };
 $("r-kind").onchange = (e) => { receipt.kind = e.target.value; };
 $("r-method").onchange = (e) => { receipt.method = e.target.value; };
-for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).oninput = (e) => { receipt.payer[k] = e.target.value; };
+for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).oninput = (e) => { receipt.payer[k] = e.target.value; if (k === "phone") markOwnPhone("r-phone"); };
 $("r-amount").oninput = (e) => { receipt.amount = parseNum(e.target.value); renderReceiptAmount(); };
 $("r-desc").oninput = (e) => { receipt.desc = e.target.value; };
 const newReceipt = () => { receipt = blankReceipt(); renderReceipt(); window.scrollTo(0, 0); };
