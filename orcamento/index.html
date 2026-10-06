@@ -54,6 +54,13 @@ h2 { font-size: 1.1rem; }
 .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
 .tabs button { border: 0; background: none; color: var(--muted); font: 600 0.92rem var(--font-body); padding: 6px 14px; border-radius: 999px; cursor: pointer; }
 .tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+.resume { display: grid; gap: 10px; }
+.resume .row1 { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: var(--radius); padding: 12px 14px; }
+.resume .row1.receipt { border-left-color: var(--warm); }
+.resume .row1 > div { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.resume .row1 b { font-size: 0.98rem; }
+.resume .row1 small { color: var(--muted); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resume .row1 .btn { flex: none; }
 section.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; }
 .stack { display: grid; gap: 14px; margin-top: 12px; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
@@ -300,6 +307,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 
   <!-- INÍCIO -->
   <div id="view-home" class="stack" hidden>
+    <div class="resume" id="home-resume" hidden></div>
     <div class="hero">
       <img src="img/marceneiro.jpg" alt="Profissional consultando o orçamento no celular durante a obra">
       <div class="txt">
@@ -1528,7 +1536,7 @@ function renderItems() {
     for (const mv of row.querySelectorAll(".mv")) mv.onclick = () => {
       const j = i + Number(mv.dataset.d); if (j < 0 || j >= quote.items.length) return;
       [quote.items[i], quote.items[j]] = [quote.items[j], quote.items[i]];
-      renderItems(); renderTotals(); $(`it-d-${j}`).closest(".item").scrollIntoView({ block: "center" });
+      renderItems(); renderTotals(); centerItem(j, false);
     };
     const x = row.querySelector(`#it-x-${i}`);
     // Preencher no meio de um ditado ligado pelo teclado: desliga o microfone antes, sem apagar o que está na caixa
@@ -1541,8 +1549,35 @@ function renderItems() {
 function insertItemAt(i) {
   quote.items.splice(i, 0, { desc: "", un: "un", qty: 1, price: 0 });
   renderItems(); renderTotals();
-  const d = $(`it-d-${i}`); d.closest(".item").scrollIntoView({ block: "center" }); d.focus();
+  centerItem(i, true);
   toast(`Novo item ${i + 1} inserido`);
+}
+/* Item novo (ou movido) no meio da tela, no celular e no notebook. Conta as abas presas em cima e a barra do total embaixo.
+   No celular o teclado abre logo depois que o cursor entra no campo e a tela encolhe: aí centraliza de novo. */
+let centerWatch = null;
+function centerItem(i, focus) {
+  const d = $(`it-d-${i}`); if (!d) return;
+  const card = d.closest(".item");
+  const place = (smooth) => {
+    const vv = window.visualViewport, top = vv ? vv.offsetTop : 0, h = vv ? vv.height : innerHeight;
+    const nav = $("subnav"), navH = nav && !nav.hidden ? Math.max(0, nav.getBoundingClientRect().bottom - top) : 0;
+    const bar = [$("bar"), $("rbar")].find((b) => !b.hidden);
+    const kb = vv && vv.height < innerHeight * 0.8; // teclado aberto: a barra do total fica atrás dele
+    const barH = bar && !kb ? bar.getBoundingClientRect().height : 0;
+    const areaTop = top + navH, areaBot = top + h - barH, r = card.getBoundingClientRect();
+    const delta = r.height > areaBot - areaTop - 16 ? r.top - areaTop - 8 : r.top + r.height / 2 - (areaTop + areaBot) / 2;
+    const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (Math.abs(delta) > 2) window.scrollBy({ top: delta, behavior: smooth && !calm ? "smooth" : "auto" });
+  };
+  if (focus) d.focus({ preventScroll: true });
+  place(true);
+  if (centerWatch) centerWatch();
+  const vv = window.visualViewport; if (!vv || !focus) return;
+  let t = 0;
+  const again = () => { clearTimeout(t); t = setTimeout(() => { if (document.activeElement === d) place(false); }, 120); };
+  vv.addEventListener("resize", again);
+  const stop = setTimeout(() => centerWatch && centerWatch(), 1500);
+  centerWatch = () => { vv.removeEventListener("resize", again); clearTimeout(stop); centerWatch = null; };
 }
 const MIC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
 
@@ -1891,13 +1926,13 @@ bindMic($("btn-add-voice"), () => {
   if (!last || last.desc.trim() || parseNum(last.price)) quote.items.push({ desc: "", un: "un", qty: 1, price: 0 });
   renderItems(); renderTotals();
   const i = quote.items.length - 1;
-  $(`it-d-${i}`).closest(".item").scrollIntoView({ block: "nearest" });
+  centerItem(i, false);
   return i;
 });
 $("btn-add").onclick = () => {
   quote.items.push({ desc: "", un: "un", qty: 1, price: 0 });
   renderItems(); renderTotals();
-  $(`it-d-${quote.items.length - 1}`).focus();
+  centerItem(quote.items.length - 1, true);
 };
 const newQuote = () => {
   const start = todayISO();
@@ -2381,7 +2416,7 @@ function confirmReset(btn) {
 }
 $("btn-reset").onclick = (e) => confirmReset(e.currentTarget);
 $("btn-reset-login").onclick = (e) => confirmReset(e.currentTarget);
-$("btn-logout").onclick = () => { session.set(false); bioAuto = false; gate("login"); }; // depois de Sair, a digital só abre se tocar no botão
+$("btn-logout").onclick = () => { saveDraft(); session.set(false); bioAuto = false; gate("login"); }; // depois de Sair, a digital só abre se tocar no botão
 
 /* ---------- Entrar com a digital (ou rosto/PIN do aparelho), pelo leitor do próprio celular ou notebook ----------
    A digital fica só no aparelho: o app guarda apenas o código da chave criada nele ("orc.bio") e pede ao aparelho que confirme a pessoa. */
@@ -2695,7 +2730,47 @@ function renderBrand() {
     el.style.webkitMaskImage = url; el.style.maskImage = url; el.hidden = false;
   });
 }
+/* Orçamento ou recibo que ficou pela metade (não salvo, ou salvo e mudado depois): fica guardado neste aparelho
+   e a tela inicial oferece continuar de onde parou, mesmo depois de Sair ou de o celular fechar o app. */
+const sameDoc = (a, b, drop) => { const f = (d) => JSON.stringify(d, (k, v) => (drop.includes(k) ? undefined : v)); return f(a) === f(b); };
+const filledItems = (q) => (q.items || []).filter((it) => (it.desc || "").trim() || parseNum(it.price));
+function quoteOpen() {
+  if (!quote || quote.sample) return false;
+  if (!quote.id) return quoteDraft();
+  const saved = quotes.find((x) => x.id === quote.id); if (!saved) return false;
+  const c = JSON.parse(JSON.stringify(quote)); normalizeQuote(c);
+  return !sameDoc({ ...c, items: filledItems(c) }, { ...saved, items: filledItems(saved) }, ["updated", "clientSig"]);
+}
+function receiptOpen() {
+  if (!receipt) return false;
+  if (!receipt.id) return receiptDraft();
+  const saved = receipts.find((x) => x.id === receipt.id); if (!saved) return false;
+  const c = JSON.parse(JSON.stringify(receipt)); normalizeReceipt(c);
+  return !sameDoc(c, saved, ["updated", "mySig", "payerSig"]);
+}
+function renderResume() {
+  const box = $("home-resume"); box.textContent = "";
+  const add = (kind, title, sub, go) => {
+    const row = document.createElement("div"); row.className = "row1 " + kind;
+    const txt = document.createElement("div"), b = document.createElement("b"), sm = document.createElement("small");
+    b.textContent = title; sm.textContent = sub; txt.append(b, sm);
+    const btn = document.createElement("button"); btn.type = "button"; btn.className = "btn " + (kind === "quote" ? "primary" : "warm"); btn.textContent = "Continuar"; btn.onclick = go;
+    row.append(txt, btn); box.append(row);
+  };
+  const numLabel = (n) => "nº " + String(n).padStart(4, "0");
+  if (quoteOpen()) {
+    const n = filledItems(quote).length;
+    add("quote", quote.id ? `Orçamento ${numLabel(quote.number)} com mudanças não salvas` : "Orçamento em andamento, ainda não salvo",
+      [quote.client.name.trim(), n ? `${n} ${n === 1 ? "item" : "itens"}` : "", money(calc(quote).total)].filter(Boolean).join(" · "), () => show("editor"));
+  }
+  if (receiptOpen()) {
+    add("receipt", receipt.id ? `Recibo ${numLabel(receipt.number)} com mudanças não salvas` : "Recibo em andamento, ainda não salvo",
+      [receipt.payer.name.trim(), parseNum(receipt.amount) > 0 ? money(parseNum(receipt.amount)) : ""].filter(Boolean).join(" · "), () => show("receipt"));
+  }
+  box.hidden = !box.childElementCount;
+}
 function renderHome() {
+  renderResume();
   const first = (profile.owner || "").split(" ")[0];
   $("home-hello").textContent = first ? `Olá, ${first}` : "Bem-vindo";
   $("st-quotes").textContent = String(quotes.length);
