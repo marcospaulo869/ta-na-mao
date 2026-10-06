@@ -807,6 +807,72 @@ const DEFAULT_OBS = `PRÉ-CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 7. Mudanças no projeto depois da aprovação podem gerar um novo orçamento.
 8. Ao assinar este documento, o cliente aprova o orçamento e as condições acima, firmadas com {EMPRESA}.`;
 
+// Pré-contrato da Madeira Forte (do Marcos, tirado do Orcamento_a-17.pdf e revisado em 06/10/2026): vira o texto padrão
+// de quem é Madeira Forte enquanto o texto padrão ainda for o genérico acima. Quem testa o app continua com o genérico.
+const OBS_MADEIRA_FORTE = `ORÇAMENTO DE QUANTIDADES E VALORES DE MATERIAIS E PRÉ-CONTRATO DE PRESTAÇÃO DE SERVIÇO
+
+01 - OS VALORES DOS MATERIAIS PODERÃO SOFRER AJUSTES SEMANAIS DEVIDO A POSSÍVEIS VARIAÇÕES DOS PREÇOS PRATICADOS NO MERCADO, DIVERGINDO DOS VALORES AQUI DESCRITOS.
+
+02 - OBSERVAR A DATA DE VALIDADE DESTE ORÇAMENTO.
+O valor da fabricação da movelaria pretendida está diretamente relacionado ao valor da soma total da compra dos materiais usados na execução do projeto, sendo observados e considerados os valores praticados no comércio de Torres.
+Possíveis descontos no ato do pagamento dos materiais não serão considerados em relação ao valor cobrado na fabricação, tendo como referência de cálculo para a cobrança da fabricação o valor deste orçamento.
+
+03 - SENDO ASSIM, O VALOR DA SOMA TOTAL DOS MATERIAIS É O VALOR QUE SERÁ COBRADO DE MÃO DE OBRA.
+
+Exemplo:
+04 - Pagamento em dinheiro (espécie).
+Se a soma total da compra dos materiais do orçamento der R$ 100,00, será cobrado mais R$ 100,00 pela fabricação, transporte até 50 km e montagem, totalizando, na soma de MATERIAL, FABRICAÇÃO, TRANSPORTE E MONTAGEM, R$ 200,00.
+Na opção de pagamento parcelado no cartão ou de pagamento via PIX, será cobrado da seguinte forma, por exemplo:
+Se a soma total da compra dos materiais do orçamento der R$ 100,00, será cobrado mais R$ 100,00 para fabricar, transportar até 50 km e montar.
+Neste caso, se for parcelado no cartão ou pago por transferência via PIX, serão cobrados também as taxas e os juros da operadora do cartão, mais 31,5% de impostos federais e mais as taxas administrativas.
+A compra dos materiais fica a cargo do cliente, ou a combinar.
+Transporte acima de 50 km: será cobrado R$ 6,30 por quilômetro rodado.
+
+05 - FORMAS DE PAGAMENTO DA FABRICAÇÃO.
+À vista:
+50% do valor da mão de obra no ato da contratação do serviço e 50% do valor na entrega, após a montagem.
+A prazo:
+50% do valor da mão de obra no ato da contratação do serviço e 50% parcelado no cartão em até 4 VEZES, ou a combinar, mais os juros da operadora do cartão.
+
+06 - CHAVE PIX PARA DEPÓSITO (CNPJ): 31246273000144 - MARCOS PAULO TRINDADE FORTES.
+
+07 - PRAZO DE ENTREGA:
+O prazo de entrega será de 40 dias ÚTEIS, contados a partir da data de entrega dos materiais na fábrica e SOMENTE APÓS o pagamento da entrada da mão de obra de fabricação. Pode haver alteração mediante aviso prévio de 5 dias úteis antes do prazo final, com a comunicação da nova data de entrega, sendo que a nova data não poderá exceder um acréscimo de 50% sobre o prazo inicial.
+Este prazo trata somente do período de fabricação. Quanto ao prazo de montagem, ela se iniciará logo após o término do prazo de fabricação, sendo comunicados e acordados com o contratante o dia e o horário para iniciar o trabalho de montagem, OBSERVANDO o item 08, citado abaixo.
+(FICA INDEFINIDO O PRAZO FINAL DE ENTREGA DA MONTAGEM), pois esse tipo de serviço depende de vários fatores externos, alheios à vontade dos montadores, como: CHUVAS, LIGAÇÃO DE ENERGIA ELÉTRICA NO IMÓVEL, CRIAÇÃO DE NOVAS LINHAS DE ENERGIA ELÉTRICA PARA ATENDER À DEMANDA DE INSTALAÇÃO DE ILUMINAÇÃO, FUNCIONAMENTO DE ELEVADORES (SE HOUVER), FERIADOS, FINAIS DE SEMANA ETC.
+Caso a data da montagem coincida com o período de 20 de dezembro do ano vigente a 20 de janeiro do ano seguinte, a montagem ficará automaticamente agendada para depois de 20 de janeiro, sendo combinada entre as partes uma nova data para iniciar a montagem do serviço pretendido, sem prejuízo ou alteração dos itens anteriores já descritos neste documento.
+
+08 - A ENTREGA E A MONTAGEM SERÃO REALIZADAS A PARTIR DAS QUARTAS-FEIRAS À TARDE. EM CASO DE CHUVA, O SERVIÇO NÃO SERÁ REALIZADO, SENDO MARCADA UMA NOVA DATA A COMBINAR.
+
+09 - Podem estar incluídos ou não neste orçamento, segundo a necessidade do cliente: vidros e espelhos, pedras e granitos.
+A escolha, as tratativas e a compra da pedra ou do granito ficam a cargo do cliente, diretamente com o fornecedor.
+
+10 - ESTE ORÇAMENTO VISA OTIMIZAR AS QUANTIDADES DE MATERIAIS UTILIZADOS NA EXECUÇÃO DO PROJETO, MAS PODE SER NECESSÁRIO COMPRAR FITA DE BORDA E CHAPA PARA FINALIZAR O PROJETO, pois esse tipo de material sempre será calculado PARA MENOS na primeira compra, para evitar sobras desnecessárias. Se for necessário, no decorrer da fabricação, serão compradas somente as quantidades necessárias para o término do projeto pretendido, sempre com aviso prévio e mediante a ciência e a autorização do cliente.
+
+11 - Sobras de materiais remanescentes do projeto executado, como retalhos de chapas, parafusos, colas etc.: o cliente terá o prazo de 90 dias para usá-las em outro projeto, mediante NOVO ORÇAMENTO DE MÃO DE OBRA, ou poderá retirá-las na fábrica.
+
+12 - Após transcorrer o prazo legal de 90 dias, o cliente perderá o direito de resgatar ou reutilizar os materiais remanescentes do projeto executado, e esses materiais deverão ser reutilizados em outros projetos ou encaminhados para doação ou reciclagem.
+
+13 - DA GARANTIA.
+Trata-se da garantia da mão de obra e da fabricação, NÃO DOS MATERIAIS. A garantia se estenderá em caráter permanente no que se refere aos acabamentos de fita de borda, ao afrouxamento de peças e parafusos e à regulagem de portas e gavetas.
+13.1 - OBS.: os itens acima perderão a garantia quando for observado mau uso ou degradação por fatores externos, como a exposição à umidade e ao calor excessivo etc. (salvo pela escolha e uso dos materiais adequados para esses fins).
+
+14 - Não fazem parte da GARANTIA PERMANENTE peças e ferragens como: dobradiças, corrediças, puxadores, kits deslizantes para porta de correr e amortecedores, lâmpadas, fita de LED, reatores elétricos, difusores, interruptores, tomadas de energia, cabos e fios e chapas. Esses itens terão a garantia oferecida pelos seus fabricantes, por 90 dias.
+
+15 - ESTE PRÉ-CONTRATO SERÁ CONSIDERADO VÁLIDO E CONSUMADO, SEM ANULAR OS DEMAIS DISPOSITIVOS LEGAIS PREVISTOS NO CÓDIGO DE DEFESA DO CONSUMIDOR (CDC), APÓS O CLIENTE RECEBER o projeto e o orçamento detalhados, com as quantidades e os valores descritos neste, e mediante A APROVAÇÃO e a CONFIRMAÇÃO da execução do projeto pretendido.
+
+16 - Após a aprovação, se houver desistência por uma das partes, o desistente pagará à outra parte multa equivalente a 30% sobre o valor da soma TOTAL DO PROJETO (MATERIAL E MÃO DE OBRA), para cobrir despesas de projeção, despesas de deslocamento e/ou por falsa expectativa.
+
+17 - CONFECÇÃO DO PROJETO.
+Caso a confecção do projeto tenha sido executada por nossa empresa e haja DESISTÊNCIA NATURAL da execução da fabricação do projeto pretendido, SERÁ COBRADO 20% sobre o valor total dos materiais utilizados na execução do projeto, para pagar as despesas do tempo de projeção, deslocamentos, visitas etc. O valor da projeção deverá ser pago no ato da desistência.
+
+18 - No caso de o cliente ADIAR a execução do projeto pretendido depois de realizado o trabalho de projeção, ele deverá pagar 20% sobre o valor dos materiais deste orçamento no ato do ADIAMENTO. Se o cliente vier a executar o projeto dentro do prazo de 90 dias, o valor desses 20% será descontado do valor final da soma total da mão de obra de fabricação.
+18.1 - (Não se aplica caso o cliente forneça o seu próprio projeto.)
+
+19 - Serão consideradas para confirmar este ato, caso necessário, as TRANSCRIÇÕES DE CONVERSAS, ÁUDIOS, PDFs, IMAGENS E VÍDEOS oriundos de dispositivos de comunicação digital utilizados para efetuar esta negociação, salvo pela opção de NÃO EXECUTAR tal projeto, mediante COMUNICADO de desistência POR ESCRITO, por quaisquer meios utilizados pelas partes, observando e considerando o prazo de validade descrito no início deste orçamento.
+
+20 - Fica eleito o FORO da comarca de TORRES - RS, por mais privilegiado que seja qualquer outro, para dirimir quaisquer eventualidades oriundas do acordo aqui firmado entre as partes, mesmo que este ato tenha sido firmado e realizado por meios de comunicação digital.`;
+
 const blankProfile = () => ({ owner: "", name: "", doc: "", ie: "", instagram: "", qr: "whatsapp", qrlink: "", tone: "mono", role: "", phone: "", email: "", cep: "", street: "", district: "", city: "", uf: "", address: "", days: 10, next: 1, nextReceipt: 1, logo: "", signature: "", obs: DEFAULT_OBS, registered: false, pwHash: "", pwSalt: "" });
 const PROFILE_FIELDS = ["owner", "name", "doc", "ie", "role", "instagram", "qr", "qrlink", "tone", "phone", "email", "cep", "street", "district", "city", "uf"];
 const composeAddress = (p) => [p.street, p.district, [p.city, (p.uf || "").toUpperCase()].filter(Boolean).join(" - "), p.cep && "CEP " + p.cep].filter(Boolean).join(", ");
@@ -832,6 +898,8 @@ const igHandle = (p) => (p.instagram || "").trim().replace(/^https?:\/\/(www\.)?
 // Vem preenchido ao escolher a opção só para a Madeira Forte; quem testa o app coloca o próprio link em Meus dados.
 const URL_AUTOATENDIMENTO = "https://orcamento.madeiraforteplanejados.com.br";
 const isMadeiraForte = (p) => /madeira\s*forte/i.test((p && p.name) || "");
+// texto padrão do pré-contrato: o da Madeira Forte entra no lugar do genérico (o que o usuário escreveu fica como está)
+const ownObs = (p) => isMadeiraForte(p) && (!p.obs || p.obs.trim() === DEFAULT_OBS) ? OBS_MADEIRA_FORTE : p.obs;
 // Fase de testes (06/10/2026): o botão "Mandar sugestão" da tela inicial abre o WhatsApp do Marcos, criador do app
 const FEEDBACK_WA = "5551981657067";
 // Link colado pelo usuário: aceita sem o "https://" e recusa o que não parece endereço de site
@@ -2014,6 +2082,7 @@ function renderEditor() {
     quote.laborAuto = !quote.sample && (same || (!l && !quote.number));
   }
   $("q-labor").value = numIn(quote.labor); $("q-discount").value = discountField(quote);
+  if (!quote.sample && quote.obs && quote.obs.trim() === DEFAULT_OBS && isMadeiraForte(profile)) quote.obs = profile.obs; // orçamento ainda com o texto genérico
   $("q-obs").value = quote.obs;
   sigClient.set(quote.clientSig);
   renderItems(); renderTotals();
@@ -2299,11 +2368,13 @@ function buildPdf(q) {
   y = 42;
   doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(...ACC);
   doc.text("OBSERVAÇÕES E PRÉ-CONTRATO", M, y); y += 8;
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(...INK);
-  const lines = doc.splitTextToSize(fillVars(q.obs, q, t), W - 2 * M);
+  // texto longo (pré-contrato completo) usa letra um pouco menor e a página inteira; as assinaturas vão no fim
+  const obsText = fillVars(q.obs, q, t), long = obsText.length > 2500, fs = long ? 9 : 10, lh = long ? 4.3 : 5;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(fs); doc.setTextColor(...INK);
+  const lines = doc.splitTextToSize(obsText, W - 2 * M);
   for (const ln of lines) {
-    if (y > 225) { doc.addPage(); header(); y = 42; }
-    doc.text(ln, M, y); y += 5;
+    if (y > (long ? 272 : 225)) { doc.addPage(); header(); y = 42; }
+    doc.text(ln, M, y); y += lh;
   }
   if (y > 222) { doc.addPage(); header(); y = 42; }
   y = Math.max(y + 10, 225);
@@ -2544,7 +2615,7 @@ const showErr = (id, msg) => { $(id).textContent = msg; $(id).hidden = !msg; ret
 
 $("btn-save-profile").onclick = async () => {
   if (showErr("p-err", readCompany())) { $("company-card").scrollIntoView({ block: "start" }); return; }
-  profile.obs = $("p-obs").value;
+  profile.obs = ownObs({ ...profile, obs: $("p-obs").value }); $("p-obs").value = profile.obs;
   profile.days = parseNum($("p-days").value) || 10; profile.bizDays = true; profile.next = parseNum($("p-next").value) || 1;
   profile.signature = sigMe.value();
   try { await store.saveProfile(profile); renderBrand(); toast("Seus dados foram salvos"); }
@@ -2574,7 +2645,7 @@ $("btn-signup").onclick = async () => {
   const a = $("s-pass").value, b = $("s-pass2").value;
   if (showErr("s-err", passProblem(a, b))) return;
   const { hash, salt } = await hashPassword(a);
-  profile.pwHash = hash; profile.pwSalt = salt; profile.registered = true;
+  profile.pwHash = hash; profile.pwSalt = salt; profile.registered = true; profile.obs = ownObs(profile);
   try { await store.saveProfile(profile); }
   catch { showErr("s-err", "Não consegui salvar o cadastro. Tente de novo."); return; }
   $("s-pass").value = $("s-pass2").value = "";
@@ -3033,6 +3104,7 @@ renderEditor();
   profile = await store.loadProfile();
   if (profile.signature) profile.signature = await inkBlue(profile.signature); // assinatura antiga (preta) sai azul no PDF
   if (profile.qr === "autoatendimento") { profile.qr = "link"; profile.qrlink = profile.qrlink || (isMadeiraForte(profile) ? URL_AUTOATENDIMENTO : ""); } // versão que só tinha o autoatendimento
+  profile.obs = ownObs(profile);
   if (!profile.bizDays) { if (!parseNum(profile.days) || parseNum(profile.days) === 15) profile.days = 10; profile.bizDays = true; } // validade passou a ser em dias úteis (padrão 10)
   applyBrand(); prepLogo();
   quotes = await store.listQuotes().then((r) => { quotesOk = true; return r; }).catch(() => []);

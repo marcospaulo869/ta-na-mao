@@ -18,6 +18,12 @@ Para continuar, peça ao Claude: "leia a pasta orcamento do ta-na-mao e vamos re
 5. **Envio:** tela de compartilhar do celular com o PDF anexado (botão verde "Enviar o PDF"); no notebook, salva o PDF e abre a conversa no WhatsApp. Se o telefone do cliente (ou de quem pagou, no recibo) for igual ao seu de Meus dados, o app avisa embaixo do campo e, na hora de enviar, não mostra "Abrir WhatsApp de ..." (abriria a conversa com você mesmo; caso da Fabiana em 06/10/2026).
 6. **Facilidades:** o que está na tela fica guardado ao atualizar a página, ao tocar em Sair ou se o app fechar, e a tela inicial mostra "Continuar" para o orçamento ou recibo que ficou pela metade (o cadastro também se guarda, menos a senha); item novo aparece no meio da tela; tocar num campo seleciona o que já está nele; listas de salvos; aba Materiais com os preços. **Pensado para o celular** (06/10/2026: 90% ou mais do uso é no celular): todos os botões têm área de toque de pelo menos 44 px (o tamanho da ponta do dedo); a barra de baixo mostra o Total, Salvar e Enviar PDF maiores numa linha só; as abas, o "‹ Início" e as setas ↑ ↓ e o × de cada item ficaram maiores; a etiqueta "COMPRAR FORA ✕" fica ao lado do número do item.
 
+### Pré-contrato da Madeira Forte (06/10/2026)
+- O pré-contrato do Marcos (20 itens, tirado do Orcamento_a-17.pdf) foi transcrito com acentos, pontuação e digitação corrigidos e virou o texto padrão quando a empresa é Madeira Forte (Meus dados e cada orçamento novo; orçamentos que ainda estavam com o texto genérico passam a mostrar o dele). Continua editável. Quem testa o app fica com o texto genérico.
+- Os campos do pré-contrato têm a correção ortográfica do navegador e do teclado ligada.
+- No PDF, texto longo sai com letra 9 e usa a página inteira; as assinaturas vão no fim.
+- Cópia do texto: pre-contrato-madeira-forte.txt na pasta do projeto.
+
 ### Testes com outras pessoas (06/10/2026)
 - Quem testa abre o link próprio no celular, instala na tela inicial e faz o cadastro com a própria empresa. Os dados ficam só no aparelho de cada um.
 - A tela inicial tem o botão verde **Mandar sugestão**, que abre o WhatsApp do Marcos com uma mensagem pronta (diz se é celular ou computador e o tamanho da tela). Para o próprio Marcos o botão não aparece.
