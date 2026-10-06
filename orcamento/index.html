@@ -140,8 +140,8 @@ input.caps::placeholder { text-transform: none; }
 .item.out { border-left: 4px solid var(--out); padding-left: 10px; background: linear-gradient(90deg, var(--out-soft), transparent 70%); border-radius: 6px 0 0 6px; }
 .item.out .inum, .item.out .tot, .item.out input { color: var(--out); }
 .outtag { border: 1px solid var(--out); background: none; color: var(--out); font: 700 0.72rem var(--font-body); letter-spacing: 0.04em; border-radius: 999px; padding: 3px 8px; cursor: pointer; white-space: nowrap; }
-.totals .outsum { color: var(--out); font-weight: 700; border-top: 1px dashed var(--out); padding-top: 6px; margin-top: 6px; }
-.totals .outsum small { display: block; font-weight: 400; font-size: 0.8rem; }
+.totals .sub { font-weight: 700; border-top: 1px solid var(--line); padding-top: 6px; margin-top: 4px; }
+.totals .outsum { color: var(--out); font-weight: 700; }
 .mv { width: 34px; height: 34px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; cursor: pointer; font-size: 1rem; }
 .mv:disabled { opacity: 0.35; cursor: default; }
 .dict { grid-column: 1 / -1; display: grid; gap: 6px; background: var(--warm-soft); border-radius: 10px; padding: 10px; }
@@ -1183,13 +1183,15 @@ const lineTotal = (it) => parseNum(it.qty) * parseNum(it.price);
 // Desconto em % sobre materiais + mão de obra (discountPct). Orçamentos antigos guardam o desconto em R$ (discount) e continuam valendo até mudar o campo.
 const clampPct = (n) => Math.min(100, Math.max(0, Number.isFinite(n) ? n : 0));
 const fmtPct = (n) => String(Math.round(n * 100) / 100).replace(".", ",");
-// Itens marcados "Comprar fora" (it.out) têm soma própria e não entram no total do orçamento
+// Itens marcados "Comprar fora" (it.out) têm soma própria e sem desconto:
+// subtotal = materiais normais + mão de obra − desconto; VALOR TOTAL = subtotal + comprar fora
 const calc = (q) => {
   const materials = q.items.reduce((s, it) => s + (it.out ? 0 : lineTotal(it)), 0);
   const outside = q.items.reduce((s, it) => s + (it.out ? lineTotal(it) : 0), 0);
   const labor = parseNum(q.labor), pct = typeof q.discountPct === "number" ? clampPct(q.discountPct) : null;
   const discount = pct != null ? cents((materials + labor) * pct / 100) : parseNum(q.discount);
-  return { materials, labor, discount, pct, outside, total: Math.max(0, materials + labor - discount) };
+  const subtotal = Math.max(0, materials + labor - discount);
+  return { materials, labor, discount, pct, outside, subtotal, hasOut: q.items.some((it) => it.out), total: subtotal + outside };
 };
 const fillVars = (text, q, t) => String(text || "")
   .replaceAll("{CLIENTE}", q.client.name || "o cliente")
@@ -1877,8 +1879,9 @@ function renderTotals() {
     <div><span>Materiais</span><span>${money(t.materials)}</span></div>
     <div><span>Mão de obra</span><span>${money(t.labor)}</span></div>
     <div><span>Desconto${t.pct ? ` (${fmtPct(t.pct)}%)` : ""}</span><span>− ${money(t.discount)}</span></div>
-    <div class="grand"><span>Total</span><span>${money(t.total)}</span></div>${quote.items.some((it) => it.out) ? `
-    <div class="outsum"><span>Comprar fora<small>Não entra no total do orçamento</small></span><span>${money(t.outside)}</span></div>` : ""}`;
+    ${t.hasOut ? `<div class="sub"><span>Subtotal</span><span>${money(t.subtotal)}</span></div>
+    <div class="outsum"><span>Comprar fora</span><span>${money(t.outside)}</span></div>
+    <div class="grand"><span>VALOR TOTAL</span><span>${money(t.total)}</span></div>` : `<div class="grand"><span>Total</span><span>${money(t.total)}</span></div>`}`;
   $("bar-total").textContent = money(t.total);
 }
 function renderEditor() {
@@ -2130,16 +2133,14 @@ function buildPdf(q) {
   if (t.labor) row("Mão de obra", money(t.labor));
   if (t.discount) row(t.pct ? `Desconto (${fmtPct(t.pct)}%)` : "Desconto", "- " + money(t.discount));
   doc.setDrawColor(...LINE); doc.line(130, y - 3.5, W - M, y - 3.5); y += 1.5;
-  row("TOTAL", money(t.total), true);
-  // Comprar fora: lista em vermelho com a soma só desses itens (não entra no TOTAL acima)
+  row(outs.length ? "SUBTOTAL" : "TOTAL", money(outs.length ? t.subtotal : t.total), true);
+  // Comprar fora: lista em vermelho com a soma só desses itens; embaixo, o VALOR TOTAL (subtotal + comprar fora)
   if (outs.length) {
     const RED = [198, 40, 40], RED_SOFT = [253, 236, 236];
     y += 4;
     if (y > 245) { doc.addPage(); header(); y = 42; }
     doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(...RED);
     doc.text("COMPRAR FORA", M, y);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
-    doc.text("Itens que não entram no total deste orçamento.", M + 33, y);
     doc.autoTable({
       startY: y + 3, margin: { left: M, right: M, top: 38 },
       head: [["#", "Material", "Un.", "Qtd.", "Preço un.", "Total"]],
@@ -2153,7 +2154,14 @@ function buildPdf(q) {
       columnStyles: COLS,
       didDrawPage: (d) => { if (d.pageNumber > 1) header(); },
     });
-    y = doc.lastAutoTable.finalY + 2;
+    y = doc.lastAutoTable.finalY + 7;
+    if (y > 262) { doc.addPage(); header(); y = 42; }
+    row("Subtotal", money(t.subtotal));
+    doc.setTextColor(198, 40, 40); doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+    doc.text("Comprar fora", 130, y); doc.text(money(t.outside), W - M, y, { align: "right" }); y += 5.5;
+    doc.setDrawColor(...LINE); doc.line(130, y - 3.5, W - M, y - 3.5); y += 1.5;
+    row("VALOR TOTAL", money(t.total), true);
+    y -= 4;
   }
   if (y > 270) { doc.addPage(); header(); y = 42; }
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...MUT);
