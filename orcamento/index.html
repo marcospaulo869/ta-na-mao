@@ -268,18 +268,28 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .pctin input { width: 100%; padding-left: 8px; padding-right: 30px; }
 @media (max-width: 350px) { .pct { font-size: 0.82rem; padding-inline: 2px; } }
 .pctin span { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 700; pointer-events: none; }
-.subnav .rec { margin-left: auto; align-self: stretch; border-radius: 999px; padding-inline: 14px; } /* mesma altura e formato das abas */
+/* e o botão "Orçamento" no recibo, com a cor do Orçamento, para ir e voltar entre os dois */
+.btn.orc { display: inline-flex; align-items: center; gap: 6px; border-color: var(--accent); background: var(--accent-soft); color: var(--ink); font-weight: 700; }
+.btn.orc svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
+#r-next { justify-self: start; margin-top: -4px; margin-bottom: 8px; }
+.subnav .rec, .subnav .orc { margin-left: auto; align-self: stretch; border-radius: 999px; padding-inline: 14px; } /* mesma altura e formato das abas */
 /* no celular não cabe ao lado das abas: o botão do topo vai para a linha do "Meus dados" e a barra de baixo fica em duas linhas */
-#top-receipt { display: none; }
+#top-receipt, #top-quote { display: none; }
 @media (max-width: 520px) {
-  #nav-receipt { display: none; }
-  #top-receipt { display: inline-flex; }
+  #nav-receipt, #nav-quote { display: none; }
+  #top-receipt, #top-quote { display: inline-flex; }
+  #rbar .in { flex-wrap: wrap; row-gap: 6px; }
+  #rbar .in > div:first-child { width: 100%; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  #rbar .in > .row { width: 100%; display: grid; grid-template-columns: repeat(3, auto); gap: 8px; }
+  #rbar .in > .row .btn { justify-content: center; padding-inline: 6px; white-space: nowrap; }
   #bar .in { flex-wrap: wrap; row-gap: 6px; }
   #bar .in > div:first-child { width: 100%; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   #bar .in > .row { width: 100%; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.15fr); gap: 8px; }
   #bar .in > .row .btn { justify-content: center; padding-inline: 6px; white-space: nowrap; }
 }
-@media (max-width: 350px) { #bar .in > .row .btn { font-size: 0.92rem; } #bar .btn.rec { gap: 4px; } #bar .btn.rec svg { width: 16px; height: 16px; }
+@media (max-width: 400px) { #rbar .btn.orc svg, #top-quote svg { display: none; } } /* "Orçamento" é mais comprido: sem o ícone cabe na linha */
+@media (max-width: 350px) { .top .row .btn.small { padding-inline: 8px; font-size: 0.88rem; } #top-receipt svg { display: none; } }
+@media (max-width: 350px) { #bar .in > .row .btn { font-size: 0.92rem; } #rbar .in > .row .btn { font-size: 0.82rem; } #bar .btn.rec { gap: 4px; } #bar .btn.rec svg { width: 16px; height: 16px; }
 }
 .back { border: 0; background: none; color: var(--accent); font: 600 0.95rem var(--font-body); cursor: pointer; padding: 6px 0; }
 /* Início: foto real + chamada + dois botões grandes */
@@ -380,6 +390,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
   <div class="top" id="topbar" hidden>
     <button class="brand" id="btn-home" title="Início"><span class="seal" id="tb-seal" hidden></span><img id="tb-logo" alt="" hidden><span id="tb-name">Orçamento e Recibo</span></button>
     <div class="row">
+      <button class="btn small orc" id="top-quote" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span>Orçamento</span></button>
       <button class="btn small rec" id="top-receipt" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/><path d="M9.5 16c1-1 2-1 2.5 0s1.5 1 2.5 0"/></svg><span>Recibo</span></button>
       <button class="btn small" id="tab-profile">Meus dados</button>
       <button class="btn small" id="btn-logout">Sair</button>
@@ -393,6 +404,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <button role="tab" id="tab-saved" data-view="saved">Salvos</button>
       <button role="tab" id="tab-materials" data-view="materials">Materiais</button>
     </div>
+    <button class="btn small orc" id="nav-quote" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span>Orçamento</span></button>
     <div class="tabs" role="tablist" id="tabs-receipt" hidden>
       <button role="tab" id="tab-receipt" data-view="receipt">Recibo</button>
       <button role="tab" id="tab-receipts" data-view="receipts">Salvos</button>
@@ -604,6 +616,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
         <h2 id="r-title">Novo recibo</h2>
       </div>
       <p class="linkinfo" id="r-link" hidden></p>
+      <button class="btn small warm" id="r-next" type="button" hidden>Fazer recibo do saldo</button>
       <div class="grid2">
         <div class="field"><label for="r-date">Data do pagamento</label><input type="date" id="r-date"></div>
         <div class="field"><label for="r-kind">Tipo</label><select id="r-kind">
@@ -773,6 +786,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <div><div class="hint">Valor do recibo</div><div class="total" id="rbar-total">R$ 0,00</div></div>
     <div class="row">
       <button class="btn" id="btn-r-save">Salvar</button>
+      <button class="btn orc" id="rbar-quote" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span>Orçamento</span></button>
       <button class="btn warm" id="btn-r-pdf">Enviar recibo</button>
     </div>
   </div>
@@ -2878,6 +2892,8 @@ function renderReceiptAmount() {
     $("r-link").textContent = `Orçamento nº ${pad4(receipt.quoteNumber)}: total ${money(receipt.quoteTotal)}, já recebido ${money(before)}, saldo depois deste recibo ${money(Math.max(0, left))}.`;
   }
   $("r-link").hidden = !receipt.quoteId;
+  $("r-next").hidden = !(receipt.id && receipt.quoteId && receipt.quoteTotal - receivedFor(receipt.quoteId, receipt.id) - parseNum(receipt.amount) > 0.004);
+  if (!$("r-next").hidden) $("r-next").textContent = `Fazer recibo do saldo (${money(receipt.quoteTotal - receivedFor(receipt.quoteId, receipt.id) - parseNum(receipt.amount))})`;
   renderReceiptPct();
   renderReceiptDesc();
 }
@@ -2969,7 +2985,7 @@ async function goReceipt() {
   const q = quote, onEditor = !$("view-editor").hidden;
   if (!onEditor || q.sample || (!q.client.name.trim() && !(calc(q).total > 0))) { show("receipt"); return; }
   if (!q.client.name.trim()) { toast("Preencha o nome do cliente para fazer o recibo deste orçamento"); $("c-name").focus(); return; }
-  if (receiptDraft() && q.id && receipt.quoteId === q.id) { show("receipt"); return; } // o recibo deste orçamento já está começado
+  if (q.id && receipt.quoteId === q.id && (receiptDraft() || receipt.id)) { show("receipt"); return; } // volta ao recibo deste orçamento (começado ou salvo)
   if (receiptDraft() && Date.now() - recAsked > 5000) { // não perder um recibo de outro cliente que ainda não foi salvo
     recAsked = Date.now();
     toast(`O recibo de ${receipt.payer.name.trim() || "outro cliente"} ainda não foi salvo. Toque de novo em Recibo para fazer o deste orçamento.`);
@@ -2982,6 +2998,24 @@ async function goReceipt() {
   receiptFromQuote(quote);
 }
 for (const id of ["nav-receipt", "top-receipt", "bar-receipt"]) $(id).onclick = goReceipt;
+
+// Botões "Orçamento" no recibo (topo e barra de baixo; pedido do Marcos, 06/10/2026), o par dos botões "Recibo": na aba Recibo
+// abrem o orçamento de onde o recibo veio; sem orçamento ligado (ou na aba Salvos dos recibos) abrem a aba Orçamento como estava.
+let quoteAsked = 0;
+function goQuote() {
+  const id = !$("view-receipt").hidden && receipt.quoteId, q = id && quotes.find((x) => x.id === id);
+  if (!q || quote.id === id) { show("editor"); if (id && !q) toast("O orçamento deste recibo não está mais nos Salvos"); return; }
+  if (quoteDraft() && Date.now() - quoteAsked > 5000) { // não perder um orçamento novo que ainda não foi salvo
+    quoteAsked = Date.now();
+    toast("O orçamento aberto ainda não foi salvo. Toque de novo em Orçamento para abrir o deste recibo.");
+    return;
+  }
+  quoteAsked = 0;
+  quote = JSON.parse(JSON.stringify(q)); show("editor"); renderEditor();
+}
+for (const id of ["nav-quote", "top-quote", "rbar-quote"]) $(id).onclick = goQuote;
+// Recibo já salvo de um orçamento que ainda tem saldo: um toque faz o próximo recibo, com o que falta receber
+$("r-next").onclick = () => { const q = quotes.find((x) => x.id === receipt.quoteId); if (q) receiptFromQuote(q); else toast("O orçamento deste recibo não está mais nos Salvos"); };
 
 async function saveReceipt(silent) {
   if (!receipt.id) {
@@ -3215,6 +3249,7 @@ function show(view) {
   $("tabs-quote").hidden = !["editor", "saved", "materials"].includes(view);
   $("tabs-receipt").hidden = !["receipt", "receipts"].includes(view);
   $("nav-receipt").hidden = $("top-receipt").hidden = $("tabs-quote").hidden;
+  $("nav-quote").hidden = $("top-quote").hidden = $("tabs-receipt").hidden;
   $("bar").hidden = view !== "editor";
   $("rbar").hidden = view !== "receipt";
   if (view === "home") renderHome();
