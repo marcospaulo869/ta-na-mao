@@ -18,6 +18,11 @@ Para continuar, peça ao Claude: "leia a pasta orcamento do ta-na-mao e vamos re
 5. **Envio:** tela de compartilhar do celular com o PDF anexado (botão verde "Enviar o PDF"); no notebook, salva o PDF e abre a conversa no WhatsApp. Se o telefone do cliente (ou de quem pagou, no recibo) for igual ao seu de Meus dados, o app avisa embaixo do campo e, na hora de enviar, não mostra "Abrir WhatsApp de ..." (abriria a conversa com você mesmo; caso da Fabiana em 06/10/2026).
 6. **Facilidades:** o que está na tela fica guardado ao atualizar a página, ao tocar em Sair ou se o app fechar, e a tela inicial mostra "Continuar" para o orçamento ou recibo que ficou pela metade (o cadastro também se guarda, menos a senha); item novo aparece no meio da tela; tocar num campo seleciona o que já está nele; listas de salvos; aba Materiais com os preços. **Pensado para o celular** (06/10/2026: 90% ou mais do uso é no celular): todos os botões têm área de toque de pelo menos 44 px (o tamanho da ponta do dedo); a barra de baixo mostra o Total, Salvar e Enviar PDF maiores numa linha só; as abas, o "‹ Início" e as setas ↑ ↓ e o × de cada item ficaram maiores; a etiqueta "COMPRAR FORA ✕" fica ao lado do número do item.
 
+### Testes com outras pessoas (06/10/2026)
+- Quem testa abre o link próprio no celular, instala na tela inicial e faz o cadastro com a própria empresa. Os dados ficam só no aparelho de cada um.
+- A tela inicial tem o botão verde **Mandar sugestão**, que abre o WhatsApp do Marcos com uma mensagem pronta (diz se é celular ou computador e o tamanho da tela). Para o próprio Marcos o botão não aparece.
+- O link do autoatendimento da Madeira Forte só vem preenchido no QR Code quando o nome da empresa é Madeira Forte; quem testa coloca o próprio link.
+
 ### O que falta para terminar a validação
 - Em Meus dados, escolher no QR Code a opção "Orçamento com valor estimado" (criada em 06/10/2026). O link do autoatendimento, https://orcamento.madeiraforteplanejados.com.br, já vem preenchido e pode ser trocado. Antes de vender, tirar esse link padrão para cada comprador colocar o seu.
 - Testar no celular: "Segure e fale", digital, botão "Enviar o PDF" e ler o QR Code com outro celular.

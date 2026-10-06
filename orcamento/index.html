@@ -284,6 +284,10 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .stat .v { font: 700 1.05rem var(--font-display); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .trust { display: flex; gap: 8px 16px; flex-wrap: wrap; color: var(--muted); font-size: 0.88rem; }
 .trust span::before { content: "✓ "; color: var(--accent); font-weight: 700; }
+/* Fase de testes: quem testa manda sugestões direto para o Marcos */
+.feedback { display: grid; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.feedback p { margin: 0; color: var(--muted); }
+.feedback .btn { justify-self: start; }
 .gate-hero { min-height: 210px; }
 .welcome-hero { min-height: 420px; }
 .welcome-hero img { object-position: 50% 30%; }
@@ -393,6 +397,10 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <div class="stat"><div class="k">A receber</div><div class="v" id="st-open">R$ 0,00</div></div>
     </div>
     <div class="trust"><span>PDF com sua logomarca</span><span>Assinatura digital na tela</span><span>Envio pelo WhatsApp</span></div>
+    <div class="feedback" id="home-feedback" hidden>
+      <p><b>Versão de teste.</b> Achou um problema ou tem uma ideia para melhorar? Conte pelo WhatsApp.</p>
+      <a class="btn wa" id="btn-feedback" target="_blank" rel="noopener">Mandar sugestão</a>
+    </div>
   </div>
 
   <!-- CARREGANDO -->
@@ -821,8 +829,11 @@ const clientCopyText = (c) => [
 const bizName = (p) => p.name || p.owner;
 const igHandle = (p) => (p.instagram || "").trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/^@/, "").replace(/\/.*$/, "");
 // Autoatendimento da Madeira Forte: o cliente monta o móvel e vê um orçamento com valor estimado.
-// Vem preenchido ao escolher a opção; cada usuário pode trocar pelo seu link em Meus dados.
+// Vem preenchido ao escolher a opção só para a Madeira Forte; quem testa o app coloca o próprio link em Meus dados.
 const URL_AUTOATENDIMENTO = "https://orcamento.madeiraforteplanejados.com.br";
+const isMadeiraForte = (p) => /madeira\s*forte/i.test((p && p.name) || "");
+// Fase de testes (06/10/2026): o botão "Mandar sugestão" da tela inicial abre o WhatsApp do Marcos, criador do app
+const FEEDBACK_WA = "5551981657067";
 // Link colado pelo usuário: aceita sem o "https://" e recusa o que não parece endereço de site
 const webLink = (v) => {
   let t = String(v || "").trim(); if (!t || /\s/.test(t)) return "";
@@ -2476,7 +2487,7 @@ function renderQr() {
   seal.onload = () => { cx.globalAlpha = SEAL_OPACITY; cx.drawImage(seal, off + (size - sw) / 2, off + (size - sh) / 2, sw, sh); cx.globalAlpha = 1; };
   seal.src = SEAL;
 }
-$("p-qr").addEventListener("change", () => { if ($("p-qr").value === "link" && !$("p-qrlink").value.trim()) { $("p-qrlink").value = URL_AUTOATENDIMENTO; renderQr(); } });
+$("p-qr").addEventListener("change", () => { if ($("p-qr").value === "link" && !$("p-qrlink").value.trim() && isMadeiraForte({ name: $("p-name").value })) { $("p-qrlink").value = URL_AUTOATENDIMENTO; renderQr(); } });
 for (const id of ["p-qr", "p-qrlink", "p-phone", "p-instagram"]) $(id).addEventListener("input", renderQr);
 for (const t of ["input", "change"]) $("company-card").addEventListener(t, signupSoon);
 // Troca de estilo: mostra na hora (só fica guardada ao tocar em "Salvar meus dados")
@@ -2950,6 +2961,10 @@ function renderResume() {
   box.hidden = !box.childElementCount;
 }
 function renderHome() {
+  // o próprio Marcos não precisa do botão de sugestão (abriria a conversa com ele mesmo)
+  $("home-feedback").hidden = waNumber(profile.phone) === FEEDBACK_WA;
+  const device = matchMedia("(pointer: coarse)").matches ? "celular" : "computador";
+  $("btn-feedback").href = `https://wa.me/${FEEDBACK_WA}?text=${encodeURIComponent(`Olá, Marcos! Estou testando o app Orçamento e Recibo.\n\nO que achei e o que dá para melhorar:\n\n\n(Mandado pelo app, no ${device}, tela ${screen.width} x ${screen.height})`)}`;
   renderResume();
   const first = (profile.owner || "").split(" ")[0];
   $("home-hello").textContent = first ? `Olá, ${first}` : "Bem-vindo";
@@ -3017,7 +3032,7 @@ renderEditor();
   await store.init();
   profile = await store.loadProfile();
   if (profile.signature) profile.signature = await inkBlue(profile.signature); // assinatura antiga (preta) sai azul no PDF
-  if (profile.qr === "autoatendimento") { profile.qr = "link"; profile.qrlink = profile.qrlink || URL_AUTOATENDIMENTO; } // versão que só tinha o autoatendimento
+  if (profile.qr === "autoatendimento") { profile.qr = "link"; profile.qrlink = profile.qrlink || (isMadeiraForte(profile) ? URL_AUTOATENDIMENTO : ""); } // versão que só tinha o autoatendimento
   if (!profile.bizDays) { if (!parseNum(profile.days) || parseNum(profile.days) === 15) profile.days = 10; profile.bizDays = true; } // validade passou a ser em dias úteis (padrão 10)
   applyBrand(); prepLogo();
   quotes = await store.listQuotes().then((r) => { quotesOk = true; return r; }).catch(() => []);
