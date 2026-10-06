@@ -16,7 +16,7 @@ Para continuar, peça ao Claude: "leia a pasta orcamento do ta-na-mao e vamos re
 3. **Recibo:** valor por extenso; tipo (total, entrada, parcela, saldo); forma de pagamento; assinaturas; gerar a partir de um orçamento com o saldo que falta.
 4. **PDF:** cabeçalho com logomarca e dados; QR Code (WhatsApp, Instagram ou "Orçamento com valor estimado", que abre o link de autoatendimento colado em Meus dados) com o selo dourado no meio; estilo preto e dourado ou verde; assinaturas em azul BIC.
 5. **Envio:** tela de compartilhar do celular com o PDF anexado (botão verde "Enviar o PDF"); no notebook, salva o PDF e abre a conversa no WhatsApp.
-6. **Facilidades:** o que está na tela fica guardado ao atualizar a página; tocar num campo seleciona o que já está nele; listas de salvos; aba Materiais com os preços.
+6. **Facilidades:** o que está na tela fica guardado ao atualizar a página (o cadastro também, menos a senha); tocar num campo seleciona o que já está nele; listas de salvos; aba Materiais com os preços.
 
 ### O que falta para terminar a validação
 - Em Meus dados, escolher no QR Code a opção "Orçamento com valor estimado" (criada em 06/10/2026). O link do autoatendimento, https://orcamento.madeiraforteplanejados.com.br, já vem preenchido e pode ser trocado. Antes de vender, tirar esse link padrão para cada comprador colocar o seu.

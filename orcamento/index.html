@@ -873,7 +873,7 @@ const store = {
       await this.profileRef.delete();
       return;
     }
-    try { for (const k of ["orc.profile", "orc.quotes", "orc.receipts", "orc.catalog", "orc.draft", "orc.bio"]) localStorage.removeItem(k); } catch {}
+    try { for (const k of ["orc.profile", "orc.quotes", "orc.receipts", "orc.catalog", "orc.draft", "orc.bio", "orc.signup"]) localStorage.removeItem(k); } catch {}
   },
 };
 
@@ -1045,6 +1045,30 @@ const draftSoon = () => { clearTimeout(draftTimer); draftTimer = setTimeout(save
 for (const t of ["input", "change", "click"]) document.addEventListener(t, draftSoon, true);
 addEventListener("pagehide", saveDraft);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveDraft(); });
+/* Cadastro em andamento: os dados da empresa e a logomarca ficam guardados neste aparelho enquanto você digita.
+   Atualizar a página ou fechar o navegador não apaga; só a senha precisa ser digitada de novo. */
+const SIGNUP_KEY = "orc.signup";
+let signupTimer = 0;
+function saveSignup() {
+  clearTimeout(signupTimer); signupTimer = 0;
+  if (profile.registered || $("view-signup").hidden) return;
+  const d = { logo: profile.logo || "" };
+  for (const k of PROFILE_FIELDS) d[k] = $("p-" + k).value;
+  local.set(SIGNUP_KEY, d);
+}
+const signupSoon = () => { clearTimeout(signupTimer); signupTimer = setTimeout(saveSignup, 300); };
+const signupDraft = () => { const d = local.get(SIGNUP_KEY, null); return d && typeof d === "object" && PROFILE_FIELDS.some((k) => k !== "qr" && k !== "tone" && typeof d[k] === "string" && d[k].trim()) ? d : null; };
+const dropSignup = () => { clearTimeout(signupTimer); signupTimer = 0; try { localStorage.removeItem(SIGNUP_KEY); } catch {} };
+function restoreSignup() {
+  const d = signupDraft(); if (!d) return false;
+  for (const k of PROFILE_FIELDS) if (typeof d[k] === "string" && d[k]) $("p-" + k).value = d[k];
+  if (typeof d.logo === "string" && d.logo.startsWith("data:image/")) profile.logo = d.logo;
+  if (d.tone) { profile.tone = $("p-tone").value; renderBrand(); }
+  renderLogo(); renderQr(); fitSoon();
+  return true;
+}
+addEventListener("pagehide", saveSignup);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveSignup(); });
 // Volta o rascunho, a não ser que ele seja de um documento apagado ou salvo depois em outro aparelho
 function draftOk(d, list, listOk) {
   if (!d || typeof d !== "object") return false;
@@ -2240,6 +2264,7 @@ function renderQr() {
 }
 $("p-qr").addEventListener("change", () => { if ($("p-qr").value === "link" && !$("p-qrlink").value.trim()) { $("p-qrlink").value = URL_AUTOATENDIMENTO; renderQr(); } });
 for (const id of ["p-qr", "p-qrlink", "p-phone", "p-instagram"]) $(id).addEventListener("input", renderQr);
+for (const t of ["input", "change"]) $("company-card").addEventListener(t, signupSoon);
 // Troca de estilo: mostra na hora (só fica guardada ao tocar em "Salvar meus dados")
 $("p-tone").addEventListener("change", () => { profile.tone = $("p-tone").value; renderBrand(); });
 function renderProfile() {
@@ -2261,11 +2286,11 @@ $("p-logo").onchange = (e) => {
     const s = Math.min(1, 400 / img.width, 200 / img.height);
     const c = document.createElement("canvas"); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
     const cx = c.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0, 0, c.width, c.height); cx.drawImage(img, 0, 0, c.width, c.height);
-    profile.logo = c.toDataURL("image/jpeg", 0.85); renderLogo(); URL.revokeObjectURL(img.src);
+    profile.logo = c.toDataURL("image/jpeg", 0.85); renderLogo(); URL.revokeObjectURL(img.src); signupSoon();
   };
   img.src = URL.createObjectURL(f);
 };
-$("p-logo-rm").onclick = () => { profile.logo = ""; renderLogo(); };
+$("p-logo-rm").onclick = () => { profile.logo = ""; renderLogo(); signupSoon(); };
 
 // Lê e confere os campos do cartão "Seus dados". Devolve a mensagem de erro ou "".
 function readCompany() {
@@ -2328,6 +2353,7 @@ $("btn-signup").onclick = async () => {
   try { await store.saveProfile(profile); }
   catch { showErr("s-err", "Não consegui salvar o cadastro. Tente de novo."); return; }
   $("s-pass").value = $("s-pass2").value = "";
+  dropSignup();
   session.set(true); enterApp(); toast("Cadastro concluído");
 };
 
@@ -2346,7 +2372,7 @@ function confirmReset(btn) {
   btn.disabled = true; btn.textContent = "Apagando…";
   store.resetAll().catch(() => {}).then(() => {
     profile = blankProfile(); quotes = []; receipts = []; catSet(null); catPending = []; catQueue = Promise.resolve(); quotesOk = true;
-    quote = sampleQuote(); receipt = blankReceipt();
+    quote = sampleQuote(); receipt = blankReceipt(); dropSignup();
     renderEditor(); renderReceipt();
     session.set(false);
     btn.disabled = false; btn.dataset.confirm = ""; btn.textContent = btn.dataset.label;
@@ -2691,7 +2717,7 @@ function gate(which) {
   for (const v of [...APP_VIEWS, "loading", "welcome", "signup", "login"]) $("view-" + v).hidden = v !== which;
   fitSoon();
   $("topbar").hidden = true; $("subnav").hidden = true; $("bar").hidden = true; $("rbar").hidden = true;
-  if (which === "signup") { $("signup-slot").appendChild($("company-card")); renderProfile(); }
+  if (which === "signup") { $("signup-slot").appendChild($("company-card")); renderProfile(); if (restoreSignup()) toast("Seu cadastro voltou do jeito que você deixou"); }
   if (which === "login") {
     $("l-name").textContent = bizName(profile) || "Entrar";
     $("l-email").textContent = profile.email ? "Conta: " + profile.email : "";
@@ -2746,7 +2772,7 @@ renderEditor();
   if (draft.quote && Array.isArray(draft.quote.items) && draft.quote.client && draftOk(draft.quote, quotes, quotesOk)) { quote = draft.quote; renderEditor(); }
   else if (quotes.length && quote.sample) newQuote();
   receipt = draft.receipt && draft.receipt.payer && draftOk(draft.receipt, receipts, true) ? draft.receipt : blankReceipt(); renderReceipt();
-  if (!profile.registered || !profile.pwHash) gate("welcome");
+  if (!profile.registered || !profile.pwHash) gate(signupDraft() ? "signup" : "welcome");
   else if (session.get()) enterApp();
   else gate("login");
 })();
