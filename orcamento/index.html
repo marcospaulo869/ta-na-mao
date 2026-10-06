@@ -256,6 +256,22 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .shsteps { margin: 0; padding-left: 1.3em; display: grid; gap: 12px; }
 .shsteps li { display: grid; gap: 4px; }
 .shsteps li::marker { font-weight: 700; color: var(--accent); }
+/* Botões "Recibo" no orçamento (topo, ao lado das abas, e barra de baixo, ao lado do Enviar PDF): cor do Recibo */
+.btn.rec { display: inline-flex; align-items: center; gap: 6px; border-color: var(--warm); background: var(--warm-soft); color: var(--ink); font-weight: 700; }
+.btn.rec svg { width: 18px; height: 18px; flex: none; color: var(--warm); }
+.subnav .rec { margin-left: auto; align-self: stretch; border-radius: 999px; padding-inline: 14px; } /* mesma altura e formato das abas */
+/* no celular não cabe ao lado das abas: o botão do topo vai para a linha do "Meus dados" e a barra de baixo fica em duas linhas */
+#top-receipt { display: none; }
+@media (max-width: 520px) {
+  #nav-receipt { display: none; }
+  #top-receipt { display: inline-flex; }
+  #bar .in { flex-wrap: wrap; row-gap: 6px; }
+  #bar .in > div:first-child { width: 100%; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  #bar .in > .row { width: 100%; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.15fr); gap: 8px; }
+  #bar .in > .row .btn { justify-content: center; padding-inline: 6px; white-space: nowrap; }
+}
+@media (max-width: 350px) { #bar .in > .row .btn { font-size: 0.92rem; } #bar .btn.rec { gap: 4px; } #bar .btn.rec svg { width: 16px; height: 16px; }
+}
 .back { border: 0; background: none; color: var(--accent); font: 600 0.95rem var(--font-body); cursor: pointer; padding: 6px 0; }
 /* Início: foto real + chamada + dois botões grandes */
 .hero { position: relative; border-radius: 18px; overflow: hidden; min-height: 300px; display: flex; align-items: flex-end; background: #0F2A30; }
@@ -355,12 +371,14 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
   <div class="top" id="topbar" hidden>
     <button class="brand" id="btn-home" title="Início"><span class="seal" id="tb-seal" hidden></span><img id="tb-logo" alt="" hidden><span id="tb-name">Orçamento e Recibo</span></button>
     <div class="row">
+      <button class="btn small rec" id="top-receipt" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/><path d="M9.5 16c1-1 2-1 2.5 0s1.5 1 2.5 0"/></svg><span>Recibo</span></button>
       <button class="btn small" id="tab-profile">Meus dados</button>
       <button class="btn small" id="btn-logout">Sair</button>
     </div>
   </div>
   <div class="subnav" id="subnav" hidden>
     <button class="back" id="btn-back">‹ Início</button>
+    <button class="btn small rec" id="nav-receipt" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/><path d="M9.5 16c1-1 2-1 2.5 0s1.5 1 2.5 0"/></svg><span>Recibo</span></button>
     <div class="tabs" role="tablist" id="tabs-quote" hidden>
       <button role="tab" id="tab-editor" data-view="editor">Orçamento</button>
       <button role="tab" id="tab-saved" data-view="saved">Salvos</button>
@@ -726,6 +744,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <div><div class="hint">Total</div><div class="total" id="bar-total">R$ 0,00</div></div>
     <div class="row">
       <button class="btn" id="btn-save">Salvar</button>
+      <button class="btn rec" id="bar-receipt" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/><path d="M9.5 16c1-1 2-1 2.5 0s1.5 1 2.5 0"/></svg><span>Recibo</span></button>
       <button class="btn primary" id="btn-pdf">Enviar PDF</button>
     </div>
   </div>
@@ -2870,6 +2889,27 @@ function receiptFromQuote(q) {
   if (before > 0) toast("Valor preenchido com o saldo que falta receber");
 }
 
+// Botões "Recibo" no orçamento (topo e barra de baixo; pedido do Marcos, 06/10/2026). Na aba Orçamento abrem o recibo
+// do orçamento da tela, já salvo, com o cliente e o saldo que falta receber; nas abas Salvos e Materiais só abrem o recibo.
+let recAsked = 0;
+async function goReceipt() {
+  const q = quote, onEditor = !$("view-editor").hidden;
+  if (!onEditor || q.sample || (!q.client.name.trim() && !(calc(q).total > 0))) { show("receipt"); return; }
+  if (!q.client.name.trim()) { toast("Preencha o nome do cliente para fazer o recibo deste orçamento"); $("c-name").focus(); return; }
+  if (receiptDraft() && q.id && receipt.quoteId === q.id) { show("receipt"); return; } // o recibo deste orçamento já está começado
+  if (receiptDraft() && Date.now() - recAsked > 5000) { // não perder um recibo de outro cliente que ainda não foi salvo
+    recAsked = Date.now();
+    toast(`O recibo de ${receipt.payer.name.trim() || "outro cliente"} ainda não foi salvo. Toque de novo em Recibo para fazer o deste orçamento.`);
+    return;
+  }
+  recAsked = 0;
+  const fresh = !q.id;
+  await saveQuote(true);
+  if (fresh) toast(`Orçamento nº ${pad4(quote.number)} salvo`);
+  receiptFromQuote(quote);
+}
+for (const id of ["nav-receipt", "top-receipt", "bar-receipt"]) $(id).onclick = goReceipt;
+
 async function saveReceipt(silent) {
   if (!receipt.id) {
     receipt.id = uid(); receipt.number = parseNum(profile.nextReceipt) || 1;
@@ -3100,6 +3140,7 @@ function show(view) {
   $("subnav").hidden = view === "home";
   $("tabs-quote").hidden = !["editor", "saved", "materials"].includes(view);
   $("tabs-receipt").hidden = !["receipt", "receipts"].includes(view);
+  $("nav-receipt").hidden = $("top-receipt").hidden = $("tabs-quote").hidden;
   $("bar").hidden = view !== "editor";
   $("rbar").hidden = view !== "receipt";
   if (view === "home") renderHome();
