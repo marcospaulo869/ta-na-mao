@@ -110,6 +110,14 @@ input.caps::placeholder { text-transform: none; }
 /* o total do item fica antes do × na tela larga (no HTML o × vem antes, por causa do layout do celular) */
 .item .tot { order: 1; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; padding-bottom: 9px; }
 .item .rm { order: 2; }
+/* Unidade: setinha no campo; tocar abre a lista de unidades (a lista fica invisível por cima do campo). Sempre em MAIÚSCULAS. */
+.unbox { position: relative; display: block; }
+.unbox input { padding-right: 28px; text-transform: uppercase; cursor: pointer; }
+.unbox::after { content: ""; position: absolute; right: 11px; top: 50%; width: 8px; height: 8px; border: solid var(--accent); border-width: 0 2px 2px 0; transform: translateY(-70%) rotate(45deg); pointer-events: none; }
+.unbox .unpick { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; margin: 0; opacity: 0; cursor: pointer; font-size: 16px; }
+.unbox:has(.unpick:focus-visible) input { outline: 2px solid var(--accent); outline-offset: 2px; }
+.unbox.typing .unpick, .unbox.typing::after { display: none; }
+.unbox.typing input { cursor: text; }
 .item .rm { border: 0; background: none; color: var(--danger); font-size: 1.3rem; cursor: pointer; padding-bottom: 6px; }
 .ihead { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .inum { font: 700 0.95rem var(--font-display); color: var(--accent); }
@@ -1268,7 +1276,7 @@ function addToCatalog(items, before, when, overwrite) {
     const desc = String(it.desc || "").replace(/\s+/g, " ").trim(), k = catKey(desc);
     if (k.length < 2 || desc.length > CAT_DESC_MAX || seen.has(k)) continue;
     seen.add(k);
-    const un = String(it.un || "").trim(), price = parseNum(it.price) > 0 ? cents(parseNum(it.price)) : 0;
+    const un = upUn(it.un), price = parseNum(it.price) > 0 ? cents(parseNum(it.price)) : 0;
     let e = byKey.get(k);
     if (!e) {
       if (same.has(k) || orig.has(k) || it.cat === k) continue; // it.cat: veio de uma sugestão e foi apagado ou renomeado na lista
@@ -1387,7 +1395,7 @@ function drawSugg() {
     const main = document.createElement("div"); main.className = "o-main";
     const t = document.createElement("div"); t.className = "o-desc"; markWords(t, x.e.desc, toks);
     const m = document.createElement("div"); m.className = "o-meta";
-    m.textContent = [x.e.un, x.e.price ? money(x.e.price) : "sem preço", x.e.uses > 1 ? `usado ${x.e.uses} vezes` : ""].filter(Boolean).join(" · ");
+    m.textContent = [upUn(x.e.un), x.e.price ? money(x.e.price) : "sem preço", x.e.uses > 1 ? `usado ${x.e.uses} vezes` : ""].filter(Boolean).join(" · ");
     main.append(t, m);
     o.append(main);
     o.onclick = () => pickSugg(x.e);
@@ -1414,7 +1422,7 @@ function pickSugg(e) {
   it.desc = e.desc; it.cat = catKey(e.desc); if (e.un) it.un = e.un; it.price = e.price > 0 ? e.price : 0; if (!parseNum(it.qty)) it.qty = 1;
   const d = $(`it-d-${i}`), u = $(`it-u-${i}`), q = $(`it-q-${i}`), p = $(`it-p-${i}`);
   if (d) d.value = it.desc;
-  if (u) u.value = it.un;
+  if (u) { u.value = upUn(it.un); u.syncUnit && u.syncUnit(); }
   if (p) p.value = it.price ? Number(it.price).toFixed(2).replace(".", ",") : "";
   if (q) q.value = numIn(it.qty);
   renderTotals();
@@ -1467,6 +1475,40 @@ function drawMaterials() {
     box.appendChild(more);
   }
 }
+/* ---------- Unidade: lista para escolher com um toque (UN, PAR, CX…) e "Outra" para digitar; sempre em MAIÚSCULAS ---------- */
+const UNITS = [["UN", "unidade"], ["PAR", "par"], ["CX", "caixa"], ["CH", "chapa"], ["M", "metro"], ["M²", "metro quadrado"], ["JG", "jogo"], ["KIT", "kit"], ["PCT", "pacote"], ["RL", "rolo"], ["BR", "barra"], ["TB", "tubo"], ["LT", "lata"], ["GL", "galão"], ["L", "litro"], ["KG", "quilo"]];
+const UNIT_OTHER = "__outra";
+const upUn = (s) => String(s || "").replace(/\s+/g, " ").trim().toUpperCase();
+// o campo de texto continua sendo o valor; por cima dele fica um select transparente que abre a lista nativa do celular
+function unitPicker(input) {
+  const box = document.createElement("span"); box.className = "unbox";
+  input.replaceWith(box); box.append(input);
+  input.setAttribute("autocapitalize", "characters"); input.tabIndex = -1;
+  const sel = document.createElement("select"); sel.className = "unpick";
+  sel.setAttribute("aria-label", "Unidade");
+  const opt = (v, t) => Object.assign(document.createElement("option"), { value: v, textContent: t });
+  for (const [u, n] of UNITS) sel.append(opt(u, `${u} (${n})`));
+  const own = opt("", ""); own.hidden = true; // unidade digitada que não está na lista
+  sel.append(own, opt(UNIT_OTHER, "Outra (digitar)…"));
+  box.append(sel);
+  // a lista sempre mostra o que está no campo, para escolher de novo a mesma unidade também valer
+  const sync = () => {
+    const cur = upUn(input.value), known = UNITS.some(([u]) => u === cur);
+    own.value = own.textContent = known ? "" : cur; own.hidden = known || !cur;
+    if (cur) sel.value = cur; else sel.selectedIndex = -1;
+  };
+  sync();
+  sel.addEventListener("focus", sync); sel.addEventListener("pointerdown", sync);
+  sel.onchange = () => {
+    if (sel.value === UNIT_OTHER) { box.classList.add("typing"); input.tabIndex = 0; input.focus(); input.select(); sync(); return; }
+    input.value = sel.value;
+    input.dispatchEvent(new Event("input", { bubbles: true })); input.dispatchEvent(new Event("change", { bubbles: true }));
+    sync();
+  };
+  input.addEventListener("blur", () => { box.classList.remove("typing"); input.tabIndex = -1; input.value = upUn(input.value); sync(); });
+  input.syncUnit = sync;
+  return input;
+}
 function matMeta(e) {
   if (!e) return "Novo: digite o nome para guardar.";
   const used = e.uses > 0 ? `Usado em ${e.uses} ${e.uses === 1 ? "orçamento" : "orçamentos"}` : "Ainda não usado em orçamento";
@@ -1482,7 +1524,8 @@ function matRow(e) {
     <button class="rm" type="button" title="Apagar material" aria-label="Apagar material">×</button>
     <div class="meta"></div>`;
   const d = row.querySelector(`#m-d-${n}`), u = row.querySelector(`#m-u-${n}`), p = row.querySelector(`#m-p-${n}`), rm = row.querySelector(".rm"), meta = row.querySelector(".meta");
-  d.value = e ? e.desc : ""; u.value = e ? e.un || "" : "un"; p.value = e ? priceIn(e.price) : "";
+  d.value = e ? e.desc : ""; u.value = e ? upUn(e.un) : "UN"; p.value = e ? priceIn(e.price) : "";
+  unitPicker(u);
   meta.textContent = matMeta(e);
   const find = () => catalog.items.find((x) => catKey(x.desc) === row.key);
   d.onchange = () => {
@@ -1501,7 +1544,7 @@ function matRow(e) {
     } else {
       if (catalog.items.length >= CAT_MAX) { toast(`A lista chegou a ${CAT_MAX} materiais. Apague os que não usa mais para criar outro.`); return; }
       row.key = k;
-      const fresh = { desc, un: u.value.trim(), price: parseNum(p.value) > 0 ? cents(parseNum(p.value)) : 0, uses: 0, last: "", edited: new Date().toISOString() };
+      const fresh = { desc, un: upUn(u.value), price: parseNum(p.value) > 0 ? cents(parseNum(p.value)) : 0, uses: 0, last: "", edited: new Date().toISOString() };
       mutateCatalog(() => { if (!catalog.items.some((y) => catKey(y.desc) === k)) catalog.items.push({ ...fresh }); });
       matCount();
     }
@@ -1515,7 +1558,7 @@ function matRow(e) {
   // o nome arrumado ao sair do campo (maiúsculas) também é guardado
   d.addEventListener("input", (ev) => { if (!ev.isTrusted && row.key) d.onchange(); });
   rm.addEventListener("pointerdown", () => { if (!row.key) row.cancel = true; });
-  u.onchange = () => { const un = u.value.trim(); u.value = un; edit((x) => { x.un = un; }); };
+  u.onchange = () => { const un = upUn(u.value); u.value = un; edit((x) => { x.un = un; }); };
   p.onchange = () => { const price = parseNum(p.value) > 0 ? cents(parseNum(p.value)) : 0; p.value = priceIn(price); edit((x) => { x.price = price; }); };
   rm.onclick = () => {
     if (!row.key) { row.remove(); if (!$("mat-list").querySelector(".mat")) drawMaterials(); return; }
@@ -1577,12 +1620,13 @@ function renderItems() {
       <div class="tot" id="it-t-${i}"></div>`;
     box.appendChild(row);
     const d = row.querySelector(`#it-d-${i}`), u = row.querySelector(`#it-u-${i}`), q = row.querySelector(`#it-q-${i}`), p = row.querySelector(`#it-p-${i}`);
-    d.value = it.desc; u.value = it.un; q.value = numIn(it.qty); p.value = it.price ? Number(it.price).toFixed(2).replace(".", ",") : "";
+    d.value = it.desc; u.value = upUn(it.un); q.value = numIn(it.qty); p.value = it.price ? Number(it.price).toFixed(2).replace(".", ",") : "";
     d.oninput = (e) => { it.desc = d.value; if (e.isTrusted) openSugg(i, d); };
     d.onkeydown = (e) => suggKey(e, d, i);
     d.onfocus = () => refreshCatalog();
     d.addEventListener("blur", () => setTimeout(() => { if (sug && sug.input === d && document.activeElement !== d) closeSugg(); }, 200));
-    u.oninput = () => { it.un = u.value; };
+    unitPicker(u);
+    u.oninput = () => { it.un = upUn(u.value); };
     q.oninput = () => { it.qty = parseNum(q.value); renderTotals(); };
     p.oninput = () => { it.price = parseNum(p.value); renderTotals(); };
     row.querySelector(".rm").onclick = () => { quote.items.splice(i, 1); renderItems(); renderTotals(); };
@@ -1603,7 +1647,7 @@ function renderItems() {
   });
 }
 function insertItemAt(i) {
-  quote.items.splice(i, 0, { desc: "", un: "un", qty: 1, price: 0 });
+  quote.items.splice(i, 0, { desc: "", un: "UN", qty: 1, price: 0 });
   renderItems(); renderTotals();
   centerItem(i, true);
   toast(`Novo item ${i + 1} inserido`);
@@ -1648,10 +1692,10 @@ const MIC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 const NUM_WORDS = { um: 1, uma: 1, dois: 2, duas: 2, "três": 3, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9, dez: 10, onze: 11, doze: 12, treze: 13, quatorze: 14, catorze: 14, quinze: 15, dezesseis: 16, dezessete: 17, dezoito: 18, dezenove: 19, vinte: 20, trinta: 30, quarenta: 40, cinquenta: 50, sessenta: 60, setenta: 70, oitenta: 80, noventa: 90, cem: 100, meia: 0.5, meio: 0.5 };
 // palavra falada -> abreviação usada na tabela
 const UNIT_WORDS = [
-  [/^(chapas?)$/, "ch"], [/^(unidades?|unids?|un|peças?|pecas?|pç|pc)$/, "un"], [/^(metros? quadrados?|m²|m2)$/, "m²"],
-  [/^(metros? lineares?|metros?|m)$/, "m"], [/^(pares?)$/, "par"], [/^(caixas?|cx)$/, "cx"], [/^(rolos?)$/, "rl"],
-  [/^(barras?)$/, "br"], [/^(litros?|l)$/, "L"], [/^(quilos?|kg|quilogramas?)$/, "kg"], [/^(pacotes?)$/, "pct"],
-  [/^(jogos?)$/, "jg"], [/^(kits?)$/, "kit"], [/^(latas?)$/, "lt"], [/^(galões|galoes|galão|galao)$/, "gl"], [/^(tubos?)$/, "tb"],
+  [/^(chapas?)$/, "CH"], [/^(unidades?|unids?|un|peças?|pecas?|pç|pc)$/, "UN"], [/^(metros? quadrados?|m²|m2)$/, "M²"],
+  [/^(metros? lineares?|metros?|m)$/, "M"], [/^(pares?)$/, "PAR"], [/^(caixas?|cx)$/, "CX"], [/^(rolos?)$/, "RL"],
+  [/^(barras?)$/, "BR"], [/^(litros?|l)$/, "L"], [/^(quilos?|kg|quilogramas?)$/, "KG"], [/^(pacotes?)$/, "PCT"],
+  [/^(jogos?)$/, "JG"], [/^(kits?)$/, "KIT"], [/^(latas?)$/, "LT"], [/^(galões|galoes|galão|galao)$/, "GL"], [/^(tubos?)$/, "TB"],
 ];
 const UNIT_RE = "metros? quadrados?|metros? lineares?|chapas?|unidades?|unids?|peças?|pecas?|metros?|pares?|caixas?|rolos?|barras?|litros?|quilos?|quilogramas?|pacotes?|jogos?|kits?|latas?|galões|galoes|galão|galao|tubos?|un|pç|pc|m²|m2|cx|kg|m";
 const unitOf = (w) => { w = w.toLowerCase(); for (const [re, u] of UNIT_WORDS) if (re.test(w)) return u; return ""; };
@@ -1698,7 +1742,7 @@ function parseDictation(raw) {
     .replace(/\s*[.;:]\s*/g, " ").replace(/\s*,\s*(?=\S)/g, ", ")
     .replace(/\s+/g, " ").replace(/^[\s,]+|[\s,]+$/g, "");
   // se a quantidade veio como "unidades" mas o material diz "chapa", a unidade é chapa
-  if ((!out.un || out.un === "un") && /\bchapas?\b/i.test(d)) { out.un = "ch"; d = d.replace(/\s*\bchapas?\b/i, "").replace(/\s+/g, " ").trim(); }
+  if ((!out.un || out.un === "UN") && /\bchapas?\b/i.test(d)) { out.un = "CH"; d = d.replace(/\s*\bchapas?\b/i, "").replace(/\s+/g, " ").trim(); }
   out.desc = d ? d.charAt(0).toUpperCase() + d.slice(1) : "";
   return out;
 }
@@ -1991,19 +2035,19 @@ $("q-obs").oninput = (e) => { quote.obs = e.target.value; };
 $("btn-obs-default").onclick = () => { quote.obs = profile.obs || DEFAULT_OBS; $("q-obs").value = quote.obs; };
 bindMic($("btn-add-voice"), () => {
   const last = quote.items[quote.items.length - 1];
-  if (!last || last.desc.trim() || parseNum(last.price)) quote.items.push({ desc: "", un: "un", qty: 1, price: 0 });
+  if (!last || last.desc.trim() || parseNum(last.price)) quote.items.push({ desc: "", un: "UN", qty: 1, price: 0 });
   renderItems(); renderTotals();
   const i = quote.items.length - 1;
   centerItem(i, false);
   return i;
 });
 $("btn-add").onclick = () => {
-  quote.items.push({ desc: "", un: "un", qty: 1, price: 0 });
+  quote.items.push({ desc: "", un: "UN", qty: 1, price: 0 });
   renderItems(); renderTotals();
   centerItem(quote.items.length - 1, true);
 };
 $("btn-add-out").onclick = () => {
-  quote.items.push({ desc: "", un: "un", qty: 1, price: 0, out: true });
+  quote.items.push({ desc: "", un: "UN", qty: 1, price: 0, out: true });
   renderItems(); renderTotals();
   centerItem(quote.items.length - 1, true);
 };
@@ -2011,7 +2055,7 @@ const newQuote = () => {
   const start = todayISO();
   quote = { id: "", number: 0, start, valid: addBizDays(start, validDays()),
     client: { name: "", doc: "", phone: "", email: "", cep: "", street: "", number: "", comp: "", district: "", city: "", uf: "", address: "" },
-    items: [{ desc: "", un: "un", qty: 1, price: 0 }], labor: 0, discount: 0, discountPct: 0, obs: profile.obs || DEFAULT_OBS, clientSig: "" };
+    items: [{ desc: "", un: "UN", qty: 1, price: 0 }], labor: 0, discount: 0, discountPct: 0, obs: profile.obs || DEFAULT_OBS, clientSig: "" };
   renderEditor(); window.scrollTo(0, 0);
   refreshCatalog(true);
 };
@@ -2159,7 +2203,7 @@ function buildPdf(q) {
   y = Math.max(cy, y + 12) + 4;
 
   const own = q.items.filter((it) => !it.out), outs = q.items.filter((it) => it.out);
-  const itemRows = (list) => list.map((it, i) => [i + 1, it.desc, it.un, String(parseNum(it.qty)).replace(".", ","), money(parseNum(it.price)), money(lineTotal(it))]);
+  const itemRows = (list) => list.map((it, i) => [i + 1, it.desc, upUn(it.un), String(parseNum(it.qty)).replace(".", ","), money(parseNum(it.price)), money(lineTotal(it))]);
   const COLS = { 0: { cellWidth: 9, halign: "center" }, 2: { cellWidth: 13, halign: "center" }, 3: { cellWidth: 15, halign: "right" }, 4: { cellWidth: 28, halign: "right" }, 5: { cellWidth: 30, halign: "right" } };
   if (own.length || !outs.length) {
     doc.autoTable({
