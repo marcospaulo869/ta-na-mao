@@ -259,6 +259,15 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 /* Botões "Recibo" no orçamento (topo, ao lado das abas, e barra de baixo, ao lado do Enviar PDF): cor do Recibo */
 .btn.rec { display: inline-flex; align-items: center; gap: 6px; border-color: var(--warm); background: var(--warm-soft); color: var(--ink); font-weight: 700; }
 .btn.rec svg { width: 18px; height: 18px; flex: none; color: var(--warm); }
+/* Recibo: porcentagem da entrada ou parcela (20%, 30%, 40%, 50% ou outra) */
+.pctrow { display: grid; gap: 6px; margin-top: 12px; }
+.pcts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(90px, 1.5fr); gap: 6px; }
+.pct { border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 700 0.95rem var(--font-body); border-radius: 999px; padding: 8px 4px; min-height: 44px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.pct[aria-pressed="true"] { background: var(--warm); border-color: var(--warm); color: var(--warm-ink); }
+.pctin { position: relative; display: block; }
+.pctin input { width: 100%; padding-left: 8px; padding-right: 30px; }
+@media (max-width: 350px) { .pct { font-size: 0.82rem; padding-inline: 2px; } }
+.pctin span { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 700; pointer-events: none; }
 .subnav .rec { margin-left: auto; align-self: stretch; border-radius: 999px; padding-inline: 14px; } /* mesma altura e formato das abas */
 /* no celular não cabe ao lado das abas: o botão do topo vai para a linha do "Meus dados" e a barra de baixo fica em duas linhas */
 #top-receipt { display: none; }
@@ -603,6 +612,14 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
           <option value="parcela">Parcela</option>
           <option value="saldo">Saldo final</option>
         </select></div>
+      </div>
+      <div class="pctrow" id="r-pctrow" hidden>
+        <label for="r-pct">Porcentagem do orçamento</label>
+        <div class="pcts" role="group" aria-label="Porcentagem">
+          <button type="button" class="pct" data-pct="20">20%</button><button type="button" class="pct" data-pct="30">30%</button><button type="button" class="pct" data-pct="40">40%</button><button type="button" class="pct" data-pct="50">50%</button>
+          <span class="pctin"><input id="r-pct" class="num" inputmode="decimal" placeholder="Outra" aria-label="Outra porcentagem"><span aria-hidden="true">%</span></span>
+        </div>
+        <p class="hint" id="r-pct-res"></p>
       </div>
     </section>
     <section class="card">
@@ -2838,7 +2855,8 @@ function extenso(v) {
 /* ---------- Recibos ---------- */
 let receipts = [];
 const KIND = { total: "Pagamento total", entrada: "Entrada", parcela: "Parcela", saldo: "Saldo final" };
-const blankReceipt = () => ({ id: "", number: 0, date: todayISO(), kind: "total", payer: { name: "", doc: "", phone: "", email: "" }, amount: 0, method: "Pix", desc: "", quoteId: "", quoteNumber: 0, quoteTotal: 0, mySig: profile.signature || "", payerSig: "" });
+const kindLabel = (r) => (KIND[r.kind] || "") + (r.pct && (r.kind === "entrada" || r.kind === "parcela") ? ` (${fmtPct(r.pct)}%)` : "");
+const blankReceipt = () => ({ id: "", number: 0, date: todayISO(), kind: "total", pct: 0, payer: { name: "", doc: "", phone: "", email: "" }, amount: 0, method: "Pix", desc: "", quoteId: "", quoteNumber: 0, quoteTotal: 0, mySig: profile.signature || "", payerSig: "" });
 let receipt = blankReceipt();
 const sigRMe = SigPad($("sig-r-me"), () => { receipt.mySig = sigRMe.value(); });
 const sigRPayer = SigPad($("sig-r-payer"), () => { receipt.payerSig = sigRPayer.value(); });
@@ -2858,7 +2876,38 @@ function renderReceiptAmount() {
     $("r-link").textContent = `Orçamento nº ${pad4(receipt.quoteNumber)}: total ${money(receipt.quoteTotal)}, já recebido ${money(before)}, saldo depois deste recibo ${money(Math.max(0, left))}.`;
   }
   $("r-link").hidden = !receipt.quoteId;
+  renderReceiptPct();
 }
+// O tipo do pagamento ajusta o valor sozinho (pedido do Marcos, 06/10/2026), quando o recibo veio de um orçamento:
+// Pagamento total e Saldo final = o que falta receber; Entrada e Parcela = a porcentagem escolhida do valor total
+// do orçamento (50% se nenhuma foi escolhida), sem passar do que falta receber. O valor continua podendo ser digitado.
+const R_PCTS = [...document.querySelectorAll("#r-pctrow [data-pct]")].map((b) => +b.dataset.pct);
+const rLeft = () => Math.max(0, cents(receipt.quoteTotal - receivedFor(receipt.quoteId, receipt.id)));
+const rUsesPct = () => !!receipt.quoteId && receipt.quoteTotal > 0 && (receipt.kind === "entrada" || receipt.kind === "parcela");
+function applyReceiptKind() {
+  if (!receipt.quoteId || !(receipt.quoteTotal > 0)) return;
+  const left = rLeft();
+  if (rUsesPct()) {
+    receipt.pct = parseNum(receipt.pct) || 50;
+    const v = cents(receipt.quoteTotal * receipt.pct / 100);
+    receipt.amount = left > 0 ? Math.min(v, left) : v;
+  } else { receipt.pct = 0; receipt.amount = left; }
+  $("r-amount").value = numIn(receipt.amount);
+  renderReceiptAmount();
+}
+function renderReceiptPct() {
+  const on = rUsesPct(); $("r-pctrow").hidden = !on;
+  if (!on) return;
+  const pct = parseNum(receipt.pct), v = parseNum(receipt.amount);
+  for (const b of document.querySelectorAll("#r-pctrow [data-pct]")) b.setAttribute("aria-pressed", String(+b.dataset.pct === pct));
+  if (document.activeElement !== $("r-pct")) $("r-pct").value = pct && !R_PCTS.includes(pct) ? fmtPct(pct) : "";
+  $("r-pct-res").textContent = pct
+    ? `${fmtPct(pct)}% de ${money(receipt.quoteTotal)} = ${money(v)}${v < cents(receipt.quoteTotal * pct / 100) ? " (o que falta receber)" : ""}`
+    : `Valor digitado: ${fmtPct(Math.round(v / receipt.quoteTotal * 1000) / 10)}% do valor do orçamento.`;
+}
+for (const b of document.querySelectorAll("#r-pctrow [data-pct]")) b.onclick = () => { receipt.pct = +b.dataset.pct; $("r-pct").value = ""; applyReceiptKind(); };
+$("r-pct").oninput = (e) => { const p = parseNum(e.target.value); if (p > 0 && p <= 100) { receipt.pct = p; applyReceiptKind(); } };
+$("r-pct").addEventListener("change", () => renderReceiptPct());
 function renderReceipt() {
   fitSoon();
   $("r-title").textContent = receipt.number ? `Recibo nº ${pad4(receipt.number)}` : "Novo recibo";
@@ -2870,10 +2919,10 @@ function renderReceipt() {
   renderReceiptAmount();
 }
 $("r-date").onchange = (e) => { receipt.date = e.target.value; };
-$("r-kind").onchange = (e) => { receipt.kind = e.target.value; };
+$("r-kind").onchange = (e) => { receipt.kind = e.target.value; applyReceiptKind(); };
 $("r-method").onchange = (e) => { receipt.method = e.target.value; };
 for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).oninput = (e) => { receipt.payer[k] = e.target.value; if (k === "phone") markOwnPhone("r-phone"); };
-$("r-amount").oninput = (e) => { receipt.amount = parseNum(e.target.value); renderReceiptAmount(); };
+$("r-amount").oninput = (e) => { receipt.amount = parseNum(e.target.value); receipt.pct = 0; renderReceiptAmount(); }; // valor digitado: sem porcentagem
 $("r-desc").oninput = (e) => { receipt.desc = e.target.value; };
 const newReceipt = () => { receipt = blankReceipt(); renderReceipt(); window.scrollTo(0, 0); };
 const receiptDraft = () => !receipt.id && !!(receipt.payer.name.trim() || parseNum(receipt.amount) > 0);
@@ -2944,7 +2993,7 @@ function buildReceiptPdf(r) {
   doc.setFontSize(8); doc.setTextColor(...MUT);
   doc.text("DATA", M, y + 2); doc.text("TIPO", M + 38, y + 2); doc.text("FORMA DE PAGAMENTO", M + 76, y + 2);
   doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); doc.setTextColor(...INK);
-  doc.text(fmtDate(r.date), M, y + 8); doc.text(KIND[r.kind] || "", M + 38, y + 8); doc.text(r.method, M + 76, y + 8);
+  doc.text(fmtDate(r.date), M, y + 8); doc.text(kindLabel(r), M + 38, y + 8); doc.text(r.method, M + 76, y + 8);
   y += 34;
   const who = bizName(profile) || "o prestador";
   const payer = r.payer.name + (r.payer.doc ? `, CPF/CNPJ ${r.payer.doc}` : "");
@@ -3007,7 +3056,7 @@ function renderReceipts() {
   if (!list.length) { box.innerHTML = `<p class="hint">Nenhum recibo ainda. Toque em "+ Novo recibo" ou use "Gerar recibo" num orçamento salvo.</p>`; return; }
   for (const r of list) {
     const el = document.createElement("div"); el.className = "q";
-    el.innerHTML = `<div><strong></strong><span class="pill">${KIND[r.kind] || ""}</span>
+    el.innerHTML = `<div><strong></strong><span class="pill">${kindLabel(r)}</span>
       <div class="meta">Nº ${pad4(r.number)} · ${fmtDate(r.date)} · ${r.method}${r.quoteNumber ? " · Orçamento nº " + pad4(r.quoteNumber) : ""}</div></div>
       <div class="val">${money(parseNum(r.amount))}</div>
       <div class="row" style="grid-column:1/-1">
