@@ -21,8 +21,7 @@
   --accent-ink: #FFFFFF;
   --accent-soft: #E1EEEF;
   --danger: #A8321F;
-  --out: #C62828;
-  --out-soft: #FDECEC;
+  --out: #2E7D32;
   --sample: #8A5A00;
   --sample-soft: #FBF1DC;
   --warm: #E2892B;
@@ -36,13 +35,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0E1417; --surface: #162026; --ink: #E4EDEF; --muted: #93A5AB; --line: #2A3940;
-    --accent: #6FBDBE; --accent-ink: #0E1417; --accent-soft: #1D3337; --danger: #F08A76; --out: #FF7B72; --out-soft: #3A1A1A;
+    --accent: #6FBDBE; --accent-ink: #0E1417; --accent-soft: #1D3337; --danger: #F08A76; --out: #6CD47E;
     --sample: #F2C26B; --sample-soft: #3A2E15; --warm: #F0A04B; --warm-ink: #2A1704; --warm-soft: #3B2914; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0E1417; --surface: #162026; --ink: #E4EDEF; --muted: #93A5AB; --line: #2A3940;
-  --accent: #6FBDBE; --accent-ink: #0E1417; --accent-soft: #1D3337; --danger: #F08A76; --out: #FF7B72; --out-soft: #3A1A1A;
+  --accent: #6FBDBE; --accent-ink: #0E1417; --accent-soft: #1D3337; --danger: #F08A76; --out: #6CD47E;
   --sample: #F2C26B; --sample-soft: #3A2E15; --warm: #F0A04B; --warm-ink: #2A1704; --warm-soft: #3B2914; color-scheme: dark;
 }
 *, *::before, *::after { box-sizing: border-box; }
@@ -139,9 +138,8 @@ input.caps::placeholder { text-transform: none; }
 .ins:hover::before, .ins:hover::after { opacity: 1; }
 .itools { display: flex; gap: 6px; align-items: center; margin-left: auto; }
 .ihead .outtag { margin-right: auto; }
-/* Comprar fora: botão, item e soma em vermelho */
-.btn.out { border-color: var(--out); color: var(--out); background: var(--out-soft); font-weight: 700; letter-spacing: 0.02em; }
-.item.out { border-left: 4px solid var(--out); padding-left: 10px; background: linear-gradient(90deg, var(--out-soft), transparent 70%); border-radius: 6px 0 0 6px; }
+/* Comprar fora: só as letras e números em verde; o fundo fica igual ao resto da página (pedido do Marcos, 06/10/2026) */
+.btn.out { border-color: var(--out); color: var(--out); font-weight: 700; letter-spacing: 0.02em; }
 .item.out .inum, .item.out .tot, .item.out input { color: var(--out); }
 /* Botões de adicionar sempre à vista: presos logo acima da barra do total enquanto a lista de materiais está na tela */
 .addrow { position: sticky; bottom: var(--barh, 64px); z-index: 4; margin: 0 -16px; padding: 10px 16px; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -10px 14px -12px rgba(0, 0, 0, 0.45); }
@@ -2183,12 +2181,12 @@ function buildPdf(q) {
   if (t.discount) row(t.pct ? `Desconto (${fmtPct(t.pct)}%)` : "Desconto", "- " + money(t.discount));
   doc.setDrawColor(...LINE); doc.line(130, y - 3.5, W - M, y - 3.5); y += 1.5;
   row(outs.length ? "SUBTOTAL" : "TOTAL", money(outs.length ? t.subtotal : t.total), true);
-  // Comprar fora: lista em vermelho com a soma só desses itens; embaixo, o VALOR TOTAL (subtotal + comprar fora)
+  // Comprar fora: mesma tabela dos materiais, só as letras e números em verde, com a soma só desses itens; embaixo, o VALOR TOTAL (subtotal + comprar fora)
   if (outs.length) {
-    const RED = [198, 40, 40], RED_SOFT = [253, 236, 236];
+    const GREEN = [46, 125, 50];
     y += 4;
     if (y > 245) { doc.addPage(); header(); y = 42; }
-    doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(...RED);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(...GREEN);
     doc.text("COMPRAR FORA", M, y);
     doc.autoTable({
       startY: y + 3, margin: { left: M, right: M, top: 38 },
@@ -2196,17 +2194,17 @@ function buildPdf(q) {
       body: itemRows(outs),
       foot: [[{ content: "Total para comprar fora", colSpan: 5, styles: { halign: "right" } }, { content: money(t.outside), styles: { halign: "right" } }]],
       showFoot: "lastPage",
-      styles: { font: "helvetica", fontSize: 9, cellPadding: 2.2, textColor: RED, lineColor: [240, 190, 190], lineWidth: 0.2 },
-      headStyles: { fillColor: RED, textColor: [255, 255, 255], fontStyle: "bold" },
-      footStyles: { fillColor: RED_SOFT, textColor: RED, fontStyle: "bold", fontSize: 10 },
-      alternateRowStyles: { fillColor: [255, 247, 247] },
+      styles: { font: "helvetica", fontSize: 9, cellPadding: 2.2, textColor: GREEN, lineColor: LINE, lineWidth: 0.2 },
+      headStyles: { fillColor: HEAD, textColor: HEADTXT, fontStyle: "bold" },
+      footStyles: { fillColor: [255, 255, 255], textColor: GREEN, fontStyle: "bold", fontSize: 10 },
+      alternateRowStyles: { fillColor: ALT },
       columnStyles: COLS,
       didDrawPage: (d) => { if (d.pageNumber > 1) header(); },
     });
     y = doc.lastAutoTable.finalY + 7;
     if (y > 262) { doc.addPage(); header(); y = 42; }
     row("Subtotal", money(t.subtotal));
-    doc.setTextColor(198, 40, 40); doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+    doc.setTextColor(...GREEN); doc.setFont("helvetica", "bold"); doc.setFontSize(10);
     doc.text("Comprar fora", 130, y); doc.text(money(t.outside), W - M, y, { align: "right" }); y += 5.5;
     doc.setDrawColor(...LINE); doc.line(130, y - 3.5, W - M, y - 3.5); y += 1.5;
     row("VALOR TOTAL", money(t.total), true);
