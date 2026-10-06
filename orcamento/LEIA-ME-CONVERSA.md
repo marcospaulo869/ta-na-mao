@@ -12,7 +12,7 @@ Para continuar, peça ao Claude: "leia a pasta orcamento do ta-na-mao e vamos re
 
 ### O que já está pronto
 1. **Entrada:** tela de boas-vindas com o selo da Madeira Forte e reflexo de luz; cadastro completo da empresa (CPF/CNPJ, IE, Instagram, endereço, logomarca, assinatura); senha com olhinho; entrar com a digital; apagar tudo e recomeçar.
-2. **Orçamento:** cliente com endereço em campos e botões de copiar; validade em dias úteis; materiais com sugestões da aba Materiais; nome do material em MAIÚSCULAS com acentos automáticos; ditado "Segure e fale"; inserir e reordenar itens; mão de obra; desconto em %; pré-contrato; assinatura do cliente.
+2. **Orçamento:** botão "COMPRAR FORA" (06/10/2026): itens em vermelho, com soma própria, fora do total do orçamento, e no PDF numa lista vermelha separada com "Total para comprar fora"; cliente com endereço em campos e botões de copiar; validade em dias úteis; materiais com sugestões da aba Materiais; nome do material em MAIÚSCULAS com acentos automáticos; ditado "Segure e fale"; inserir e reordenar itens; mão de obra; desconto em %; pré-contrato; assinatura do cliente.
 3. **Recibo:** valor por extenso; tipo (total, entrada, parcela, saldo); forma de pagamento; assinaturas; gerar a partir de um orçamento com o saldo que falta.
 4. **PDF:** cabeçalho com logomarca e dados; QR Code (WhatsApp, Instagram ou "Orçamento com valor estimado", que abre o link de autoatendimento colado em Meus dados) com o selo dourado no meio; estilo preto e dourado ou verde; assinaturas em azul BIC.
 5. **Envio:** tela de compartilhar do celular com o PDF anexado (botão verde "Enviar o PDF"); no notebook, salva o PDF e abre a conversa no WhatsApp.

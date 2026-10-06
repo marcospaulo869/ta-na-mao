@@ -21,6 +21,8 @@
   --accent-ink: #FFFFFF;
   --accent-soft: #E1EEEF;
   --danger: #A8321F;
+  --out: #C62828;
+  --out-soft: #FDECEC;
   --sample: #8A5A00;
   --sample-soft: #FBF1DC;
   --warm: #E2892B;
@@ -34,13 +36,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0E1417; --surface: #162026; --ink: #E4EDEF; --muted: #93A5AB; --line: #2A3940;
-    --accent: #6FBDBE; --accent-ink: #0E1417; --accent-soft: #1D3337; --danger: #F08A76;
+    --accent: #6FBDBE; --accent-ink: #0E1417; --accent-soft: #1D3337; --danger: #F08A76; --out: #FF7B72; --out-soft: #3A1A1A;
     --sample: #F2C26B; --sample-soft: #3A2E15; --warm: #F0A04B; --warm-ink: #2A1704; --warm-soft: #3B2914; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0E1417; --surface: #162026; --ink: #E4EDEF; --muted: #93A5AB; --line: #2A3940;
-  --accent: #6FBDBE; --accent-ink: #0E1417; --accent-soft: #1D3337; --danger: #F08A76;
+  --accent: #6FBDBE; --accent-ink: #0E1417; --accent-soft: #1D3337; --danger: #F08A76; --out: #FF7B72; --out-soft: #3A1A1A;
   --sample: #F2C26B; --sample-soft: #3A2E15; --warm: #F0A04B; --warm-ink: #2A1704; --warm-soft: #3B2914; color-scheme: dark;
 }
 *, *::before, *::after { box-sizing: border-box; }
@@ -133,6 +135,13 @@ input.caps::placeholder { text-transform: none; }
 .ins::before, .ins::after { content: ""; flex: 1; border-top: 1px dashed var(--accent); opacity: 0.45; }
 .ins:hover::before, .ins:hover::after { opacity: 1; }
 .itools { display: flex; gap: 6px; align-items: center; }
+/* Comprar fora: botão, item e soma em vermelho */
+.btn.out { border-color: var(--out); color: var(--out); background: var(--out-soft); font-weight: 700; letter-spacing: 0.02em; }
+.item.out { border-left: 4px solid var(--out); padding-left: 10px; background: linear-gradient(90deg, var(--out-soft), transparent 70%); border-radius: 6px 0 0 6px; }
+.item.out .inum, .item.out .tot, .item.out input { color: var(--out); }
+.outtag { border: 1px solid var(--out); background: none; color: var(--out); font: 700 0.72rem var(--font-body); letter-spacing: 0.04em; border-radius: 999px; padding: 3px 8px; cursor: pointer; white-space: nowrap; }
+.totals .outsum { color: var(--out); font-weight: 700; border-top: 1px dashed var(--out); padding-top: 6px; margin-top: 6px; }
+.totals .outsum small { display: block; font-weight: 400; font-size: 0.8rem; }
 .mv { width: 34px; height: 34px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; cursor: pointer; font-size: 1rem; }
 .mv:disabled { opacity: 0.35; cursor: default; }
 .dict { grid-column: 1 / -1; display: grid; gap: 6px; background: var(--warm-soft); border-radius: 10px; padding: 10px; }
@@ -449,7 +458,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <h2>Materiais</h2>
       <p class="hint">Digite o começo do nome (ex.: "mdf br") e toque na sugestão para preencher unidade e preço. Os materiais vêm da aba Materiais, e os novos entram lá quando você salva o orçamento.</p>
       <div class="items" id="items"></div>
-      <div class="row"><button class="btn" id="btn-add">+ Adicionar material</button><button class="mic" id="btn-add-voice" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar novo item</span></button></div>
+      <div class="row"><button class="btn" id="btn-add">+ Adicionar material</button><button class="btn out" id="btn-add-out" type="button">COMPRAR FORA</button><button class="mic" id="btn-add-voice" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar novo item</span></button></div>
       <div class="grid2">
         <div class="field"><label for="q-labor">Mão de obra (R$)</label><input id="q-labor" class="num" inputmode="decimal"></div>
         <div class="field"><label for="q-discount">Desconto (%)</label><input id="q-discount" class="num" inputmode="decimal" placeholder="0"></div>
@@ -1174,11 +1183,13 @@ const lineTotal = (it) => parseNum(it.qty) * parseNum(it.price);
 // Desconto em % sobre materiais + mão de obra (discountPct). Orçamentos antigos guardam o desconto em R$ (discount) e continuam valendo até mudar o campo.
 const clampPct = (n) => Math.min(100, Math.max(0, Number.isFinite(n) ? n : 0));
 const fmtPct = (n) => String(Math.round(n * 100) / 100).replace(".", ",");
+// Itens marcados "Comprar fora" (it.out) têm soma própria e não entram no total do orçamento
 const calc = (q) => {
-  const materials = q.items.reduce((s, it) => s + lineTotal(it), 0);
+  const materials = q.items.reduce((s, it) => s + (it.out ? 0 : lineTotal(it)), 0);
+  const outside = q.items.reduce((s, it) => s + (it.out ? lineTotal(it) : 0), 0);
   const labor = parseNum(q.labor), pct = typeof q.discountPct === "number" ? clampPct(q.discountPct) : null;
   const discount = pct != null ? cents((materials + labor) * pct / 100) : parseNum(q.discount);
-  return { materials, labor, discount, pct, total: Math.max(0, materials + labor - discount) };
+  return { materials, labor, discount, pct, outside, total: Math.max(0, materials + labor - discount) };
 };
 const fillVars = (text, q, t) => String(text || "")
   .replaceAll("{CLIENTE}", q.client.name || "o cliente")
@@ -1506,9 +1517,9 @@ function renderItems() {
       ins.onclick = () => insertItemAt(i);
       box.appendChild(ins);
     }
-    const row = document.createElement("div"); row.className = "item";
+    const row = document.createElement("div"); row.className = it.out ? "item out" : "item";
     row.innerHTML = `
-      <div class="ihead"><span class="inum">Item ${i + 1}</span><span class="itools"><button class="mv" type="button" data-d="-1" title="Subir" aria-label="Subir item ${i + 1}" ${i === 0 ? "disabled" : ""}>↑</button><button class="mv" type="button" data-d="1" title="Descer" aria-label="Descer item ${i + 1}" ${i === quote.items.length - 1 ? "disabled" : ""}>↓</button><button class="mic" type="button" aria-label="Ditar o item ${i + 1}">${MIC_SVG}<span></span></button></span></div>
+      <div class="ihead"><span class="inum">Item ${i + 1}</span><span class="itools">${it.out ? `<button class="outtag" type="button" data-a="out" title="Tirar de Comprar fora" aria-label="Item ${i + 1} é para comprar fora. Tocar tira a marcação">COMPRAR FORA ✕</button>` : ""}<button class="mv" type="button" data-d="-1" title="Subir" aria-label="Subir item ${i + 1}" ${i === 0 ? "disabled" : ""}>↑</button><button class="mv" type="button" data-d="1" title="Descer" aria-label="Descer item ${i + 1}" ${i === quote.items.length - 1 ? "disabled" : ""}>↓</button><button class="mic" type="button" aria-label="Ditar o item ${i + 1}">${MIC_SVG}<span></span></button></span></div>
       <div class="dict" hidden>
         <p class="dict-st" role="status" aria-live="polite"></p>
         <p class="hint">Fale assim: "MDF chapa branco TX 18 milímetros, quatro unidades, valor 289,90".</p>
@@ -1532,6 +1543,8 @@ function renderItems() {
     q.oninput = () => { it.qty = parseNum(q.value); renderTotals(); };
     p.oninput = () => { it.price = parseNum(p.value); renderTotals(); };
     row.querySelector(".rm").onclick = () => { quote.items.splice(i, 1); renderItems(); renderTotals(); };
+    const tag = row.querySelector('[data-a="out"]');
+    if (tag) tag.onclick = () => { delete it.out; renderItems(); renderTotals(); toast(`Item ${i + 1} voltou para os seus materiais`); };
     bindMic(row.querySelector(".mic"), () => i);
     for (const mv of row.querySelectorAll(".mv")) mv.onclick = () => {
       const j = i + Number(mv.dataset.d); if (j < 0 || j >= quote.items.length) return;
@@ -1864,7 +1877,8 @@ function renderTotals() {
     <div><span>Materiais</span><span>${money(t.materials)}</span></div>
     <div><span>Mão de obra</span><span>${money(t.labor)}</span></div>
     <div><span>Desconto${t.pct ? ` (${fmtPct(t.pct)}%)` : ""}</span><span>− ${money(t.discount)}</span></div>
-    <div class="grand"><span>Total</span><span>${money(t.total)}</span></div>`;
+    <div class="grand"><span>Total</span><span>${money(t.total)}</span></div>${quote.items.some((it) => it.out) ? `
+    <div class="outsum"><span>Comprar fora<small>Não entra no total do orçamento</small></span><span>${money(t.outside)}</span></div>` : ""}`;
   $("bar-total").textContent = money(t.total);
 }
 function renderEditor() {
@@ -1931,6 +1945,11 @@ bindMic($("btn-add-voice"), () => {
 });
 $("btn-add").onclick = () => {
   quote.items.push({ desc: "", un: "un", qty: 1, price: 0 });
+  renderItems(); renderTotals();
+  centerItem(quote.items.length - 1, true);
+};
+$("btn-add-out").onclick = () => {
+  quote.items.push({ desc: "", un: "un", qty: 1, price: 0, out: true });
   renderItems(); renderTotals();
   centerItem(quote.items.length - 1, true);
 };
@@ -2085,17 +2104,22 @@ function buildPdf(q) {
   if (q.client.address) { const lines = doc.splitTextToSize(q.client.address, 105); doc.text(lines, M, cy); cy += 4 * lines.length + 0.5; }
   y = Math.max(cy, y + 12) + 4;
 
-  doc.autoTable({
-    startY: y, margin: { left: M, right: M, top: 38 },
-    head: [["#", "Material", "Un.", "Qtd.", "Preço un.", "Total"]],
-    body: q.items.map((it, i) => [i + 1, it.desc, it.un, String(parseNum(it.qty)).replace(".", ","), money(parseNum(it.price)), money(lineTotal(it))]),
-    styles: { font: "helvetica", fontSize: 9, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
-    headStyles: { fillColor: HEAD, textColor: HEADTXT, fontStyle: "bold" },
-    alternateRowStyles: { fillColor: ALT },
-    columnStyles: { 0: { cellWidth: 9, halign: "center" }, 2: { cellWidth: 13, halign: "center" }, 3: { cellWidth: 15, halign: "right" }, 4: { cellWidth: 28, halign: "right" }, 5: { cellWidth: 30, halign: "right" } },
-    didDrawPage: (d) => { if (d.pageNumber > 1) header(); },
-  });
-  y = doc.lastAutoTable.finalY + 6;
+  const own = q.items.filter((it) => !it.out), outs = q.items.filter((it) => it.out);
+  const itemRows = (list) => list.map((it, i) => [i + 1, it.desc, it.un, String(parseNum(it.qty)).replace(".", ","), money(parseNum(it.price)), money(lineTotal(it))]);
+  const COLS = { 0: { cellWidth: 9, halign: "center" }, 2: { cellWidth: 13, halign: "center" }, 3: { cellWidth: 15, halign: "right" }, 4: { cellWidth: 28, halign: "right" }, 5: { cellWidth: 30, halign: "right" } };
+  if (own.length || !outs.length) {
+    doc.autoTable({
+      startY: y, margin: { left: M, right: M, top: 38 },
+      head: [["#", "Material", "Un.", "Qtd.", "Preço un.", "Total"]],
+      body: itemRows(own),
+      styles: { font: "helvetica", fontSize: 9, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
+      headStyles: { fillColor: HEAD, textColor: HEADTXT, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: ALT },
+      columnStyles: COLS,
+      didDrawPage: (d) => { if (d.pageNumber > 1) header(); },
+    });
+    y = doc.lastAutoTable.finalY + 6;
+  }
   if (y > 250) { doc.addPage(); header(); y = 42; }
   const row = (label, val, bold) => {
     doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setFontSize(bold ? 12 : 10);
@@ -2107,6 +2131,31 @@ function buildPdf(q) {
   if (t.discount) row(t.pct ? `Desconto (${fmtPct(t.pct)}%)` : "Desconto", "- " + money(t.discount));
   doc.setDrawColor(...LINE); doc.line(130, y - 3.5, W - M, y - 3.5); y += 1.5;
   row("TOTAL", money(t.total), true);
+  // Comprar fora: lista em vermelho com a soma só desses itens (não entra no TOTAL acima)
+  if (outs.length) {
+    const RED = [198, 40, 40], RED_SOFT = [253, 236, 236];
+    y += 4;
+    if (y > 245) { doc.addPage(); header(); y = 42; }
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(...RED);
+    doc.text("COMPRAR FORA", M, y);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
+    doc.text("Itens que não entram no total deste orçamento.", M + 33, y);
+    doc.autoTable({
+      startY: y + 3, margin: { left: M, right: M, top: 38 },
+      head: [["#", "Material", "Un.", "Qtd.", "Preço un.", "Total"]],
+      body: itemRows(outs),
+      foot: [[{ content: "Total para comprar fora", colSpan: 5, styles: { halign: "right" } }, { content: money(t.outside), styles: { halign: "right" } }]],
+      showFoot: "lastPage",
+      styles: { font: "helvetica", fontSize: 9, cellPadding: 2.2, textColor: RED, lineColor: [240, 190, 190], lineWidth: 0.2 },
+      headStyles: { fillColor: RED, textColor: [255, 255, 255], fontStyle: "bold" },
+      footStyles: { fillColor: RED_SOFT, textColor: RED, fontStyle: "bold", fontSize: 10 },
+      alternateRowStyles: { fillColor: [255, 247, 247] },
+      columnStyles: COLS,
+      didDrawPage: (d) => { if (d.pageNumber > 1) header(); },
+    });
+    y = doc.lastAutoTable.finalY + 2;
+  }
+  if (y > 270) { doc.addPage(); header(); y = 42; }
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...MUT);
   doc.text(`Orçamento válido até ${fmtDate(q.valid)}. Condições e assinaturas na página de observações.`, M, y + 4);
 
