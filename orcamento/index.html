@@ -640,7 +640,9 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
         </select></div>
       </div>
       <div><div class="amount-big" id="r-amount-show">R$ 0,00</div><div class="extenso" id="r-extenso"></div></div>
-      <div class="field"><label for="r-desc">Referente a</label><textarea id="r-desc" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true" style="min-height:90px" placeholder="Ex.: entrada do serviço de marcenaria da cozinha planejada"></textarea></div>
+      <div class="field"><label for="r-serv">Mão de obra de fabricação de</label><input id="r-serv" autocomplete="off" autocapitalize="none" autocorrect="on" spellcheck="true" placeholder="Ex.: móveis planejados da cozinha"></div>
+      <div class="field"><label for="r-desc">Referente a</label><textarea id="r-desc" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true" style="min-height:90px" placeholder="Ex.: entrada do serviço de marcenaria da cozinha planejada"></textarea>
+        <p class="hint" id="r-desc-hint">O texto se ajusta sozinho ao tipo, à porcentagem e ao valor.</p><button class="btn small" id="r-desc-auto" type="button" hidden>Voltar ao texto automático</button></div>
     </section>
     <section class="card">
       <h2>Assinaturas</h2>
@@ -2856,7 +2858,7 @@ function extenso(v) {
 let receipts = [];
 const KIND = { total: "Pagamento total", entrada: "Entrada", parcela: "Parcela", saldo: "Saldo final" };
 const kindLabel = (r) => (KIND[r.kind] || "") + (r.pct && (r.kind === "entrada" || r.kind === "parcela") ? ` (${fmtPct(r.pct)}%)` : "");
-const blankReceipt = () => ({ id: "", number: 0, date: todayISO(), kind: "total", pct: 0, payer: { name: "", doc: "", phone: "", email: "" }, amount: 0, method: "Pix", desc: "", quoteId: "", quoteNumber: 0, quoteTotal: 0, mySig: profile.signature || "", payerSig: "" });
+const blankReceipt = () => ({ id: "", number: 0, date: todayISO(), kind: "total", pct: 0, serv: "", descAuto: true, payer: { name: "", doc: "", phone: "", email: "" }, amount: 0, method: "Pix", desc: "", quoteId: "", quoteNumber: 0, quoteTotal: 0, mySig: profile.signature || "", payerSig: "" });
 let receipt = blankReceipt();
 const sigRMe = SigPad($("sig-r-me"), () => { receipt.mySig = sigRMe.value(); });
 const sigRPayer = SigPad($("sig-r-payer"), () => { receipt.payerSig = sigRPayer.value(); });
@@ -2877,7 +2879,28 @@ function renderReceiptAmount() {
   }
   $("r-link").hidden = !receipt.quoteId;
   renderReceiptPct();
+  renderReceiptDesc();
 }
+// Texto do "Referente a" (pedido do Marcos, 06/10/2026): fica pronto e se ajusta sozinho ao tipo, à porcentagem e aos valores;
+// ex.: "Entrada de 50% (R$ 5.366,63) do valor total de R$ 10.733,26 do serviço de mão de obra de fabricação de móveis da cozinha
+// (orçamento nº 0001)." Se a pessoa mudar o texto à mão, ele para de se ajustar até tocar em "Voltar ao texto automático".
+const LEAD = { total: "Pagamento", entrada: "Entrada", parcela: "Parcela", saldo: "Saldo final" };
+function receiptAutoDesc(r) {
+  const v = parseNum(r.amount), T = r.quoteId ? parseNum(r.quoteTotal) : 0;
+  if (!(v > 0)) return "";
+  const serv = (r.serv || "").trim().replace(/\.$/, "") || "________", lead = LEAD[r.kind] || "Pagamento";
+  const pct = T > 0 ? (parseNum(r.pct) && (r.kind === "entrada" || r.kind === "parcela") && cents(T * parseNum(r.pct) / 100) === v ? parseNum(r.pct) : Math.round(v / T * 10000) / 100) : 0;
+  const part = !T ? `${lead} de ${money(v)}` : pct === 100 ? `${lead} de 100% do valor total de ${money(T)}` : `${lead} de ${fmtPct(pct)}% (${money(v)}) do valor total de ${money(T)}`;
+  return `${part} do serviço de mão de obra de fabricação de ${serv}${r.quoteNumber ? ` (orçamento nº ${pad4(r.quoteNumber)})` : ""}.`;
+}
+function renderReceiptDesc() {
+  if (receipt.descAuto) { receipt.desc = receiptAutoDesc(receipt); if (document.activeElement !== $("r-desc")) { $("r-desc").value = receipt.desc; growBox($("r-desc")); } }
+  $("r-desc-hint").hidden = !receipt.descAuto;
+  $("r-desc-auto").hidden = !!receipt.descAuto;
+}
+$("r-serv").oninput = (e) => { receipt.serv = e.target.value; renderReceiptDesc(); };
+$("r-desc-auto").onclick = () => { receipt.descAuto = true; renderReceiptDesc(); toast("Texto automático de volta"); };
+
 // O tipo do pagamento ajusta o valor sozinho (pedido do Marcos, 06/10/2026), quando o recibo veio de um orçamento:
 // Pagamento total e Saldo final = o que falta receber; Entrada e Parcela = a porcentagem escolhida do valor total
 // do orçamento (50% se nenhuma foi escolhida), sem passar do que falta receber. O valor continua podendo ser digitado.
@@ -2914,16 +2937,16 @@ function renderReceipt() {
   $("r-date").value = receipt.date; $("r-kind").value = receipt.kind; $("r-method").value = receipt.method;
   for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).value = receipt.payer[k] || "";
   markOwnPhone("r-phone");
-  $("r-amount").value = numIn(receipt.amount); $("r-desc").value = receipt.desc;
+  $("r-amount").value = numIn(receipt.amount); $("r-desc").value = receipt.desc; $("r-serv").value = receipt.serv || "";
   sigRMe.set(receipt.mySig); sigRPayer.set(receipt.payerSig);
   renderReceiptAmount();
 }
 $("r-date").onchange = (e) => { receipt.date = e.target.value; };
-$("r-kind").onchange = (e) => { receipt.kind = e.target.value; applyReceiptKind(); };
+$("r-kind").onchange = (e) => { receipt.kind = e.target.value; applyReceiptKind(); renderReceiptDesc(); };
 $("r-method").onchange = (e) => { receipt.method = e.target.value; };
 for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).oninput = (e) => { receipt.payer[k] = e.target.value; if (k === "phone") markOwnPhone("r-phone"); };
 $("r-amount").oninput = (e) => { receipt.amount = parseNum(e.target.value); receipt.pct = 0; renderReceiptAmount(); }; // valor digitado: sem porcentagem
-$("r-desc").oninput = (e) => { receipt.desc = e.target.value; };
+$("r-desc").oninput = (e) => { receipt.desc = e.target.value; receipt.descAuto = false; $("r-desc-hint").hidden = true; $("r-desc-auto").hidden = false; }; // mudou à mão: para de se ajustar
 const newReceipt = () => { receipt = blankReceipt(); renderReceipt(); window.scrollTo(0, 0); };
 const receiptDraft = () => !receipt.id && !!(receipt.payer.name.trim() || parseNum(receipt.amount) > 0);
 $("btn-r-new").onclick = () => confirmNew($("btn-r-new"), "Novo recibo", receiptDraft(), newReceipt);
@@ -2933,7 +2956,8 @@ function receiptFromQuote(q) {
   const total = calc(q).total, before = receivedFor(q.id, "");
   receipt = { ...blankReceipt(), payer: { name: q.client.name, doc: q.client.doc, phone: q.client.phone, email: q.client.email },
     quoteId: q.id, quoteNumber: q.number, quoteTotal: total, amount: Math.max(0, Math.round((total - before) * 100) / 100),
-    kind: before > 0 ? "saldo" : "total", desc: `Materiais e serviços do orçamento nº ${pad4(q.number)}` };
+    kind: before > 0 ? "saldo" : "total", descAuto: true,
+    serv: (receipts.filter((r) => r.quoteId === q.id && r.serv).sort((a, b) => (b.updated || "").localeCompare(a.updated || ""))[0] || {}).serv || "" }; // o "fabricação de" do recibo anterior deste orçamento
   show("receipt"); renderReceipt();
   if (before > 0) toast("Valor preenchido com o saldo que falta receber");
 }
@@ -2999,7 +3023,8 @@ function buildReceiptPdf(r) {
   const payer = r.payer.name + (r.payer.doc ? `, CPF/CNPJ ${r.payer.doc}` : "");
   // No meio da frase do recibo ("referente a ..."), a primeira palavra volta para minúscula, menos siglas e nomes em maiúsculas
   const ref = (r.desc || "serviços prestados").trim().replace(/\.$/, "").replace(/^(\p{Lu})(?=\p{Ll})/u, (c) => c.toLocaleLowerCase("pt-BR"));
-  const body = `Recebi(emos) de ${payer}, a importância de ${money(v)} (${extenso(v)}), referente a ${ref}, paga por ${r.method.toLowerCase()}.\n\nPara maior clareza, firmo(amos) o presente recibo, dando quitação do valor acima recebido.`;
+  const prep = /^(entrada|parcela)\b/.test(ref) ? "à" : /^(pagamento|saldo)\b/.test(ref) ? "ao" : "a"; // "referente à entrada", "ao saldo"
+  const body = `Recebi(emos) de ${payer}, a importância de ${money(v)} (${extenso(v)}), referente ${prep} ${ref}, paga por ${r.method.toLowerCase()}.\n\nPara maior clareza, firmo(amos) o presente recibo, dando quitação do valor acima recebido.`;
   doc.setFontSize(11.5);
   for (const ln of doc.splitTextToSize(body, W - 2 * M)) { doc.text(ln, M, y); y += 6.2; }
   if (r.quoteId) {
