@@ -139,6 +139,18 @@ input.caps::placeholder { text-transform: none; }
 .btn.out { border-color: var(--out); color: var(--out); background: var(--out-soft); font-weight: 700; letter-spacing: 0.02em; }
 .item.out { border-left: 4px solid var(--out); padding-left: 10px; background: linear-gradient(90deg, var(--out-soft), transparent 70%); border-radius: 6px 0 0 6px; }
 .item.out .inum, .item.out .tot, .item.out input { color: var(--out); }
+/* Botões de adicionar sempre à vista: presos logo acima da barra do total enquanto a lista de materiais está na tela */
+.addrow { position: sticky; bottom: var(--barh, 64px); z-index: 4; margin: 0 -16px; padding: 10px 16px; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -10px 14px -12px rgba(0, 0, 0, 0.45); }
+/* celular: os 3 botões lado a lado em colunas iguais (texto quebra em 2 linhas se precisar) */
+@media (max-width: 560px) {
+  .addrow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .addrow .btn, .addrow .mic { min-height: 44px; padding: 6px; border-radius: 10px; font-size: 0.82rem; line-height: 1.15; white-space: normal; text-align: center; justify-content: center; }
+  .addrow .mic { gap: 4px; }
+  .addrow .mic svg { flex: none; }
+  .addrow .btn.out { letter-spacing: 0; }
+  .addrow .wide { display: none; }
+}
+@media (max-width: 350px) { .addrow .btn, .addrow .mic { font-size: 0.74rem; } }
 .outtag { border: 1px solid var(--out); background: none; color: var(--out); font: 700 0.72rem var(--font-body); letter-spacing: 0.04em; border-radius: 999px; padding: 3px 8px; cursor: pointer; white-space: nowrap; }
 .totals .sub { font-weight: 700; border-top: 1px solid var(--line); padding-top: 6px; margin-top: 4px; }
 .totals .outsum { color: var(--out); font-weight: 700; }
@@ -458,7 +470,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <h2>Materiais</h2>
       <p class="hint">Digite o começo do nome (ex.: "mdf br") e toque na sugestão para preencher unidade e preço. Os materiais vêm da aba Materiais, e os novos entram lá quando você salva o orçamento.</p>
       <div class="items" id="items"></div>
-      <div class="row"><button class="btn" id="btn-add">+ Adicionar material</button><button class="btn out" id="btn-add-out" type="button">COMPRAR FORA</button><button class="mic" id="btn-add-voice" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar novo item</span></button></div>
+      <div class="row addrow" id="add-row"><button class="btn" id="btn-add">+ Adicionar<span class="wide"> material</span></button><button class="btn out" id="btn-add-out" type="button">COMPRAR FORA</button><button class="mic" id="btn-add-voice" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar novo item</span></button></div>
       <div class="grid2">
         <div class="field"><label for="q-labor">Mão de obra (R$)</label><input id="q-labor" class="num" inputmode="decimal"></div>
         <div class="field"><label for="q-discount">Desconto (%)</label><input id="q-discount" class="num" inputmode="decimal" placeholder="0"></div>
@@ -1570,6 +1582,10 @@ function insertItemAt(i) {
 /* Item novo (ou movido) no meio da tela, no celular e no notebook. Conta as abas presas em cima e a barra do total embaixo.
    No celular o teclado abre logo depois que o cursor entra no campo e a tela encolhe: aí centraliza de novo. */
 let centerWatch = null;
+// altura da barra do total: os botões de adicionar ficam presos logo acima dela
+const syncBarH = () => document.documentElement.style.setProperty("--barh", ($("bar").hidden ? 0 : $("bar").offsetHeight) + "px");
+if (window.ResizeObserver) new ResizeObserver(syncBarH).observe($("bar"));
+syncBarH();
 function centerItem(i, focus) {
   const d = $(`it-d-${i}`); if (!d) return;
   const card = d.closest(".item");
@@ -1579,17 +1595,20 @@ function centerItem(i, focus) {
     const bar = [$("bar"), $("rbar")].find((b) => !b.hidden);
     const kb = vv && vv.height < innerHeight * 0.8; // teclado aberto: a barra do total fica atrás dele
     const barH = bar && !kb ? bar.getBoundingClientRect().height : 0;
-    const areaTop = top + navH, areaBot = top + h - barH, r = card.getBoundingClientRect();
+    const addH = !kb ? $("add-row").getBoundingClientRect().height : 0; // botões de adicionar presos acima da barra
+    const areaTop = top + navH, areaBot = top + h - barH - addH, r = card.getBoundingClientRect();
     const delta = r.height > areaBot - areaTop - 16 ? r.top - areaTop - 8 : r.top + r.height / 2 - (areaTop + areaBot) / 2;
     const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (Math.abs(delta) > 2) window.scrollBy({ top: delta, behavior: smooth && !calm ? "smooth" : "auto" });
+    const far = Math.abs(delta) > h * 0.8; // longe (ex.: tocou em adicionar lá no começo da lista): pula direto, sem animação longa
+    if (Math.abs(delta) > 2) window.scrollBy({ top: delta, behavior: smooth && !calm && !far ? "smooth" : "auto" });
   };
   if (focus) d.focus({ preventScroll: true });
   place(true);
   if (centerWatch) centerWatch();
   const vv = window.visualViewport; if (!vv || !focus) return;
   let t = 0;
-  const again = () => { clearTimeout(t); t = setTimeout(() => { if (document.activeElement === d) place(false); }, 120); };
+  // centraliza de novo quando o teclado abre; e confere outra vez depois, caso uma rolagem suave ainda estivesse andando
+  const again = () => { clearTimeout(t); t = setTimeout(() => { if (document.activeElement !== d) return; place(false); setTimeout(() => document.activeElement === d && place(false), 400); }, 120); };
   vv.addEventListener("resize", again);
   const stop = setTimeout(() => centerWatch && centerWatch(), 1500);
   centerWatch = () => { vv.removeEventListener("resize", again); clearTimeout(stop); centerWatch = null; };
@@ -1676,8 +1695,10 @@ try {
     upd(); st.onchange = upd;
   }, () => {});
 } catch {}
-const micLabel = (b) => b.id === "btn-add-voice" ? (speechBlocked ? "Ditar novo item" : "Segure e dite um item") : (speechBlocked ? "Ditar" : "Segure e fale");
+const narrowAdd = matchMedia("(max-width: 560px)"); // celular: os 3 botões de adicionar cabem numa linha só
+const micLabel = (b) => b.id === "btn-add-voice" ? (speechBlocked ? (narrowAdd.matches ? "Ditar item" : "Ditar novo item") : (narrowAdd.matches ? "Segure e dite" : "Segure e dite um item")) : (speechBlocked ? "Ditar" : "Segure e fale");
 const paintMic = (b) => { b.classList.remove("on", "off"); b.querySelector("span").textContent = micLabel(b); };
+narrowAdd.addEventListener("change", () => { const b = $("btn-add-voice"); if (!b.classList.contains("on")) paintMic(b); });
 function setSpeechBlocked(why) {
   if (speechBlocked) return;
   speechBlocked = true; micWhy = why || micWhy || "microfone indisponível";
