@@ -587,8 +587,10 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
           <div class="field"><label for="p-qr">QR Code no PDF</label><select id="p-qr">
             <option value="whatsapp">Abre seu WhatsApp</option>
             <option value="instagram">Abre seu Instagram</option>
+            <option value="link">Orçamento com valor estimado</option>
             <option value="none">Sem QR Code</option>
           </select></div>
+          <div class="field" id="p-qrlink-box" hidden><label for="p-qrlink">Link do autoatendimento</label><input id="p-qrlink" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Cole aqui o link"></div>
           <p class="hint" id="p-qr-hint">Aparece ao lado dos seus dados no orçamento. Quem apontar a câmera do celular abre o link na hora.</p>
         </div>
       </div>
@@ -729,8 +731,8 @@ const DEFAULT_OBS = `PRÉ-CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 7. Mudanças no projeto depois da aprovação podem gerar um novo orçamento.
 8. Ao assinar este documento, o cliente aprova o orçamento e as condições acima, firmadas com {EMPRESA}.`;
 
-const blankProfile = () => ({ owner: "", name: "", doc: "", ie: "", instagram: "", qr: "whatsapp", tone: "mono", role: "", phone: "", email: "", cep: "", street: "", district: "", city: "", uf: "", address: "", days: 10, next: 1, nextReceipt: 1, logo: "", signature: "", obs: DEFAULT_OBS, registered: false, pwHash: "", pwSalt: "" });
-const PROFILE_FIELDS = ["owner", "name", "doc", "ie", "role", "instagram", "qr", "tone", "phone", "email", "cep", "street", "district", "city", "uf"];
+const blankProfile = () => ({ owner: "", name: "", doc: "", ie: "", instagram: "", qr: "whatsapp", qrlink: "", tone: "mono", role: "", phone: "", email: "", cep: "", street: "", district: "", city: "", uf: "", address: "", days: 10, next: 1, nextReceipt: 1, logo: "", signature: "", obs: DEFAULT_OBS, registered: false, pwHash: "", pwSalt: "" });
+const PROFILE_FIELDS = ["owner", "name", "doc", "ie", "role", "instagram", "qr", "qrlink", "tone", "phone", "email", "cep", "street", "district", "city", "uf"];
 const composeAddress = (p) => [p.street, p.district, [p.city, (p.uf || "").toUpperCase()].filter(Boolean).join(" - "), p.cep && "CEP " + p.cep].filter(Boolean).join(", ");
 // Endereço do cliente em uma linha só: "Rua das Flores, 120, Apto 32 - Centro, São Paulo - SP, CEP 01001-000"
 const composeClientAddress = (c) => [
@@ -750,8 +752,15 @@ const clientCopyText = (c) => [
 ].filter(Boolean).join("\n");
 const bizName = (p) => p.name || p.owner;
 const igHandle = (p) => (p.instagram || "").trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/^@/, "").replace(/\/.*$/, "");
+// Link colado pelo usuário: aceita sem o "https://" e recusa o que não parece endereço de site
+const webLink = (v) => {
+  let t = String(v || "").trim(); if (!t || /\s/.test(t)) return "";
+  if (!/^https?:\/\//i.test(t)) t = "https://" + t;
+  try { const u = new URL(t); return u.hostname.includes(".") ? u.href : ""; } catch { return ""; }
+};
 const qrText = (p) => {
   if (p.qr === "instagram" && igHandle(p)) return "https://instagram.com/" + igHandle(p);
+  if (p.qr === "link") return webLink(p.qrlink);
   if (p.qr === "whatsapp") { let d = (p.phone || "").replace(/\D/g, ""); if (d.length === 10 || d.length === 11) d = "55" + d; if (d.length >= 12) return "https://wa.me/" + d; }
   return "";
 };
@@ -2208,12 +2217,14 @@ function renderLogo() {
 }
 function renderQr() {
   const cv = $("p-qr-prev"), cx = cv.getContext("2d");
-  const p = { ...profile, qr: $("p-qr").value, phone: $("p-phone").value, instagram: $("p-instagram").value };
+  const p = { ...profile, qr: $("p-qr").value, qrlink: $("p-qrlink").value, phone: $("p-phone").value, instagram: $("p-instagram").value };
   const mtx = qrMatrix(qrText(p));
   cx.fillStyle = "#fff"; cx.fillRect(0, 0, cv.width, cv.height);
   cv.hidden = !mtx;
-  $("p-qr-hint").textContent = mtx ? "Aparece ao lado dos seus dados no orçamento. Quem apontar a câmera do celular abre o link na hora."
-    : p.qr === "none" ? "O PDF sai sem QR Code." : p.qr === "instagram" ? "Preencha o Instagram para gerar o QR Code." : "Preencha o telefone com DDD para gerar o QR Code.";
+  $("p-qrlink-box").hidden = p.qr !== "link";
+  $("p-qr-hint").textContent = mtx ? (p.qr === "link" ? "Aparece ao lado dos seus dados no orçamento. Quem apontar a câmera do celular abre o seu autoatendimento e faz um orçamento com valor estimado." : "Aparece ao lado dos seus dados no orçamento. Quem apontar a câmera do celular abre o link na hora.")
+    : p.qr === "none" ? "O PDF sai sem QR Code." : p.qr === "instagram" ? "Preencha o Instagram para gerar o QR Code."
+    : p.qr === "link" ? (p.qrlink.trim() ? "Esse link não parece um endereço de site. Confira e cole de novo." : "Cole o link do seu autoatendimento para gerar o QR Code.") : "Preencha o telefone com DDD para gerar o QR Code.";
   if (!mtx) return;
   const cell = Math.floor((cv.width - 8) / mtx.length), off = Math.floor((cv.width - cell * mtx.length) / 2);
   cx.fillStyle = "#16242A";
@@ -2224,7 +2235,7 @@ function renderQr() {
   seal.onload = () => { cx.globalAlpha = SEAL_OPACITY; cx.drawImage(seal, off + (size - sw) / 2, off + (size - sh) / 2, sw, sh); cx.globalAlpha = 1; };
   seal.src = SEAL;
 }
-for (const id of ["p-qr", "p-phone", "p-instagram"]) $(id).addEventListener("input", renderQr);
+for (const id of ["p-qr", "p-qrlink", "p-phone", "p-instagram"]) $(id).addEventListener("input", renderQr);
 // Troca de estilo: mostra na hora (só fica guardada ao tocar em "Salvar meus dados")
 $("p-tone").addEventListener("change", () => { profile.tone = $("p-tone").value; renderBrand(); });
 function renderProfile() {
@@ -2256,6 +2267,7 @@ $("p-logo-rm").onclick = () => { profile.logo = ""; renderLogo(); };
 function readCompany() {
   for (const k of PROFILE_FIELDS) profile[k] = $("p-" + k).value.trim();
   profile.uf = profile.uf.toUpperCase();
+  profile.qrlink = webLink(profile.qrlink) || profile.qrlink;
   profile.address = composeAddress(profile);
   const missing = [["owner", "seu nome"], ["doc", "CPF ou CNPJ"], ["phone", "telefone"], ["email", "e-mail"], ["city", "cidade"]].filter(([k]) => !profile[k]).map(([, n]) => n);
   if (missing.length) return "Preencha: " + missing.join(", ") + ".";
