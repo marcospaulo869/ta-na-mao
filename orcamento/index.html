@@ -137,7 +137,8 @@ input.caps::placeholder { text-transform: none; }
 .ins span { border: 1.5px solid var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 6px 16px; white-space: nowrap; }
 .ins:hover span, .ins:focus-visible span { background: var(--accent); color: var(--accent-ink); }
 .ins:hover::before, .ins:hover::after { opacity: 1; }
-.itools { display: flex; gap: 6px; align-items: center; }
+.itools { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+.ihead .outtag { margin-right: auto; }
 /* Comprar fora: botão, item e soma em vermelho */
 .btn.out { border-color: var(--out); color: var(--out); background: var(--out-soft); font-weight: 700; letter-spacing: 0.02em; }
 .item.out { border-left: 4px solid var(--out); padding-left: 10px; background: linear-gradient(90deg, var(--out-soft), transparent 70%); border-radius: 6px 0 0 6px; }
@@ -149,6 +150,7 @@ input.caps::placeholder { text-transform: none; }
   .addrow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .addrow .btn, .addrow .mic { min-height: 44px; padding: 6px; border-radius: 10px; font-size: 0.82rem; line-height: 1.15; white-space: normal; text-align: center; justify-content: center; }
   .addrow .btn { padding-inline: 4px; }
+  .addrow #btn-add { white-space: nowrap; }
   .addrow .mic { gap: 4px; }
   .addrow .mic svg { flex: none; }
   .addrow .btn.out { letter-spacing: 0; }
@@ -307,6 +309,28 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 @media (prefers-reduced-motion: reduce) { .action { transition: none; } .action:hover { transform: none; } }
 /* Celular estreito: as três abas (Orçamento, Salvos, Materiais) cabem na mesma linha do "Início" */
 @media (max-width: 440px) { .tabs button { padding: 6px 7px; font-size: 0.82rem; } .subnav { column-gap: 6px; } }
+/* Celular primeiro (06/10/2026: 90% do uso é no celular): todo botão com área de toque de pelo menos 44 px, para o dedo */
+@media (max-width: 560px), (pointer: coarse) {
+  .btn, .back, .tabs button, .brand, .mic, select, input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]) { min-height: 44px; }
+  .back { display: inline-flex; align-items: center; }
+  .tabs button { display: inline-flex; align-items: center; }
+  .subnav { padding-block: 4px; }
+  .tabs { padding: 3px; }
+  .brand { justify-content: center; }
+  .btn.small { min-height: 44px; padding: 8px 14px; font-size: 0.95rem; }
+  .mv, .item .mv, .item .rm { width: 44px; height: 44px; min-width: 44px; }
+  .item .rm { padding: 0; display: grid; place-items: center; }
+  .mat .rm { min-height: 44px; }
+  .pw .eye { height: 44px; }
+  .ins span { padding: 10px 18px; }
+  .outtag { min-height: 34px; padding: 6px 12px; font-size: 0.8rem; }
+  .bar .btn { min-height: 48px; padding-inline: 16px; font-size: 1rem; }
+  /* barra do total numa linha só: valor à esquerda, Salvar e Enviar PDF à direita */
+  .bar .in { flex-wrap: nowrap; }
+  .bar .in > div:first-child { min-width: 0; }
+  .bar .in > .row { flex-wrap: nowrap; flex: none; }
+}
+@media (max-width: 400px) { .bar .btn { padding-inline: 12px; } .bar .total { font-size: 1.05rem; } .top .btn.small { padding-inline: 10px; } }
 </style>
 
 <div class="wrap">
@@ -1537,7 +1561,7 @@ function renderItems() {
     }
     const row = document.createElement("div"); row.className = it.out ? "item out" : "item";
     row.innerHTML = `
-      <div class="ihead"><span class="inum">Item ${i + 1}</span><span class="itools">${it.out ? `<button class="outtag" type="button" data-a="out" title="Tirar de Comprar fora" aria-label="Item ${i + 1} é para comprar fora. Tocar tira a marcação">COMPRAR FORA ✕</button>` : ""}<button class="mv" type="button" data-d="-1" title="Subir" aria-label="Subir item ${i + 1}" ${i === 0 ? "disabled" : ""}>↑</button><button class="mv" type="button" data-d="1" title="Descer" aria-label="Descer item ${i + 1}" ${i === quote.items.length - 1 ? "disabled" : ""}>↓</button><button class="mic" type="button" aria-label="Ditar o item ${i + 1}">${MIC_SVG}<span></span></button></span></div>
+      <div class="ihead"><span class="inum">Item ${i + 1}</span>${it.out ? `<button class="outtag" type="button" data-a="out" title="Tirar de Comprar fora" aria-label="Item ${i + 1} é para comprar fora. Tocar tira a marcação">COMPRAR FORA ✕</button>` : ""}<span class="itools"><button class="mv" type="button" data-d="-1" title="Subir" aria-label="Subir item ${i + 1}" ${i === 0 ? "disabled" : ""}>↑</button><button class="mv" type="button" data-d="1" title="Descer" aria-label="Descer item ${i + 1}" ${i === quote.items.length - 1 ? "disabled" : ""}>↓</button><button class="mic" type="button" aria-label="Ditar o item ${i + 1}">${MIC_SVG}<span></span></button></span></div>
       <div class="dict" hidden>
         <p class="dict-st" role="status" aria-live="polite"></p>
         <p class="hint">Fale assim: "MDF chapa branco TX 18 milímetros, quatro unidades, valor 289,90".</p>
