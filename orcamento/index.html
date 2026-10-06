@@ -193,6 +193,8 @@ input.caps::placeholder { text-transform: none; }
 .stack0 { display: grid; gap: 6px; flex: 1 1 200px; min-width: 0; }
 .err { color: var(--danger); font-weight: 600; margin: 0; font-size: 0.92rem; }
 .err.own { margin-top: 6px; }
+.labhint { margin-top: 6px; }
+#q-labor-auto { margin-top: 6px; }
 #sh-own { margin-bottom: 10px; }
 .gate { max-width: 560px; margin-inline: auto; padding-top: 16px; }
 .intro { display: grid; gap: 6px; }
@@ -508,7 +510,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <div class="items" id="items"></div>
       <div class="row addrow" id="add-row"><button class="btn" id="btn-add">+ Adicionar<span class="wide"> material</span></button><button class="btn out" id="btn-add-out" type="button">COMPRAR FORA</button><button class="mic" id="btn-add-voice" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar novo item</span></button></div>
       <div class="grid2">
-        <div class="field"><label for="q-labor">Mão de obra (R$)</label><input id="q-labor" class="num" inputmode="decimal"></div>
+        <div class="field"><label for="q-labor">Mão de obra (R$)</label><input id="q-labor" class="num" inputmode="decimal" placeholder="0"><p class="hint labhint" id="q-labor-hint"></p><button class="btn small" id="q-labor-auto" type="button" hidden>Igualar ao valor dos materiais</button></div>
         <div class="field"><label for="q-discount">Desconto (%)</label><input id="q-discount" class="num" inputmode="decimal" placeholder="0"></div>
       </div>
       <div class="totals" id="totals"></div>
@@ -1234,10 +1236,13 @@ const clampPct = (n) => Math.min(100, Math.max(0, Number.isFinite(n) ? n : 0));
 const fmtPct = (n) => String(Math.round(n * 100) / 100).replace(".", ",");
 // Itens marcados "Comprar fora" (it.out) têm soma própria e sem desconto:
 // subtotal = materiais normais + mão de obra − desconto; VALOR TOTAL = subtotal + comprar fora
+// Mão de obra automática (laborAuto): total dos materiais × LABOR_X (regra do Marcos, 06/10/2026: materiais vezes um).
+// Digitar um valor no campo deixa a mão de obra fixa; orçamentos antigos (sem laborAuto) guardam o valor que tinham.
+const LABOR_X = 1;
 const calc = (q) => {
   const materials = q.items.reduce((s, it) => s + (it.out ? 0 : lineTotal(it)), 0);
   const outside = q.items.reduce((s, it) => s + (it.out ? lineTotal(it) : 0), 0);
-  const labor = parseNum(q.labor), pct = typeof q.discountPct === "number" ? clampPct(q.discountPct) : null;
+  const labor = q.laborAuto ? cents(materials * LABOR_X) : parseNum(q.labor), pct = typeof q.discountPct === "number" ? clampPct(q.discountPct) : null;
   const discount = pct != null ? cents((materials + labor) * pct / 100) : parseNum(q.discount);
   const subtotal = Math.max(0, materials + labor - discount);
   return { materials, labor, discount, pct, outside, subtotal, hasOut: q.items.some((it) => it.out), total: subtotal + outside };
@@ -1977,6 +1982,9 @@ function renderTotals() {
     <div class="outsum"><span>Comprar fora</span><span>${money(t.outside)}</span></div>
     <div class="grand"><span>VALOR TOTAL</span><span>${money(t.total)}</span></div>` : `<div class="grand"><span>Total</span><span>${money(t.total)}</span></div>`}`;
   $("bar-total").textContent = money(t.total);
+  if (quote.laborAuto) { quote.labor = t.labor; if (document.activeElement !== $("q-labor")) $("q-labor").value = numIn(t.labor); }
+  $("q-labor-hint").textContent = quote.laborAuto ? "Automático: igual ao valor dos materiais. Digite outro valor se quiser mudar." : "Valor digitado por você.";
+  $("q-labor-auto").hidden = !!quote.laborAuto;
 }
 function renderEditor() {
   fitSoon();
@@ -1988,6 +1996,10 @@ function renderEditor() {
   for (const k of ["name", "doc", "phone", "email", ...CLIENT_ADDR]) $("c-" + k).value = quote.client[k] || "";
   markOwnPhone("c-phone");
   setFull(quote.client.address);
+  if (quote.laborAuto == null) { // orçamento de antes da regra: segue automático se a mão de obra já era igual aos materiais (ou se ainda não foi salvo e está sem mão de obra)
+    const m = calc({ ...quote, laborAuto: true }).labor, l = parseNum(quote.labor);
+    quote.laborAuto = !quote.sample && ((m > 0 && cents(l) === m) || (!l && !quote.number));
+  }
   $("q-labor").value = numIn(quote.labor); $("q-discount").value = discountField(quote);
   $("q-obs").value = quote.obs;
   sigClient.set(quote.clientSig);
@@ -2017,7 +2029,14 @@ function copyClient(whole) {
 }
 $("c-copy-addr").onclick = () => copyClient(false);
 $("c-copy-all").onclick = () => copyClient(true);
-$("q-labor").oninput = (e) => { quote.labor = parseNum(e.target.value); renderTotals(); };
+$("q-labor").oninput = (e) => {
+  const v = e.target.value.trim();
+  quote.laborAuto = !v; // campo vazio volta ao automático
+  if (v) quote.labor = parseNum(v);
+  renderTotals();
+};
+$("q-labor").addEventListener("change", () => { if (quote.laborAuto) $("q-labor").value = numIn(quote.labor); });
+$("q-labor-auto").onclick = () => { quote.laborAuto = true; renderTotals(); toast("Mão de obra igual ao valor dos materiais"); };
 // Campo de desconto em %; orçamento antigo (desconto em R$) mostra a porcentagem equivalente
 function discountField(q) {
   if (typeof q.discountPct === "number") return q.discountPct ? fmtPct(q.discountPct) : "";
@@ -2055,7 +2074,7 @@ const newQuote = () => {
   const start = todayISO();
   quote = { id: "", number: 0, start, valid: addBizDays(start, validDays()),
     client: { name: "", doc: "", phone: "", email: "", cep: "", street: "", number: "", comp: "", district: "", city: "", uf: "", address: "" },
-    items: [{ desc: "", un: "UN", qty: 1, price: 0 }], labor: 0, discount: 0, discountPct: 0, obs: profile.obs || DEFAULT_OBS, clientSig: "" };
+    items: [{ desc: "", un: "UN", qty: 1, price: 0 }], labor: 0, laborAuto: true, discount: 0, discountPct: 0, obs: profile.obs || DEFAULT_OBS, clientSig: "" };
   renderEditor(); window.scrollTo(0, 0);
   refreshCatalog(true);
 };
