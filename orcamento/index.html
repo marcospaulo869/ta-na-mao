@@ -1314,7 +1314,7 @@ const lineTotal = (it) => parseNum(it.qty) * parseNum(it.price);
 const clampPct = (n) => Math.min(100, Math.max(0, Number.isFinite(n) ? n : 0));
 const fmtPct = (n) => String(Math.round(n * 100) / 100).replace(".", ",");
 // Itens marcados "Comprar fora" (it.out) têm soma própria e sem desconto:
-// subtotal = materiais normais + mão de obra − desconto; VALOR TOTAL = subtotal + comprar fora
+// subtotal = materiais normais + mão de obra − desconto; VALOR TOTAL = subtotal + comprar fora (= materiais + comprar fora + mão de obra − desconto)
 // Mão de obra automática (laborAuto): total da compra dos materiais, incluindo os de Comprar fora, × LABOR_X
 // (regra do Marcos, 06/10/2026: materiais vezes um).
 // Digitar um valor no campo deixa a mão de obra fixa; orçamentos antigos (sem laborAuto) guardam o valor que tinham.
@@ -2054,13 +2054,19 @@ function applyDictation(i, text) {
 function renderTotals() {
   const t = calc(quote);
   quote.items.forEach((it, i) => { const el = $(`it-t-${i}`); if (el) el.textContent = money(lineTotal(it)); });
-  $("totals").innerHTML = `
+  // ordem pedida pelo Marcos (06/10/2026): Materiais, Comprar fora, Total dos materiais, Mão de obra, Desconto, VALOR TOTAL
+  const disc = `<div><span>Desconto${t.pct ? ` (${fmtPct(t.pct)}%)` : ""}</span><span>− ${money(t.discount)}</span></div>`;
+  $("totals").innerHTML = t.hasOut ? `
+    <div><span>Materiais</span><span>${money(t.materials)}</span></div>
+    <div class="outsum"><span>Comprar fora</span><span>${money(t.outside)}</span></div>
+    <div class="sub"><span>Total dos materiais</span><span>${money(t.materials + t.outside)}</span></div>
+    <div><span>Mão de obra</span><span>${money(t.labor)}</span></div>
+    ${disc}
+    <div class="grand"><span>VALOR TOTAL</span><span>${money(t.total)}</span></div>` : `
     <div><span>Materiais</span><span>${money(t.materials)}</span></div>
     <div><span>Mão de obra</span><span>${money(t.labor)}</span></div>
-    <div><span>Desconto${t.pct ? ` (${fmtPct(t.pct)}%)` : ""}</span><span>− ${money(t.discount)}</span></div>
-    ${t.hasOut ? `<div class="sub"><span>Subtotal</span><span>${money(t.subtotal)}</span></div>
-    <div class="outsum"><span>Comprar fora</span><span>${money(t.outside)}</span></div>
-    <div class="grand"><span>VALOR TOTAL</span><span>${money(t.total)}</span></div>` : `<div class="grand"><span>Total</span><span>${money(t.total)}</span></div>`}`;
+    ${disc}
+    <div class="grand"><span>Total</span><span>${money(t.total)}</span></div>`;
   $("bar-total").textContent = money(t.total);
   if (quote.laborAuto) { quote.labor = t.labor; if (document.activeElement !== $("q-labor")) $("q-labor").value = t.labor ? t.labor.toFixed(2).replace(".", ",") : ""; }
   $("q-labor-hint").textContent = quote.laborAuto ? (quote.items.some((it) => it.out) ? "Automático: igual ao valor dos materiais, com o Comprar fora. Digite outro valor se quiser mudar." : "Automático: igual ao valor dos materiais. Digite outro valor se quiser mudar.") : "Valor digitado por você.";
@@ -2320,19 +2326,24 @@ function buildPdf(q) {
     y = doc.lastAutoTable.finalY + 6;
   }
   if (y > 250) { doc.addPage(); header(); y = 42; }
-  const row = (label, val, bold) => {
-    doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setFontSize(bold ? 12 : 10);
-    doc.setTextColor(...(bold ? ACC : INK));
-    doc.text(label, 130, y); doc.text(val, W - M, y, { align: "right" }); y += bold ? 7 : 5.5;
+  const GREEN = [46, 125, 50];
+  // big: total final (maior, cor de destaque); strong: negrito; color: cor da linha
+  const row = (label, val, { big, strong, color } = {}) => {
+    doc.setFont("helvetica", big || strong ? "bold" : "normal"); doc.setFontSize(big ? 12 : 10);
+    doc.setTextColor(...(color || (big ? ACC : INK)));
+    doc.text(label, 130, y); doc.text(val, W - M, y, { align: "right" }); y += big ? 7 : 5.5;
   };
-  row("Materiais", money(t.materials));
-  if (t.labor) row("Mão de obra", money(t.labor));
-  if (t.discount) row(t.pct ? `Desconto (${fmtPct(t.pct)}%)` : "Desconto", "- " + money(t.discount));
-  doc.setDrawColor(...LINE); doc.line(130, y - 3.5, W - M, y - 3.5); y += 1.5;
-  row(outs.length ? "SUBTOTAL" : "TOTAL", money(outs.length ? t.subtotal : t.total), true);
-  // Comprar fora: mesma tabela dos materiais, só as letras e números em verde, com a soma só desses itens; embaixo, o VALOR TOTAL (subtotal + comprar fora)
+  const rule = () => { doc.setDrawColor(...LINE); doc.line(130, y - 3.5, W - M, y - 3.5); y += 1.5; };
+  const laborAndTotal = (label) => {
+    if (t.labor) row("Mão de obra", money(t.labor));
+    if (t.discount) row(t.pct ? `Desconto (${fmtPct(t.pct)}%)` : "Desconto", "- " + money(t.discount));
+    rule(); row(label, money(t.total), { big: true });
+  };
+  if (!outs.length) { row("Materiais", money(t.materials)); laborAndTotal("TOTAL"); }
+  else if (own.length) row("Materiais", money(t.materials), { strong: true }); // soma da tabela de cima; os totais vêm depois do Comprar fora
+  // Comprar fora: mesma tabela dos materiais, só as letras e números em verde, com a soma só desses itens; depois os totais na ordem
+  // Materiais, Comprar fora, Total dos materiais, Mão de obra, Desconto e VALOR TOTAL
   if (outs.length) {
-    const GREEN = [46, 125, 50];
     y += 4;
     if (y > 245) { doc.addPage(); header(); y = 42; }
     doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(...GREEN);
@@ -2351,12 +2362,11 @@ function buildPdf(q) {
       didDrawPage: (d) => { if (d.pageNumber > 1) header(); },
     });
     y = doc.lastAutoTable.finalY + 7;
-    if (y > 262) { doc.addPage(); header(); y = 42; }
-    row("Subtotal", money(t.subtotal));
-    doc.setTextColor(...GREEN); doc.setFont("helvetica", "bold"); doc.setFontSize(10);
-    doc.text("Comprar fora", 130, y); doc.text(money(t.outside), W - M, y, { align: "right" }); y += 5.5;
-    doc.setDrawColor(...LINE); doc.line(130, y - 3.5, W - M, y - 3.5); y += 1.5;
-    row("VALOR TOTAL", money(t.total), true);
+    if (y > 248) { doc.addPage(); header(); y = 42; }
+    row("Materiais", money(t.materials));
+    row("Comprar fora", money(t.outside), { strong: true, color: GREEN });
+    rule(); row("Total dos materiais", money(t.materials + t.outside), { strong: true });
+    laborAndTotal("VALOR TOTAL");
     y -= 4;
   }
   if (y > 270) { doc.addPage(); header(); y = 42; }
