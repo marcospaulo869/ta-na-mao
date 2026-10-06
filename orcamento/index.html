@@ -1236,13 +1236,14 @@ const clampPct = (n) => Math.min(100, Math.max(0, Number.isFinite(n) ? n : 0));
 const fmtPct = (n) => String(Math.round(n * 100) / 100).replace(".", ",");
 // Itens marcados "Comprar fora" (it.out) têm soma própria e sem desconto:
 // subtotal = materiais normais + mão de obra − desconto; VALOR TOTAL = subtotal + comprar fora
-// Mão de obra automática (laborAuto): total dos materiais × LABOR_X (regra do Marcos, 06/10/2026: materiais vezes um).
+// Mão de obra automática (laborAuto): total da compra dos materiais, incluindo os de Comprar fora, × LABOR_X
+// (regra do Marcos, 06/10/2026: materiais vezes um).
 // Digitar um valor no campo deixa a mão de obra fixa; orçamentos antigos (sem laborAuto) guardam o valor que tinham.
 const LABOR_X = 1;
 const calc = (q) => {
   const materials = q.items.reduce((s, it) => s + (it.out ? 0 : lineTotal(it)), 0);
   const outside = q.items.reduce((s, it) => s + (it.out ? lineTotal(it) : 0), 0);
-  const labor = q.laborAuto ? cents(materials * LABOR_X) : parseNum(q.labor), pct = typeof q.discountPct === "number" ? clampPct(q.discountPct) : null;
+  const labor = q.laborAuto ? cents((materials + outside) * LABOR_X) : parseNum(q.labor), pct = typeof q.discountPct === "number" ? clampPct(q.discountPct) : null;
   const discount = pct != null ? cents((materials + labor) * pct / 100) : parseNum(q.discount);
   const subtotal = Math.max(0, materials + labor - discount);
   return { materials, labor, discount, pct, outside, subtotal, hasOut: q.items.some((it) => it.out), total: subtotal + outside };
@@ -1982,8 +1983,8 @@ function renderTotals() {
     <div class="outsum"><span>Comprar fora</span><span>${money(t.outside)}</span></div>
     <div class="grand"><span>VALOR TOTAL</span><span>${money(t.total)}</span></div>` : `<div class="grand"><span>Total</span><span>${money(t.total)}</span></div>`}`;
   $("bar-total").textContent = money(t.total);
-  if (quote.laborAuto) { quote.labor = t.labor; if (document.activeElement !== $("q-labor")) $("q-labor").value = numIn(t.labor); }
-  $("q-labor-hint").textContent = quote.laborAuto ? "Automático: igual ao valor dos materiais. Digite outro valor se quiser mudar." : "Valor digitado por você.";
+  if (quote.laborAuto) { quote.labor = t.labor; if (document.activeElement !== $("q-labor")) $("q-labor").value = t.labor ? t.labor.toFixed(2).replace(".", ",") : ""; }
+  $("q-labor-hint").textContent = quote.laborAuto ? (quote.items.some((it) => it.out) ? "Automático: igual ao valor dos materiais, com o Comprar fora. Digite outro valor se quiser mudar." : "Automático: igual ao valor dos materiais. Digite outro valor se quiser mudar.") : "Valor digitado por você.";
   $("q-labor-auto").hidden = !!quote.laborAuto;
 }
 function renderEditor() {
@@ -1997,8 +1998,9 @@ function renderEditor() {
   markOwnPhone("c-phone");
   setFull(quote.client.address);
   if (quote.laborAuto == null) { // orçamento de antes da regra: segue automático se a mão de obra já era igual aos materiais (ou se ainda não foi salvo e está sem mão de obra)
-    const m = calc({ ...quote, laborAuto: true }).labor, l = parseNum(quote.labor);
-    quote.laborAuto = !quote.sample && ((m > 0 && cents(l) === m) || (!l && !quote.number));
+    const t = calc({ ...quote, laborAuto: false }), l = cents(parseNum(quote.labor));
+    const same = [t.materials + t.outside, t.materials].some((m) => m > 0 && l === cents(m)); // antes o Comprar fora ficava de fora da conta
+    quote.laborAuto = !quote.sample && (same || (!l && !quote.number));
   }
   $("q-labor").value = numIn(quote.labor); $("q-discount").value = discountField(quote);
   $("q-obs").value = quote.obs;
@@ -2035,7 +2037,7 @@ $("q-labor").oninput = (e) => {
   if (v) quote.labor = parseNum(v);
   renderTotals();
 };
-$("q-labor").addEventListener("change", () => { if (quote.laborAuto) $("q-labor").value = numIn(quote.labor); });
+$("q-labor").addEventListener("change", () => { if (quote.laborAuto) renderTotals(); });
 $("q-labor-auto").onclick = () => { quote.laborAuto = true; renderTotals(); toast("Mão de obra igual ao valor dos materiais"); };
 // Campo de desconto em %; orçamento antigo (desconto em R$) mostra a porcentagem equivalente
 function discountField(q) {
