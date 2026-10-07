@@ -331,6 +331,10 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .feedback { display: grid; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
 .feedback p { margin: 0; color: var(--muted); }
 .feedback .btn { justify-self: start; }
+.btn.imp { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-color: var(--accent); color: var(--accent); }
+.btn.imp svg { width: 20px; height: 20px; flex: none; }
+#view-saved > .btn.imp { width: 100%; }
+.app-ver { text-align: center; font-size: 0.8rem; margin: 0; }
 .gate-hero { min-height: 210px; }
 .welcome-hero { min-height: 420px; }
 .welcome-hero img { object-position: 50% 30%; }
@@ -443,11 +447,16 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <div class="stat"><div class="k">Recebido no mês</div><div class="v" id="st-month">R$ 0,00</div></div>
       <div class="stat"><div class="k">A receber</div><div class="v" id="st-open">R$ 0,00</div></div>
     </div>
+    <div class="feedback" id="home-import">
+      <p><b>Tem orçamentos de outro app?</b> Importe o arquivo de orçamentos e eles entram nos Salvos, sem apagar nada.</p>
+      <button class="btn imp bk-load" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><path d="M8 8l4-4 4 4"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>Importar orçamentos</button>
+    </div>
     <div class="trust"><span>PDF com sua logomarca</span><span>Assinatura digital na tela</span><span>Envio pelo WhatsApp</span></div>
     <div class="feedback" id="home-feedback" hidden>
       <p><b>Versão de teste.</b> Achou um problema ou tem uma ideia para melhorar? Conte pelo WhatsApp.</p>
       <a class="btn wa" id="btn-feedback" target="_blank" rel="noopener">Mandar sugestão</a>
     </div>
+    <p class="hint app-ver" id="home-ver"></p>
   </div>
 
   <!-- CARREGANDO -->
@@ -599,10 +608,10 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
   <!-- SALVOS -->
   <div id="view-saved" class="stack" hidden>
     <button class="btn primary new" id="btn-new-2" type="button"><span class="plus" aria-hidden="true">+</span>Novo orçamento</button>
+    <button class="btn imp bk-load" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><path d="M8 8l4-4 4 4"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>Importar orçamentos</button>
     <h2 id="saved-h">Orçamentos salvos</h2>
     <p class="hint" id="saved-where"></p>
     <div class="list" id="saved-list"></div>
-    <div class="row"><button class="btn small bk-load" type="button">Importar orçamentos de um arquivo</button></div>
   </div>
 
   <!-- MATERIAIS -->
@@ -2808,6 +2817,10 @@ $("btn-logout").onclick = () => { saveDraft(); session.set(false); bioAuto = fal
 const appNumber = (n) => typeof n === "number" ? n : /^\d+$/.test(String(n || "")) ? Number(n) : 0;
 const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return m ? Number(m[1]) : 0; };
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
+
+// Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
+const APP_VERSION = "58";
+$("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
    Tudo fica só no navegador deste aparelho. A cópia é um arquivo .txt (o compartilhar do Android não aceita .json) com o
