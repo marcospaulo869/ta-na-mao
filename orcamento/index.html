@@ -58,6 +58,7 @@ h2 { font-size: 1.1rem; }
 .resume { display: grid; gap: 10px; }
 .resume .row1 { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: var(--radius); padding: 12px 14px; }
 .resume .row1.receipt { border-left-color: var(--warm); }
+.resume .row1.backup { border-left-color: var(--sample); }
 .resume .row1 > div { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .resume .row1 b { font-size: 0.98rem; }
 .resume .row1 small { color: var(--muted); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -479,6 +480,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <div class="cta">
       <button class="btn warm big" id="btn-start">Começar cadastro</button>
       <p class="hint">Leva cerca de 2 minutos.</p>
+      <button class="btn small bk-load" type="button">Já tenho uma cópia de segurança</button>
     </div>
   </div>
 
@@ -488,6 +490,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <div class="intro">
       <h1>Bem-vindo ao Orçamento e Recibo</h1>
       <p class="hint">Primeiro acesso: cadastre seus dados e crie uma senha. Seus dados e sua logomarca vão aparecer em todos os orçamentos.</p>
+      <div class="row"><button class="btn small bk-load" type="button">Já tenho uma cópia de segurança</button></div>
     </div>
     <div id="signup-slot"></div>
     <section class="card">
@@ -769,6 +772,12 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <p class="err" id="pw-err" hidden></p>
       <div class="row"><button class="btn" id="btn-pw">Trocar senha</button></div>
     </section>
+    <section class="card" id="backup-card">
+      <h2>Cópia de segurança</h2>
+      <p class="hint">Seus dados ficam guardados só neste aparelho. Faça uma cópia de vez em quando e guarde no WhatsApp, no e-mail ou no Drive. Com ela você recupera tudo se o aparelho apagar os dados, ou passa tudo para outro celular ou computador.</p>
+      <p class="hint" id="bk-st"></p>
+      <div class="row"><button class="btn primary" id="btn-bk-save" type="button">Fazer cópia agora</button><button class="btn bk-load" type="button">Restaurar uma cópia</button></div>
+    </section>
     <section class="card">
       <h2>Recomeçar do zero</h2>
       <p class="hint">Apaga seu cadastro, sua senha, seus orçamentos e seus recibos deste app, e volta para a tela de primeiro acesso. Não dá para desfazer.</p>
@@ -825,6 +834,16 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <div class="row"><button class="btn primary bio-btn" id="ba-yes" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11v3a8 8 0 0 1-1.5 4.7"/><path d="M8.5 9.5A3.5 3.5 0 0 1 15.5 11v1.5"/><path d="M5.5 15.5A12 12 0 0 0 6 11a6 6 0 0 1 9.4-4.9"/><path d="M18 9.5c.3.5.5 1 .5 1.5v1a14 14 0 0 1-1 5"/><path d="M14.5 15a17 17 0 0 1-1.6 5.5"/><path d="M3.5 12a8.5 8.5 0 0 1 1.7-6.3"/></svg>Ativar a digital</button><button class="btn" id="ba-no" type="button">Agora não</button></div>
   </div>
 </div>
+<div class="sheet-bg" id="bk-ask" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="bk-title">
+    <h2 id="bk-title">Restaurar a cópia de segurança?</h2>
+    <p id="bk-info"></p>
+    <p class="hint" id="bk-note"></p>
+    <p class="err" id="bk-err" hidden></p>
+    <div class="row"><button class="btn primary" id="bk-yes" type="button">Restaurar</button><button class="btn" id="bk-no" type="button">Cancelar</button></div>
+  </div>
+</div>
+<input type="file" id="bk-file" accept=".txt,.json,text/plain,application/json" hidden>
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1091,7 +1110,7 @@ const store = {
       await this.profileRef.delete();
       return;
     }
-    try { for (const k of ["orc.profile", "orc.quotes", "orc.receipts", "orc.catalog", "orc.draft", "orc.bio", "orc.bioAsk", "orc.signup"]) localStorage.removeItem(k); } catch {}
+    try { for (const k of ["orc.profile", "orc.quotes", "orc.receipts", "orc.catalog", "orc.draft", "orc.bio", "orc.bioAsk", "orc.signup", "orc.backupAt"]) localStorage.removeItem(k); } catch {}
   },
 };
 
@@ -2653,7 +2672,7 @@ function renderProfile() {
   $("p-qr").value = profile.qr || "whatsapp";
   $("p-tone").value = profile.tone || "mono";
   $("p-err").hidden = true;
-  renderLogo(); renderQr();
+  renderLogo(); renderQr(); renderBackup();
   sigMe.set(profile.signature);
 }
 $("p-logo").onchange = (e) => {
@@ -2781,6 +2800,105 @@ function confirmReset(btn) {
 $("btn-reset").onclick = (e) => confirmReset(e.currentTarget);
 $("btn-reset-login").onclick = (e) => confirmReset(e.currentTarget);
 $("btn-logout").onclick = () => { saveDraft(); session.set(false); bioAuto = false; gate("login"); }; // depois de Sair, a digital só abre se tocar no botão
+
+/* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
+   Tudo fica só no navegador deste aparelho. A cópia é um arquivo .txt (o compartilhar do Android não aceita .json) com o
+   cadastro, os orçamentos, os recibos, a lista de materiais e o que está aberto na tela. Restaurar junta com o que já está aqui
+   (vale a versão mais nova de cada documento); num aparelho sem cadastro, o cadastro volta inteiro, com a senha da cópia. */
+const BK_KEY = "orc.backupAt", BK_APP = "orcamento-e-recibo";
+const bkWhen = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : `${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`; };
+const bkCount = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+const lastChange = () => [...quotes, ...receipts].reduce((m, x) => String(x.updated || "") > m ? String(x.updated || "") : m, "");
+// Lembrete no Início: há documentos salvos e nunca houve cópia, ou já faz 3 dias e houve mudança depois dela
+function needBackup() {
+  if (store.mode !== "local" || !(quotes.length + receipts.length)) return false;
+  const at = local.get(BK_KEY, "");
+  return !at || (lastChange() > at && Date.now() - new Date(at).getTime() > 3 * 864e5);
+}
+function renderBackup() {
+  const at = local.get(BK_KEY, "");
+  $("bk-st").textContent = at ? `Última cópia feita neste aparelho: ${bkWhen(at)}.` : "Você ainda não fez nenhuma cópia neste aparelho.";
+}
+async function makeBackup() {
+  const data = { app: BK_APP, v: 1, made: new Date().toISOString(), profile, quotes, receipts, catalog: { items: catalog.items },
+    draft: { quote: quote && !quote.sample ? quote : null, receipt } };
+  const name = `copia-de-seguranca-orcamento-${todayISO()}.txt`;
+  const blob = new Blob([JSON.stringify(data)], { type: "text/plain" });
+  const file = new File([blob], name, { type: "text/plain" });
+  let done = false;
+  // No celular abre o compartilhar (WhatsApp, e-mail, Drive); no computador baixa o arquivo
+  if (canShareFile(file)) {
+    try { await navigator.share({ files: [file], title: "Cópia de segurança", text: `Cópia de segurança do app Orçamento e Recibo${bizName(profile) ? " (" + bizName(profile) + ")" : ""}, feita em ${bkWhen(data.made)}. Guarde este arquivo.` }); done = true; }
+    catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  if (!done && (await savePdfFile(blob, name)) !== "saved") { toast("Não consegui salvar a cópia. Tente de novo."); return; }
+  local.set(BK_KEY, data.made); renderBackup(); renderResume();
+  toast("Cópia feita. Guarde o arquivo em um lugar seguro.");
+}
+$("btn-bk-save").onclick = makeBackup;
+let bkPending = null;
+for (const b of document.querySelectorAll(".bk-load")) b.onclick = () => $("bk-file").click();
+$("bk-file").onchange = async (e) => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  let d = null; try { d = JSON.parse(await f.text()); } catch {}
+  if (!d || d.app !== BK_APP || !d.profile || typeof d.profile !== "object" || !Array.isArray(d.quotes) || !Array.isArray(d.receipts)) {
+    toast("Este arquivo não é uma cópia de segurança do app Orçamento e Recibo"); return;
+  }
+  const fresh = !profile.registered || !profile.pwHash;
+  if (fresh && !(d.profile.registered && d.profile.pwHash)) { toast("Esta cópia não tem um cadastro completo"); return; }
+  bkPending = d;
+  const items = d.catalog && Array.isArray(d.catalog.items) ? d.catalog.items.length : 0;
+  $("bk-info").textContent = [`Cópia de ${bkWhen(d.made) || "data desconhecida"}`, bizName(d.profile) || d.profile.owner || "",
+    bkCount(d.quotes.length, "orçamento", "orçamentos"), bkCount(d.receipts.length, "recibo", "recibos"), bkCount(items, "material", "materiais")].filter(Boolean).join(" · ");
+  $("bk-note").textContent = fresh
+    ? "Seu cadastro, seus orçamentos e seus recibos voltam como estavam. Depois é só entrar com a senha que você usava quando fez a cópia."
+    : "O que já está neste aparelho continua. Os orçamentos e recibos da cópia entram nos Salvos e, se o mesmo estiver nos dois, fica a versão mais nova. Os dados da empresa passam a ser os da cópia, e a sua senha continua a mesma.";
+  showErr("bk-err", ""); $("bk-yes").disabled = false; $("bk-ask").hidden = false;
+};
+$("bk-no").onclick = () => { bkPending = null; $("bk-ask").hidden = true; };
+$("bk-yes").onclick = async () => {
+  const d = bkPending; if (!d) return;
+  $("bk-yes").disabled = true;
+  try { await restoreBackup(d); }
+  catch { $("bk-yes").disabled = false; showErr("bk-err", "Não consegui restaurar tudo. Pode faltar espaço neste aparelho. Tente de novo."); return; }
+  bkPending = null;
+  try { sessionStorage.setItem("orc.restored", "1"); } catch {}
+  location.reload(); // abre de novo como numa visita normal: Entrar, ou a tela onde você estava
+};
+async function restoreBackup(d) {
+  const fresh = !profile.registered || !profile.pwHash;
+  const p = { ...blankProfile(), ...d.profile };
+  if (!fresh) { p.pwHash = profile.pwHash; p.pwSalt = profile.pwSalt; p.registered = true; }
+  const newer = (list, x) => { const c = list.find((y) => y.id === x.id); return !c || String(x.updated || "") > String(c.updated || ""); };
+  const qs = d.quotes.filter((q) => q && q.id && Array.isArray(q.items) && q.client && typeof q.client === "object" && !q.sample);
+  const rs = d.receipts.filter((r) => r && r.id && r.payer && typeof r.payer === "object");
+  for (const q of qs) if (newer(quotes, q)) await store.saveQuote(q);
+  for (const r of rs) if (newer(receipts, r)) await store.saveReceipt(r);
+  // a numeração continua depois do maior número dos dois aparelhos
+  const top = (list) => list.reduce((m, x) => Math.max(m, parseNum(x.number) || 0), 0);
+  p.next = Math.max(parseNum(p.next) || 1, fresh ? 1 : parseNum(profile.next) || 1, top([...quotes, ...qs]) + 1);
+  p.nextReceipt = Math.max(parseNum(p.nextReceipt) || 1, fresh ? 1 : parseNum(profile.nextReceipt) || 1, top([...receipts, ...rs]) + 1);
+  await store.saveProfile(p);
+  profile = p; dropSignup();
+  const items = (d.catalog && Array.isArray(d.catalog.items) ? d.catalog.items : []).filter((e) => e && typeof e.desc === "string" && e.desc.trim());
+  if (items.length) await mutateCatalog(() => {
+    const by = new Map(catalog.items.map((e) => [catKey(e.desc), e]));
+    for (const e of items) { const k = catKey(e.desc), c = by.get(k); if (!c) { const n = { ...e }; catalog.items.push(n); by.set(k, n); } else if (touchedAt(e) > touchedAt(c)) Object.assign(c, e); }
+    if (catalog.items.length > CAT_MAX) pruneCatalog();
+  });
+  // num aparelho novo, o orçamento e o recibo que estavam abertos na tela também voltam
+  // (também na memória, porque ao recarregar a página o rascunho da tela é guardado de novo)
+  if (fresh && d.draft && typeof d.draft === "object") {
+    const dq = d.draft.quote, dr = d.draft.receipt;
+    if (dq && Array.isArray(dq.items) && dq.client) quote = dq;
+    if (dr && dr.payer) receipt = dr;
+    saveDraft();
+  }
+}
+// Pede ao navegador para não apagar os dados deste site sozinho (por exemplo, com o celular sem espaço). No Chrome não aparece pergunta.
+function keepStorage() {
+  try { if (store.mode === "local" && navigator.storage && navigator.storage.persist && !/Firefox/.test(navigator.userAgent)) navigator.storage.persisted().then((ok) => ok || navigator.storage.persist()).catch(() => {}); } catch {}
+}
 
 /* ---------- Entrar com a digital (ou rosto/PIN do aparelho), pelo leitor do próprio celular ou notebook ----------
    A digital fica só no aparelho: o app guarda apenas o código da chave criada nele ("orc.bio") e pede ao aparelho que confirme a pessoa. */
@@ -3211,11 +3329,11 @@ function receiptOpen() {
 }
 function renderResume() {
   const box = $("home-resume"); box.textContent = "";
-  const add = (kind, title, sub, go) => {
+  const add = (kind, title, sub, go, label) => {
     const row = document.createElement("div"); row.className = "row1 " + kind;
     const txt = document.createElement("div"), b = document.createElement("b"), sm = document.createElement("small");
     b.textContent = title; sm.textContent = sub; txt.append(b, sm);
-    const btn = document.createElement("button"); btn.type = "button"; btn.className = "btn " + (kind === "quote" ? "primary" : "warm"); btn.textContent = "Continuar"; btn.onclick = go;
+    const btn = document.createElement("button"); btn.type = "button"; btn.className = "btn " + (kind === "quote" ? "primary" : kind === "receipt" ? "warm" : ""); btn.textContent = label || "Continuar"; btn.onclick = go;
     row.append(txt, btn); box.append(row);
   };
   const numLabel = (n) => "nº " + String(n).padStart(4, "0");
@@ -3227,6 +3345,10 @@ function renderResume() {
   if (receiptOpen()) {
     add("receipt", receipt.id ? `Recibo ${numLabel(receipt.number)} com mudanças não salvas` : "Recibo em andamento, ainda não salvo",
       [receipt.payer.name.trim(), parseNum(receipt.amount) > 0 ? money(parseNum(receipt.amount)) : ""].filter(Boolean).join(" · "), () => show("receipt"));
+  }
+  if (needBackup()) {
+    const at = local.get(BK_KEY, "");
+    add("backup", "Faça uma cópia de segurança", at ? `A última foi em ${bkWhen(at)}. Depois dela você salvou outros documentos.` : "Seus orçamentos e recibos estão guardados só neste aparelho.", makeBackup, "Fazer cópia");
   }
   box.hidden = !box.childElementCount;
 }
@@ -3273,7 +3395,7 @@ function enterApp() {
   $("profile-slot").appendChild($("company-card"));
   for (const v of ["loading", "welcome", "signup", "login"]) $("view-" + v).hidden = true;
   $("topbar").hidden = false;
-  renderBrand();
+  renderBrand(); keepStorage();
   let last = ""; try { last = sessionStorage.getItem("orc.view") || ""; } catch {}
   show(APP_VIEWS.includes(last) ? last : "home");
 }
@@ -3319,6 +3441,8 @@ renderEditor();
   if (!profile.registered || !profile.pwHash) gate(signupDraft() ? "signup" : "welcome");
   else if (session.get()) enterApp();
   else gate("login");
+  let restored = false; try { restored = sessionStorage.getItem("orc.restored") === "1"; sessionStorage.removeItem("orc.restored"); } catch {}
+  if (restored) toast(session.get() ? "Cópia restaurada" : "Cópia restaurada. Entre com a senha que você usava.");
 })();
 })();
 </script>

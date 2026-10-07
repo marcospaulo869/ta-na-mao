@@ -217,6 +217,14 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - **Assinaturas em azul BIC**, inclusive as antigas.
 - **Envio do PDF:** o WhatsApp não deixa site nenhum anexar arquivo direto na conversa; o PDF só vai pela tela de compartilhar do celular. Quando ela não abre sozinha, aparece o botão verde "Enviar o PDF".
 
+## Atualização (07/10/2026, madrugada): dados sumiram no celular e cópia de segurança
+
+- **O que houve:** Marcos abriu o app pelo ícone no celular depois da versão de "Salvar senha" e o cadastro tinha sumido. O código não apaga nada ao atualizar (só "Apagar tudo", com dois toques); testamos atualizar no meio e depois do cadastro, e também abrir com a versão anterior. O mais provável é que os dados tenham ficado em outro navegador ou que o celular tenha limpado os dados do site. O banco do app no Claude continua com os testes de 03 a 05/10, intactos. O orçamento da Fabiana está no notebook.
+- **Cópia de segurança** (Meus dados → "Cópia de segurança"): "Fazer cópia agora" cria um arquivo `copia-de-seguranca-orcamento-AAAA-MM-DD.txt` com o cadastro (com a senha protegida), os orçamentos, os recibos, a lista de materiais e o que está aberto na tela. No celular abre o compartilhar (WhatsApp, e-mail, Drive); no computador baixa o arquivo. O arquivo é .txt porque o compartilhar do Android não aceita .json.
+- **Restaurar:** "Restaurar uma cópia" (Meus dados) ou "Já tenho uma cópia de segurança" (boas-vindas e cadastro). Num aparelho sem cadastro, tudo volta e você entra com a senha que usava. Num aparelho com cadastro, os orçamentos e recibos se juntam (vale a versão mais nova de cada um), os dados da empresa passam a ser os da cópia e a senha do aparelho continua. Serve também para passar tudo do notebook para o celular.
+- **Lembrete no Início:** "Faça uma cópia de segurança" aparece quando há orçamento ou recibo salvo e nunca houve cópia, ou quando já passaram 3 dias e algo mudou depois da última.
+- O app também pede ao navegador para não apagar os dados do site sozinho (no Chrome não aparece pergunta).
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.
