@@ -59,6 +59,7 @@ h2 { font-size: 1.1rem; }
 .resume .row1 { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: var(--radius); padding: 12px 14px; }
 .resume .row1.receipt { border-left-color: var(--warm); }
 .resume .row1.backup { border-left-color: var(--sample); }
+#bk-info { white-space: pre-line; }
 .resume .row1 > div { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .resume .row1 b { font-size: 0.98rem; }
 .resume .row1 small { color: var(--muted); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -601,6 +602,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <h2 id="saved-h">Orçamentos salvos</h2>
     <p class="hint" id="saved-where"></p>
     <div class="list" id="saved-list"></div>
+    <div class="row"><button class="btn small bk-load" type="button">Importar orçamentos de um arquivo</button></div>
   </div>
 
   <!-- MATERIAIS -->
@@ -2597,7 +2599,7 @@ function renderSaved() {
     ? "Guardados na sua conta. Só você vê esta lista."
     : "Guardados neste aparelho e navegador.";
   const box = $("saved-list"); box.textContent = "";
-  const list = [...quotes].sort((a, b) => (b.number || 0) - (a.number || 0));
+  const list = [...quotes].sort(byQuoteNumber);
   $("saved-h").textContent = list.length ? `Orçamentos salvos (${list.length})` : "Orçamentos salvos";
   if (!list.length) { box.innerHTML = `<p class="hint">Nenhum orçamento salvo ainda. Toque em "+ Novo orçamento" para fazer o primeiro.</p>`; return; }
   const today = todayISO();
@@ -2801,6 +2803,12 @@ $("btn-reset").onclick = (e) => confirmReset(e.currentTarget);
 $("btn-reset-login").onclick = (e) => confirmReset(e.currentTarget);
 $("btn-logout").onclick = () => { saveDraft(); session.set(false); bioAuto = false; gate("login"); }; // depois de Sair, a digital só abre se tocar no botão
 
+// Orçamento importado do app antigo guarda o código de lá ("a-22") no lugar do número: aparece assim no app e no PDF,
+// fica depois dos números do app na lista e não mexe no "Próximo número"
+const appNumber = (n) => typeof n === "number" ? n : /^\d+$/.test(String(n || "")) ? Number(n) : 0;
+const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return m ? Number(m[1]) : 0; };
+const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
+
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
    Tudo fica só no navegador deste aparelho. A cópia é um arquivo .txt (o compartilhar do Android não aceita .json) com o
    cadastro, os orçamentos, os recibos, a lista de materiais e o que está aberto na tela. Restaurar junta com o que já está aqui
@@ -2841,10 +2849,23 @@ for (const b of document.querySelectorAll(".bk-load")) b.onclick = () => $("bk-f
 $("bk-file").onchange = async (e) => {
   const f = e.target.files[0]; e.target.value = ""; if (!f) return;
   let d = null; try { d = JSON.parse(await f.text()); } catch {}
-  if (!d || d.app !== BK_APP || !d.profile || typeof d.profile !== "object" || !Array.isArray(d.quotes) || !Array.isArray(d.receipts)) {
+  const imp = !!d && d.kind === "importar";
+  if (!d || d.app !== BK_APP || (!imp && (!d.profile || typeof d.profile !== "object")) || !Array.isArray(d.quotes) || !Array.isArray(d.receipts || [])) {
     toast("Este arquivo não é uma cópia de segurança do app Orçamento e Recibo"); return;
   }
   const fresh = !profile.registered || !profile.pwHash;
+  $("bk-yes").disabled = false; showErr("bk-err", "");
+  if (imp) {
+    if (fresh) { toast("Faça o cadastro primeiro. Depois importe em Orçamento → Salvos."); return; }
+    d.receipts = d.receipts || []; bkPending = d;
+    const n = d.quotes.length;
+    $("bk-title").textContent = n === 1 ? "Importar 1 orçamento?" : `Importar ${n} orçamentos?`;
+    $("bk-info").textContent = d.quotes.slice(0, 6).map((q) => `Nº ${pad4(q.number)} · ${(q.client && q.client.name) || "Sem nome"} · ${money(calc(q).total)}`).join("\n") + (n > 6 ? `\n… e mais ${n - 6}` : "");
+    $("bk-note").textContent = "Eles entram nos Salvos do Orçamento. Nada do que já está neste aparelho é apagado. Se um deles já foi importado antes e você mudou alguma coisa, fica a sua versão.";
+    $("bk-yes").textContent = "Importar"; $("bk-ask").hidden = false;
+    return;
+  }
+  $("bk-title").textContent = "Restaurar a cópia de segurança?"; $("bk-yes").textContent = "Restaurar";
   if (fresh && !(d.profile.registered && d.profile.pwHash)) { toast("Esta cópia não tem um cadastro completo"); return; }
   bkPending = d;
   const items = d.catalog && Array.isArray(d.catalog.items) ? d.catalog.items.length : 0;
@@ -2853,18 +2874,32 @@ $("bk-file").onchange = async (e) => {
   $("bk-note").textContent = fresh
     ? "Seu cadastro, seus orçamentos e seus recibos voltam como estavam. Depois é só entrar com a senha que você usava quando fez a cópia."
     : "O que já está neste aparelho continua. Os orçamentos e recibos da cópia entram nos Salvos e, se o mesmo estiver nos dois, fica a versão mais nova. Os dados da empresa passam a ser os da cópia, e a sua senha continua a mesma.";
-  showErr("bk-err", ""); $("bk-yes").disabled = false; $("bk-ask").hidden = false;
+  $("bk-ask").hidden = false;
 };
 $("bk-no").onclick = () => { bkPending = null; $("bk-ask").hidden = true; };
 $("bk-yes").onclick = async () => {
   const d = bkPending; if (!d) return;
   $("bk-yes").disabled = true;
-  try { await restoreBackup(d); }
-  catch { $("bk-yes").disabled = false; showErr("bk-err", "Não consegui restaurar tudo. Pode faltar espaço neste aparelho. Tente de novo."); return; }
+  const imp = d.kind === "importar";
+  try { if (imp) await importQuotes(d); else await restoreBackup(d); }
+  catch { $("bk-yes").disabled = false; showErr("bk-err", imp ? "Não consegui importar tudo. Pode faltar espaço neste aparelho. Tente de novo." : "Não consegui restaurar tudo. Pode faltar espaço neste aparelho. Tente de novo."); return; }
   bkPending = null;
-  try { sessionStorage.setItem("orc.restored", "1"); } catch {}
+  try { sessionStorage.setItem("orc.restored", imp ? "imp:" + d.quotes.length : "1"); if (imp) sessionStorage.setItem("orc.view", "saved"); } catch {}
   location.reload(); // abre de novo como numa visita normal: Entrar, ou a tela onde você estava
 };
+// Orçamentos de outro app (Claude lê o PDF e monta o arquivo): só entram nos Salvos, sem mexer no cadastro, na numeração nem na
+// lista de materiais (os preços de lá são de móveis prontos). Mesmo id = mesmo orçamento: fica a versão mais nova.
+async function importQuotes(d) {
+  for (const q of d.quotes) {
+    if (!q || !q.id || !Array.isArray(q.items) || !q.client || typeof q.client !== "object") continue;
+    const c = quotes.find((y) => y.id === q.id);
+    if (c && String(c.updated || "") >= String(q.updated || "")) continue;
+    q.client = { name: "", doc: "", phone: "", email: "", cep: "", street: "", number: "", comp: "", district: "", city: "", uf: "", address: "", ...q.client };
+    normalizeClient(q.client);
+    await store.saveQuote(q);
+  }
+  for (const r of d.receipts) if (r && r.id && r.payer && !receipts.some((y) => y.id === r.id)) await store.saveReceipt(r);
+}
 async function restoreBackup(d) {
   const fresh = !profile.registered || !profile.pwHash;
   const p = { ...blankProfile(), ...d.profile };
@@ -2875,7 +2910,7 @@ async function restoreBackup(d) {
   for (const q of qs) if (newer(quotes, q)) await store.saveQuote(q);
   for (const r of rs) if (newer(receipts, r)) await store.saveReceipt(r);
   // a numeração continua depois do maior número dos dois aparelhos
-  const top = (list) => list.reduce((m, x) => Math.max(m, parseNum(x.number) || 0), 0);
+  const top = (list) => list.reduce((m, x) => Math.max(m, appNumber(x.number)), 0);
   p.next = Math.max(parseNum(p.next) || 1, fresh ? 1 : parseNum(profile.next) || 1, top([...quotes, ...qs]) + 1);
   p.nextReceipt = Math.max(parseNum(p.nextReceipt) || 1, fresh ? 1 : parseNum(profile.nextReceipt) || 1, top([...receipts, ...rs]) + 1);
   await store.saveProfile(p);
@@ -3441,8 +3476,10 @@ renderEditor();
   if (!profile.registered || !profile.pwHash) gate(signupDraft() ? "signup" : "welcome");
   else if (session.get()) enterApp();
   else gate("login");
-  let restored = false; try { restored = sessionStorage.getItem("orc.restored") === "1"; sessionStorage.removeItem("orc.restored"); } catch {}
+  let restoredKind = ""; try { restoredKind = sessionStorage.getItem("orc.restored") || ""; sessionStorage.removeItem("orc.restored"); } catch {}
+  const restored = restoredKind === "1";
   if (restored) toast(session.get() ? "Cópia restaurada" : "Cópia restaurada. Entre com a senha que você usava.");
+  else if (/^imp:\d+$/.test(restoredKind)) { const n = Number(restoredKind.slice(4)); toast(n === 1 ? "Orçamento importado. Ele está nos Salvos." : `${n} orçamentos importados. Eles estão nos Salvos.`); }
 })();
 })();
 </script>

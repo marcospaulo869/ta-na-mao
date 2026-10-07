@@ -225,6 +225,15 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - **Lembrete no Início:** "Faça uma cópia de segurança" aparece quando há orçamento ou recibo salvo e nunca houve cópia, ou quando já passaram 3 dias e algo mudou depois da última.
 - O app também pede ao navegador para não apagar os dados do site sozinho (no Chrome não aparece pergunta).
 
+## Atualização (07/10/2026, madrugada): importar orçamentos do app antigo
+
+- Marcos manda o PDF de um orçamento do app antigo (o primeiro foi o Orcamento_a-22.pdf, da Sandra) e o Claude transcreve: cliente, cidade, datas, itens, quantidades, preços e observações.
+- As transcrições ficam em `/mnt/project-files/orcamento/importar/antigos.json`. O `gerar.py` da mesma pasta monta o arquivo `importar-orcamentos-AAAA-MM-DD.txt`, sempre com todos os orçamentos já transcritos.
+- **No app:** Orçamento → Salvos → "Importar orçamentos de um arquivo" (também serve o "Restaurar uma cópia" de Meus dados). Aparece "Importar 1 orçamento?" com a lista, e eles entram nos Salvos.
+- **Nada é apagado:** o cadastro, a numeração e a lista de materiais não mudam. Importar o mesmo arquivo de novo não duplica, e se você mudou um importado, fica a sua versão.
+- O importado guarda o código do app antigo ("a-22") no lugar do número: aparece assim na lista, no título, no PDF e no recibo, e fica depois dos orçamentos do app na lista.
+- O preço do PDF antigo já é o do móvel pronto, por isso a mão de obra vem zerada e digitada (não automática) e o total fica igual ao do PDF.
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.
