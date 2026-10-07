@@ -203,6 +203,8 @@ input.caps::placeholder { text-transform: none; }
 .gate { max-width: 560px; margin-inline: auto; padding-top: 16px; }
 .intro { display: grid; gap: 6px; }
 .login { justify-items: start; }
+#l-form { display: contents; } /* formulário de verdade, para o Chrome oferecer "Salvar senha" e preencher sozinho */
+.pmuser { position: absolute; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; overflow: hidden; clip: rect(0 0 0 0); pointer-events: none; }
 .login label { width: 100%; }
 .pw { position: relative; display: block; }
 .pw input { width: 100%; padding-right: 48px; }
@@ -491,7 +493,8 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <section class="card">
       <h2>Crie sua senha</h2>
       <div class="grid2">
-        <div class="field"><label for="s-pass">Senha</label><input type="password" id="s-pass" autocomplete="new-password"></div>
+        <input id="s-user" class="pmuser" name="username" type="email" autocomplete="username" tabindex="-1" aria-hidden="true" readonly>
+        <div class="field"><label for="s-pass">Senha</label><input type="password" id="s-pass" name="new-password" autocomplete="new-password"></div>
         <div class="field"><label for="s-pass2">Confirme a senha</label><input type="password" id="s-pass2" autocomplete="new-password"></div>
       </div>
       <p class="hint">Use pelo menos 6 caracteres.</p>
@@ -508,9 +511,12 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
       <h2 id="l-name">Entrar</h2>
       <p class="hint" id="l-email"></p>
       <button class="btn primary bio-btn" id="btn-bio-login" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11v3a8 8 0 0 1-1.5 4.7"/><path d="M8.5 9.5A3.5 3.5 0 0 1 15.5 11v1.5"/><path d="M5.5 15.5A12 12 0 0 0 6 11a6 6 0 0 1 9.4-4.9"/><path d="M18 9.5c.3.5.5 1 .5 1.5v1a14 14 0 0 1-1 5"/><path d="M14.5 15a17 17 0 0 1-1.6 5.5"/><path d="M3.5 12a8.5 8.5 0 0 1 1.7-6.3"/></svg>Entrar com a digital</button>
-      <div class="field"><label for="l-pass">Senha</label><input type="password" id="l-pass" autocomplete="current-password"></div>
+      <form id="l-form" autocomplete="on" novalidate>
+      <input id="l-user" class="pmuser" name="username" type="email" autocomplete="username" tabindex="-1" aria-hidden="true" readonly>
+      <div class="field"><label for="l-pass">Senha</label><input type="password" id="l-pass" name="password" autocomplete="current-password"></div>
       <p class="err" id="l-err" hidden></p>
-      <div class="row"><button class="btn primary" id="btn-login">Entrar</button><button class="btn small" id="btn-forgot">Esqueci minha senha</button></div>
+      <div class="row"><button class="btn primary" id="btn-login" type="submit">Entrar</button><button class="btn small" id="btn-forgot" type="button">Esqueci minha senha</button></div>
+      </form>
       <div id="l-forgot" class="stack0" hidden>
         <p class="hint">Por enquanto a senha não pode ser recuperada por e-mail. Essa opção entra na versão de venda do app, com contas no servidor. Se quiser, você pode apagar tudo e fazer um cadastro novo.</p>
         <div class="row"><button class="btn small danger" id="btn-reset-login">Apagar tudo e cadastrar de novo</button></div>
@@ -811,6 +817,14 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <div class="row"><button class="btn small" id="sh-copy" type="button">Copiar mensagem</button><button class="btn small" id="sh-close" type="button">Fechar</button></div>
   </div>
 </div>
+<div class="sheet-bg" id="bio-ask" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ba-title">
+    <h2 id="ba-title">Entrar com a digital?</h2>
+    <p>Da próxima vez, abra o app com a digital (ou o rosto ou o PIN do celular), sem digitar a senha. A senha continua valendo.</p>
+    <p class="err" id="ba-err" hidden></p>
+    <div class="row"><button class="btn primary bio-btn" id="ba-yes" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11v3a8 8 0 0 1-1.5 4.7"/><path d="M8.5 9.5A3.5 3.5 0 0 1 15.5 11v1.5"/><path d="M5.5 15.5A12 12 0 0 0 6 11a6 6 0 0 1 9.4-4.9"/><path d="M18 9.5c.3.5.5 1 .5 1.5v1a14 14 0 0 1-1 5"/><path d="M14.5 15a17 17 0 0 1-1.6 5.5"/><path d="M3.5 12a8.5 8.5 0 0 1 1.7-6.3"/></svg>Ativar a digital</button><button class="btn" id="ba-no" type="button">Agora não</button></div>
+  </div>
+</div>
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1077,7 +1091,7 @@ const store = {
       await this.profileRef.delete();
       return;
     }
-    try { for (const k of ["orc.profile", "orc.quotes", "orc.receipts", "orc.catalog", "orc.draft", "orc.bio", "orc.signup"]) localStorage.removeItem(k); } catch {}
+    try { for (const k of ["orc.profile", "orc.quotes", "orc.receipts", "orc.catalog", "orc.draft", "orc.bio", "orc.bioAsk", "orc.signup"]) localStorage.removeItem(k); } catch {}
   },
 };
 
@@ -2718,14 +2732,36 @@ $("btn-signup").onclick = async () => {
   $("s-pass").value = $("s-pass2").value = "";
   dropSignup();
   session.set(true); enterApp(); toast("Cadastro concluído");
+  afterPassword(a);
 };
 
 async function doLogin() {
-  if (await checkPassword($("l-pass").value)) { $("l-pass").value = ""; showErr("l-err", ""); session.set(true); enterApp(); }
+  const pass = $("l-pass").value;
+  if (await checkPassword(pass)) { $("l-pass").value = ""; showErr("l-err", ""); session.set(true); enterApp(); afterPassword(pass); }
   else showErr("l-err", "Senha incorreta. Tente de novo.");
 }
-$("btn-login").onclick = doLogin;
-$("l-pass").onkeydown = (e) => { if (e.key === "Enter") doLogin(); };
+$("l-form").onsubmit = (e) => { e.preventDefault(); doLogin(); }; // Entrar ou Enter no teclado
+$("p-email").addEventListener("input", () => { $("s-user").value = $("p-email").value.trim(); });
+
+/* Depois de entrar com a senha (cadastro ou login; pedido do Marcos, 07/10/2026): o Chrome oferece "Salvar senha?" e o app
+   oferece a digital, uma vez por aparelho, se o aparelho tiver leitor e ela ainda não estiver ativada */
+const pmUser = () => profile.email || bizName(profile) || "Orçamento e Recibo";
+async function offerSavePassword(pass) {
+  try {
+    if (!pass || !window.PasswordCredential || !navigator.credentials || !navigator.credentials.store) return;
+    await navigator.credentials.store(new PasswordCredential({ id: pmUser(), password: pass, name: bizName(profile) || pmUser() }));
+  } catch {} // navegador sem gerenciador de senhas, ou dentro do Claude: segue sem oferecer
+}
+async function offerBio() {
+  if (bioGet() || local.get("orc.bioAsk", "") === "no" || store.mode === "db" || !(await bioCan())) return;
+  showErr("ba-err", ""); $("toast").hidden = true; $("bio-ask").hidden = false;
+}
+function afterPassword(pass) { offerSavePassword(pass); setTimeout(offerBio, 1500); } // depois do "Salvar senha?" do Chrome
+$("ba-no").onclick = () => { local.set("orc.bioAsk", "no"); $("bio-ask").hidden = true; toast("Tudo bem. Dá para ativar depois em Meus dados."); };
+$("ba-yes").onclick = async () => {
+  try { await bioEnable(); $("bio-ask").hidden = true; renderBio(); toast("Digital ativada. Na próxima vez, é só tocar em Entrar com a digital."); }
+  catch (e) { showErr("ba-err", "Não consegui ativar: " + bioMsg(e) + ". Tente de novo ou toque em Agora não."); }
+};
 $("btn-forgot").onclick = () => { $("l-forgot").hidden = false; };
 $("btn-start").onclick = () => gate("signup");
 $("btn-signup-back").onclick = () => gate("welcome");
@@ -2834,7 +2870,7 @@ $("btn-pw").onclick = async () => {
   profile.pwHash = hash; profile.pwSalt = salt;
   try { await store.saveProfile(profile); } catch { return showErr("pw-err", "Não consegui salvar. Tente de novo."); }
   for (const id of ["pw-old", "pw-new", "pw-new2"]) $(id).value = "";
-  toast("Senha trocada");
+  toast("Senha trocada"); offerSavePassword(a); // o Chrome oferece atualizar a senha salva
 };
 
 /* ---------- Valor por extenso ---------- */
@@ -3225,6 +3261,7 @@ function gate(which) {
   if (which === "login") {
     $("l-name").textContent = bizName(profile) || "Entrar";
     $("l-email").textContent = profile.email ? "Conta: " + profile.email : "";
+    $("l-user").value = pmUser();
     $("l-logo").hidden = !profile.logo; if (profile.logo) $("l-logo").src = profile.logo;
     $("l-forgot").hidden = true; showErr("l-err", "");
     if (bioGet()) prepBioLogin(); else setTimeout(() => $("l-pass").focus(), 50);
