@@ -229,10 +229,17 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 
 - Marcos manda o PDF de um orçamento do app antigo (o primeiro foi o Orcamento_a-22.pdf, da Sandra) e o Claude transcreve: cliente, cidade, datas, itens, quantidades, preços e observações.
 - As transcrições ficam em `/mnt/project-files/orcamento/importar/antigos.json`. O `gerar.py` da mesma pasta monta o arquivo `importar-orcamentos-AAAA-MM-DD.txt`, sempre com todos os orçamentos já transcritos.
-- **No app:** botão **Importar orçamentos** no Início (cartão "Tem orçamentos de outro app?") e em Orçamento → Salvos, logo abaixo do "+ Novo orçamento" (também serve o "Restaurar uma cópia" de Meus dados). O fim do Início mostra a versão do app ("Versão 58"), para conferir se o celular já abriu a versão nova. Aparece "Importar 1 orçamento?" com a lista, e eles entram nos Salvos.
+- **No app:** botão **Importar orçamentos** no Início (cartão "Tem orçamentos de outro app?") e em Orçamento → Salvos, logo abaixo do "+ Novo orçamento" (também serve o "Restaurar uma cópia" de Meus dados). O fim do Início mostra a versão do app ("Versão N"), para conferir se o celular já abriu a versão nova. Aparece "Importar 1 orçamento?" com a lista, e eles entram nos Salvos.
 - **Nada é apagado:** o cadastro, a numeração e a lista de materiais não mudam. Importar o mesmo arquivo de novo não duplica, e se você mudou um importado, fica a sua versão.
 - O importado guarda o código do app antigo ("a-22") no lugar do número: aparece assim na lista, no título, no PDF e no recibo, e fica depois dos orçamentos do app na lista.
 - O preço do PDF antigo já é o do móvel pronto, por isso a mão de obra vem zerada e digitada (não automática) e o total fica igual ao do PDF.
+
+## Atualização (07/10/2026, madrugada): botão "Ver PDF" (versão 59)
+
+- **Para que serve:** ver a folha do orçamento exatamente como o cliente vai receber, antes de enviar. Não salva, não envia, não baixa e não gasta número.
+- **Onde fica:** em Orçamento → Salvos, cada cartão tem **Ver PDF** ao lado do Excluir. Na tela do orçamento, **Ver PDF** fica na barra de baixo, ao lado do Total (antes de Salvar e Enviar PDF); ali ele mostra o que está na tela agora, mesmo sem salvar, já com o número que o orçamento vai ganhar.
+- **Na folha:** dá para rolar por todas as páginas (orçamento e pré-contrato). Tocar na folha aumenta e tocar de novo volta. "Fechar" ou o botão voltar do celular fecham a folha. "Enviar PDF" fecha a folha e faz o mesmo que o botão Enviar PDF (na tela do orçamento, salva e envia).
+- **Sem internet:** a folha é desenhada pelo pdf.js (carrega na primeira vez). Se ele não carregar, aparece "Baixar o PDF".
 
 ## Próximos passos
 

@@ -263,6 +263,23 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 /* Botões "Recibo" no orçamento (topo, ao lado das abas, e barra de baixo, ao lado do Enviar PDF): cor do Recibo */
 .btn.rec { display: inline-flex; align-items: center; gap: 6px; border-color: var(--warm); background: var(--warm-soft); color: var(--ink); font-weight: 700; }
 .btn.rec svg { width: 18px; height: 18px; flex: none; color: var(--warm); }
+/* Ver PDF: mostra a folha do orçamento dentro do app, sem enviar nem baixar */
+.bar .tot { display: flex; align-items: center; gap: 14px; }
+.btn.view { display: inline-flex; align-items: center; gap: 6px; border-color: var(--accent); color: var(--accent); white-space: nowrap; }
+.btn.view svg { width: 18px; height: 18px; flex: none; }
+.pv { position: fixed; inset: 0; z-index: 25; display: flex; flex-direction: column; background: #3B4043; }
+.pv-top, .pv-bot { background: var(--surface); padding: 10px 16px; }
+.pv-top { border-bottom: 1px solid var(--line); padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
+.pv-top strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv-top .hint { font-size: 0.85rem; }
+.pv-pages { flex: 1; overflow: auto; padding: 12px; -webkit-overflow-scrolling: touch; }
+.pv-pages canvas { display: block; width: 100%; max-width: 760px; height: auto; margin: 0 auto 12px; background: #FFFFFF; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); cursor: zoom-in; }
+.pv-pages.zoom canvas { width: 200%; max-width: 1520px; cursor: zoom-out; }
+.pv-msg { position: absolute; left: 0; right: 0; top: 40%; display: grid; justify-items: center; gap: 12px; padding: 0 24px; color: #FFFFFF; text-align: center; font-weight: 600; }
+.pv-bot { border-top: 1px solid var(--line); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+.pv-bot .row { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+.pv-bot .btn { justify-content: center; min-height: 48px; }
+body.pv-open { overflow: hidden; }
 /* Recibo: porcentagem da entrada ou parcela (20%, 30%, 40%, 50% ou outra) */
 .pctrow { display: grid; gap: 6px; margin-top: 12px; }
 .pcts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(90px, 1.5fr); gap: 6px; }
@@ -286,8 +303,13 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
   #rbar .in > div:first-child { width: 100%; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   #rbar .in > .row { width: 100%; display: grid; grid-template-columns: repeat(3, auto); gap: 8px; }
   #rbar .in > .row .btn { justify-content: center; padding-inline: 6px; white-space: nowrap; }
+}
+/* barra do orçamento em duas linhas no celular: Total e Ver PDF em cima, Salvar, Recibo e Enviar PDF embaixo */
+@media (max-width: 640px) {
   #bar .in { flex-wrap: wrap; row-gap: 6px; }
-  #bar .in > div:first-child { width: 100%; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  #bar .in > .tot { width: 100%; justify-content: space-between; gap: 8px; }
+  #bar .tv { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  #bar .btn.view { min-height: 44px; padding-block: 4px; } /* a barra não cresce demais: a linha do Total fica baixa */
   #bar .in > .row { width: 100%; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.15fr); gap: 8px; }
   #bar .in > .row .btn { justify-content: center; padding-inline: 6px; white-space: nowrap; }
 }
@@ -799,7 +821,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 
 <div class="bar" id="bar" hidden>
   <div class="in">
-    <div><div class="hint">Total</div><div class="total" id="bar-total">R$ 0,00</div></div>
+    <div class="tot"><div class="tv"><div class="hint">Total</div><div class="total" id="bar-total">R$ 0,00</div></div><button class="btn small view" id="bar-view" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Ver PDF</span></button></div>
     <div class="row">
       <button class="btn" id="btn-save">Salvar</button>
       <button class="btn rec" id="bar-receipt" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/><path d="M9.5 16c1-1 2-1 2.5 0s1.5 1 2.5 0"/></svg><span>Recibo</span></button>
@@ -844,6 +866,12 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
     <p class="err" id="ba-err" hidden></p>
     <div class="row"><button class="btn primary bio-btn" id="ba-yes" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11v3a8 8 0 0 1-1.5 4.7"/><path d="M8.5 9.5A3.5 3.5 0 0 1 15.5 11v1.5"/><path d="M5.5 15.5A12 12 0 0 0 6 11a6 6 0 0 1 9.4-4.9"/><path d="M18 9.5c.3.5.5 1 .5 1.5v1a14 14 0 0 1-1 5"/><path d="M14.5 15a17 17 0 0 1-1.6 5.5"/><path d="M3.5 12a8.5 8.5 0 0 1 1.7-6.3"/></svg>Ativar a digital</button><button class="btn" id="ba-no" type="button">Agora não</button></div>
   </div>
+</div>
+<div class="pv" id="pv" hidden role="dialog" aria-modal="true" aria-labelledby="pv-title">
+  <div class="pv-top"><strong id="pv-title">Ver PDF</strong><div class="hint">Assim o cliente vai receber. Toque na folha para aumentar ou diminuir.</div></div>
+  <div class="pv-pages" id="pv-pages"></div>
+  <div class="pv-msg" id="pv-msg" hidden><span id="pv-msg-t"></span><button class="btn" id="pv-dl" type="button" hidden>Baixar o PDF</button></div>
+  <div class="pv-bot"><div class="row"><button class="btn" id="pv-close" type="button">Fechar</button><button class="btn primary" id="pv-send" type="button">Enviar PDF</button></div></div>
 </div>
 <div class="sheet-bg" id="bk-ask" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="bk-title">
@@ -2602,6 +2630,89 @@ $("btn-pdf").onclick = async () => {
   await sendQuote(quote);
 };
 
+/* ---------- Ver PDF: a folha pronta dentro do app, antes de enviar ---------- */
+// O Chrome do celular não mostra PDF dentro da página: o pdf.js desenha cada folha numa imagem.
+// O "worker" do pdf.js entra como script comum e roda na própria página (funciona também dentro do Claude).
+const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+const loadScript = (src) => new Promise((ok, bad) => {
+  const el = document.createElement("script"); el.src = src; el.onload = ok;
+  el.onerror = () => { el.remove(); bad(new Error("script")); };
+  document.head.appendChild(el);
+});
+let pdfjsReady = null;
+const loadPdfjs = () => pdfjsReady || (pdfjsReady = (async () => {
+  if (!window.pdfjsLib) await loadScript(PDFJS + "pdf.min.js");
+  if (!window.pdfjsWorker) await loadScript(PDFJS + "pdf.worker.min.js");
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.js";
+  return window.pdfjsLib;
+})().catch((e) => { pdfjsReady = null; throw e; }));
+let pvToken = 0, pv = null;
+const pvMsg = (text, dl) => { $("pv-msg").hidden = !text; $("pv-msg-t").textContent = text || ""; $("pv-dl").hidden = !dl; };
+async function viewPdf(q, onSend) {
+  if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet.");
+  const my = ++pvToken;
+  pv = { blob: null, name: fileName(q), onSend };
+  $("pv-title").textContent = `Orçamento nº ${String(q.number).padStart(4, "0")}${q.client.name ? " · " + q.client.name : ""}`;
+  const box = $("pv-pages"); box.textContent = ""; box.classList.remove("zoom"); box.scrollTop = 0;
+  pvMsg("Montando o PDF…");
+  $("pv").hidden = false; document.body.classList.add("pv-open");
+  try { if (!(history.state && history.state.pv)) history.pushState({ pv: 1 }, ""); } catch {} // o botão voltar do celular fecha a folha
+  try {
+    await prepLogo();
+    const blob = buildPdf({ ...q, clientSig: await inkBlue(q.clientSig) }).output("blob");
+    if (my !== pvToken) return;
+    pv.blob = blob;
+    const lib = await loadPdfjs().catch(() => null);
+    if (my !== pvToken) return;
+    if (!lib) return pvMsg("Não deu para mostrar a folha aqui. Verifique a internet ou baixe o PDF.", true);
+    const doc = await lib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()), isEvalSupported: false }).promise;
+    const dpr = window.devicePixelRatio || 1, cssW = Math.min(box.clientWidth - 24, 760) || 360;
+    for (let i = 1; i <= doc.numPages && my === pvToken; i++) {
+      const page = await doc.getPage(i), w1 = page.getViewport({ scale: 1 }).width;
+      const vp = page.getViewport({ scale: Math.min(1600, Math.max(900, cssW * dpr * 1.6)) / w1 });
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+      cv.setAttribute("aria-label", `Página ${i} de ${doc.numPages}`);
+      await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise;
+      if (my !== pvToken) break;
+      box.appendChild(cv);
+      if (i === 1) pvMsg("");
+    }
+    doc.destroy();
+  } catch (e) {
+    if (my === pvToken) pvMsg("Não deu para mostrar a folha aqui." + (pv.blob ? " Baixe o PDF para ver." : ""), !!pv.blob);
+  }
+}
+function closePv(fromBack) {
+  if ($("pv").hidden) return;
+  pvToken++; $("pv").hidden = true; $("pv-pages").textContent = ""; document.body.classList.remove("pv-open");
+  if (!fromBack) try { if (history.state && history.state.pv) history.back(); } catch {}
+}
+addEventListener("popstate", () => closePv(true));
+try { if (history.state && history.state.pv) history.replaceState(null, ""); } catch {} // recarregou com a folha aberta
+$("pv-close").onclick = () => closePv();
+$("pv-send").onclick = () => { const go = pv && pv.onSend; closePv(); if (go) go(); };
+$("pv-dl").onclick = async () => { if (!pv || !pv.blob) return; const r = await savePdfFile(pv.blob, pv.name); toast(r === "saved" ? "PDF salvo" : "O PDF não foi salvo"); };
+// toque na folha: aumenta (o ponto tocado fica embaixo do dedo) ou volta ao tamanho da tela
+$("pv-pages").onclick = (e) => {
+  const cv = e.target.closest("canvas"); if (!cv) return;
+  const box = $("pv-pages"), r = cv.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+  box.classList.toggle("zoom");
+  const r2 = cv.getBoundingClientRect();
+  box.scrollLeft += r2.left + fx * r2.width - e.clientX;
+  box.scrollTop += r2.top + fy * r2.height - e.clientY;
+};
+// na tela do orçamento: mostra como está agora, sem salvar e sem gastar número
+$("bar-view").onclick = () => {
+  const q = JSON.parse(JSON.stringify(quote));
+  if (!q.number) q.number = parseNum(profile.next) || 1;
+  if (q.sample) q.client.name = q.client.name.replace(/\s*\(exemplo\)/i, "");
+  normalizeQuote(q);
+  q.items = q.items.filter((it) => it.desc.trim() || parseNum(it.price));
+  q.clientSig = sigClient.value();
+  viewPdf(q, () => $("btn-pdf").click());
+};
+
 /* ---------- Salvos ---------- */
 function renderSaved() {
   $("saved-where").textContent = store.mode === "db"
@@ -2624,11 +2735,13 @@ function renderSaved() {
         <button class="btn small" data-a="rec">Gerar recibo</button>
         <button class="btn small" data-a="copy">Duplicar</button>
         <button class="btn small danger" data-a="del">Excluir</button>
+        <button class="btn small view" data-a="view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Ver PDF</span></button>
       </div>`;
     el.querySelector("strong").textContent = q.client.name || "Sem nome";
     el.querySelector('[data-a="open"]').onclick = () => { quote = JSON.parse(JSON.stringify(q)); show("editor"); renderEditor(); };
     el.querySelector('[data-a="rec"]').onclick = () => receiptFromQuote(q);
     el.querySelector('[data-a="send"]').onclick = () => { if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet."); sendQuote(q); };
+    el.querySelector('[data-a="view"]').onclick = () => viewPdf(q, () => sendQuote(q));
     el.querySelector('[data-a="copy"]').onclick = () => {
       const start = todayISO();
       quote = { ...JSON.parse(JSON.stringify(q)), id: "", number: 0, start, valid: addBizDays(start, validDays()), clientSig: "", datesSet: false, from: q.id };
@@ -2819,7 +2932,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "58";
+const APP_VERSION = "59";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
