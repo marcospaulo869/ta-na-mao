@@ -149,17 +149,23 @@ input.caps::placeholder { text-transform: none; }
 .ins:hover::before, .ins:hover::after { opacity: 1; }
 .itools { display: flex; gap: 6px; align-items: center; margin-left: auto; }
 .ihead .outtag { margin-right: auto; }
-/* Caixinha do item (pedido do Marcos, 08/10/2026): marcado, o item continua na lista, apagado, mas sai da conta
-   (Materiais ou Comprar fora, mão de obra automática e total) e do PDF. "Todos" no topo marca ou desmarca a lista inteira. */
+/* Caixinha do item (pedido do Marcos, 08/10/2026): conferência da soma antes de gerar o PDF. O item selecionado fica apagado
+   e o quadro "Conferência" mostra a soma dos selecionados e os materiais sem eles. Só na tela: não é salvo e o PDF sai com todos.
+   "Todos" no topo seleciona ou limpa a lista inteira. */
 .ioff { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 32px; height: 40px; cursor: pointer; color: var(--muted); font: 600 0.85rem var(--font-body); user-select: none; -webkit-user-select: none; }
 .ioff input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); cursor: pointer; }
 .ioff .box { display: inline-flex; justify-content: center; width: 32px; }
 .itemshead { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 1px dashed var(--line); }
 .itemshead .hint { flex: 1; min-width: 0; }
-.offtag { font: 700 0.72rem var(--font-body); letter-spacing: 0.04em; color: var(--muted); border: 1px dashed var(--muted); border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
-.item.off .field, .item.off .inum, .item.off .tot, .item.off .outtag { opacity: 0.45; }
-.item.off .tot { text-decoration: line-through; }
-.totals .offnote { color: var(--muted); font-size: 0.85rem; margin: 0 0 4px; }
+.seltag { font: 700 0.72rem var(--font-body); letter-spacing: 0.04em; color: var(--accent); border: 1px dashed var(--accent); border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+.item.sel .field, .item.sel .inum, .item.sel .tot, .item.sel .outtag { opacity: 0.45; }
+.item.sel .tot { text-decoration: line-through; }
+.totals .conf { display: grid; justify-content: stretch; gap: 3px; background: var(--accent-soft); border: 1px dashed var(--accent); border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; }
+.totals .conf-h { display: grid; font-weight: 700; color: var(--accent); }
+.totals .conf > div:not(.conf-h) { gap: 10px; }
+.totals .conf > div > span:last-child { white-space: nowrap; }
+.totals .conf-h span:last-child { font-weight: 600; font-size: 0.8rem; color: var(--muted); }
+.totals .conf .big { font-weight: 700; }
 /* Comprar fora: só as letras e números em verde; o fundo fica igual ao resto da página (pedido do Marcos, 06/10/2026) */
 .btn.out { border-color: var(--out); color: var(--out); font-weight: 700; letter-spacing: 0.02em; }
 .item.out .inum, .item.out .tot, .item.out input { color: var(--out); }
@@ -614,7 +620,7 @@ body.pv-open { overflow: hidden; }
     <section class="card">
       <h2>Materiais</h2>
       <p class="hint">Digite o começo do nome (ex.: "mdf br") e toque na sugestão para preencher unidade e preço. Os materiais vêm da aba Materiais, e os novos entram lá quando você salva o orçamento.</p>
-      <div class="itemshead" id="items-head" hidden><p class="hint">Marque o item para tirar da conta e do PDF.</p><label class="ioff all" for="it-all"><span>Todos</span><span class="box"><input type="checkbox" id="it-all"></span></label></div>
+      <div class="itemshead" id="items-head" hidden><p class="hint">Selecione itens para conferir a soma. O PDF sai com todos.</p><label class="ioff all" for="it-all"><span>Todos</span><span class="box"><input type="checkbox" id="it-all"></span></label></div>
       <div class="items" id="items"></div>
       <div class="row addrow" id="add-row"><button class="btn" id="btn-add">+ Adicionar<span class="wide"> material</span></button><button class="btn out" id="btn-add-out" type="button">COMPRAR FORA</button><button class="mic" id="btn-add-voice" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar novo item</span></button></div>
       <div class="grid2 pair">
@@ -1270,7 +1276,7 @@ const normalizeClient = (c) => {
 };
 const normalizeQuote = (q) => {
   normalizeClient(q.client);
-  for (const it of q.items) it.desc = fixCase(it.desc, "upper");
+  for (const it of q.items) { it.desc = fixCase(it.desc, "upper"); delete it.off; } // off: seleção da versão 60, não fica salva
 };
 const normalizeReceipt = (r) => { r.payer.name = fixCase(r.payer.name, "name"); r.desc = fixCase(r.desc, "text"); };
 
@@ -1370,7 +1376,7 @@ function draftOk(d, list, listOk) {
   return !(saved.updated && (!d.updated || saved.updated > d.updated));
 }
 
-const toast = (msg) => { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (t.hidden = true), 2600); };
+const toast = (msg, ms = 2600) => { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (t.hidden = true), ms); };
 
 // Copia um texto. Tenta a área de transferência; se o navegador negar, tenta o método antigo; por último deixa o texto selecionado para copiar pelo menu.
 async function copyText(text, box, okMsg) {
@@ -1464,10 +1470,8 @@ const fmtPct = (n) => String(Math.round(n * 100) / 100).replace(".", ",");
 // (regra do Marcos, 06/10/2026: materiais vezes um).
 // Digitar um valor no campo deixa a mão de obra fixa; orçamentos antigos (sem laborAuto) guardam o valor que tinham.
 const LABOR_X = 1;
-// Item marcado (it.off): continua na lista, mas fica fora da conta e do PDF
-const liveItems = (q) => q.items.filter((it) => !it.off);
 const calc = (q) => {
-  const items = liveItems(q);
+  const items = q.items;
   const materials = items.reduce((s, it) => s + (it.out ? 0 : lineTotal(it)), 0);
   const outside = items.reduce((s, it) => s + (it.out ? lineTotal(it) : 0), 0);
   const labor = q.laborAuto ? cents((materials + outside) * LABOR_X) : parseNum(q.labor), pct = typeof q.discountPct === "number" ? clampPct(q.discountPct) : null;
@@ -1836,9 +1840,9 @@ function renderItems() {
       ins.onclick = () => insertItemAt(i);
       box.appendChild(ins);
     }
-    const row = document.createElement("div"); row.className = "item" + (it.out ? " out" : "") + (it.off ? " off" : "");
+    const row = document.createElement("div"); row.className = "item" + (it.out ? " out" : "") + (picked.has(it) ? " sel" : "");
     row.innerHTML = `
-      <div class="ihead"><span class="inum">Item ${i + 1}</span><span class="offtag" ${it.off ? "" : "hidden"}>FORA DA CONTA</span>${it.out ? `<button class="outtag" type="button" data-a="out" title="Tirar de Comprar fora" aria-label="Item ${i + 1} é para comprar fora. Tocar tira a marcação">COMPRAR FORA ✕</button>` : ""}<span class="itools"><button class="mv" type="button" data-d="-1" title="Subir" aria-label="Subir item ${i + 1}" ${i === 0 ? "disabled" : ""}>↑</button><button class="mv" type="button" data-d="1" title="Descer" aria-label="Descer item ${i + 1}" ${i === quote.items.length - 1 ? "disabled" : ""}>↓</button><button class="mic" type="button" aria-label="Ditar o item ${i + 1}">${MIC_SVG}<span></span></button></span></div>
+      <div class="ihead"><span class="inum">Item ${i + 1}</span><span class="seltag" ${picked.has(it) ? "" : "hidden"}>SELECIONADO</span>${it.out ? `<button class="outtag" type="button" data-a="out" title="Tirar de Comprar fora" aria-label="Item ${i + 1} é para comprar fora. Tocar tira a marcação">COMPRAR FORA ✕</button>` : ""}<span class="itools"><button class="mv" type="button" data-d="-1" title="Subir" aria-label="Subir item ${i + 1}" ${i === 0 ? "disabled" : ""}>↑</button><button class="mv" type="button" data-d="1" title="Descer" aria-label="Descer item ${i + 1}" ${i === quote.items.length - 1 ? "disabled" : ""}>↓</button><button class="mic" type="button" aria-label="Ditar o item ${i + 1}">${MIC_SVG}<span></span></button></span></div>
       <div class="dict" hidden>
         <p class="dict-st" role="status" aria-live="polite"></p>
         <p class="hint">Fale assim: "MDF chapa branco TX 18 milímetros, quatro unidades, valor 289,90".</p>
@@ -1851,7 +1855,7 @@ function renderItems() {
       <div class="field"><label for="it-p-${i}">Preço un. (R$)</label><input id="it-p-${i}" class="num" inputmode="decimal"></div>
       <button class="rm" title="Remover material" aria-label="Remover material">×</button>
       <div class="tot" id="it-t-${i}"></div>
-      <label class="ioff" title="Tirar da conta"><input type="checkbox" id="it-o-${i}" aria-label="Tirar o item ${i + 1} da conta"></label>`;
+      <label class="ioff" title="Selecionar para conferir a soma"><input type="checkbox" id="it-o-${i}" aria-label="Selecionar o item ${i + 1} para conferir a soma"></label>`;
     box.appendChild(row);
     const d = row.querySelector(`#it-d-${i}`), u = row.querySelector(`#it-u-${i}`), q = row.querySelector(`#it-q-${i}`), p = row.querySelector(`#it-p-${i}`);
     d.value = it.desc; u.value = upUn(it.un); q.value = numIn(it.qty); p.value = it.price ? Number(it.price).toFixed(2).replace(".", ",") : "";
@@ -1864,10 +1868,10 @@ function renderItems() {
     q.oninput = () => { it.qty = parseNum(q.value); renderTotals(); };
     p.oninput = () => { it.price = parseNum(p.value); renderTotals(); };
     row.querySelector(".rm").onclick = () => { quote.items.splice(i, 1); renderItems(); renderTotals(); };
-    const off = row.querySelector(`#it-o-${i}`); off.checked = !!it.off;
-    off.onchange = () => {
-      if (off.checked) it.off = true; else delete it.off;
-      row.classList.toggle("off", off.checked); row.querySelector(".offtag").hidden = !off.checked;
+    const sel = row.querySelector(`#it-o-${i}`); sel.checked = picked.has(it);
+    sel.onchange = () => {
+      if (sel.checked) picked.add(it); else picked.delete(it);
+      row.classList.toggle("sel", sel.checked); row.querySelector(".seltag").hidden = !sel.checked;
       renderTotals(); syncItemsAll();
     };
     const tag = row.querySelector('[data-a="out"]');
@@ -1887,18 +1891,24 @@ function renderItems() {
   });
   syncItemsAll();
 }
-// "Todos": marcado quando todos estão marcados, meio marcado quando só alguns
+// Seleção para conferir a soma: guarda o próprio item (WeakSet), por isso acompanha o item ao mover e some ao abrir
+// outro orçamento, ao recarregar ou ao salvar e reabrir. Nunca vai para o orçamento salvo nem para o PDF.
+let picked = new WeakSet();
+const pickedItems = () => quote.items.filter((it) => picked.has(it));
+// "Todos": marcado quando todos estão selecionados, meio marcado quando só alguns
 function syncItemsAll() {
-  const n = quote.items.length, offs = quote.items.filter((it) => it.off).length, all = $("it-all");
+  const n = quote.items.length, k = pickedItems().length, all = $("it-all");
   $("items-head").hidden = !n;
-  all.checked = !!n && offs === n; all.indeterminate = offs > 0 && offs < n;
+  all.checked = !!n && k === n; all.indeterminate = k > 0 && k < n;
 }
 $("it-all").onchange = () => {
   const on = $("it-all").checked;
-  for (const it of quote.items) { if (on) it.off = true; else delete it.off; }
+  for (const it of quote.items) { if (on) picked.add(it); else picked.delete(it); }
   renderItems(); renderTotals();
-  toast(on ? "Todos os itens fora da conta" : "Todos os itens de volta na conta");
+  toast(on ? "Todos os itens selecionados para conferir" : "Seleção limpa");
 };
+// Ver PDF e Enviar PDF com itens selecionados: avisa que o PDF sai com todos
+const warnPicked = () => { const k = pickedItems().length; if (k) toast(`${k === 1 ? "1 item selecionado" : k + " itens selecionados"} só para conferir. O PDF sai com todos os itens.`, 5000); };
 function insertItemAt(i) {
   quote.items.splice(i, 0, { desc: "", un: "UN", qty: 1, price: 0 });
   renderItems(); renderTotals();
@@ -2224,9 +2234,15 @@ function renderTotals() {
   quote.items.forEach((it, i) => { const el = $(`it-t-${i}`); if (el) el.textContent = money(lineTotal(it)); });
   // ordem pedida pelo Marcos (06/10/2026): Materiais, Comprar fora, Total dos materiais, Mão de obra, Desconto, VALOR TOTAL
   const disc = `<div><span>Desconto${t.pct ? ` (${fmtPct(t.pct)}%)` : ""}</span><span>− ${money(t.discount)}</span></div>`;
-  const offs = quote.items.filter((it) => it.off && ((it.desc || "").trim() || parseNum(it.price)));
-  const offNote = offs.length ? `<p class="offnote">${offs.length === 1 ? "1 item marcado fica" : offs.length + " itens marcados ficam"} fora da conta e do PDF (${money(offs.reduce((s, it) => s + lineTotal(it), 0))}).</p>` : "";
-  $("totals").innerHTML = offNote + (t.hasOut ? `
+  // conferência: soma dos selecionados e os materiais sem eles (os totais de baixo continuam com todos os itens, como no PDF)
+  const sel = pickedItems(), selOwn = sel.filter((it) => !it.out).reduce((s, it) => s + lineTotal(it), 0), selOut = sel.filter((it) => it.out).reduce((s, it) => s + lineTotal(it), 0);
+  const conf = sel.length ? `<div class="conf" role="status">
+    <div class="conf-h"><span>Conferência</span><span>só na tela, o PDF sai com todos</span></div>
+    <div class="big"><span>Selecionados (${sel.length === 1 ? "1 item" : sel.length + " itens"})</span><span>${money(selOwn + selOut)}</span></div>
+    <div><span>Materiais sem os selecionados</span><span>${money(cents(t.materials - selOwn))}</span></div>
+    ${t.hasOut ? `<div><span>Comprar fora sem os selecionados</span><span>${money(cents(t.outside - selOut))}</span></div>` : ""}
+  </div>` : "";
+  $("totals").innerHTML = conf + (t.hasOut ? `
     <div><span>Materiais</span><span>${money(t.materials)}</span></div>
     <div class="outsum"><span>Comprar fora</span><span>${money(t.outside)}</span></div>
     <div class="sub"><span>Total dos materiais</span><span>${money(t.materials + t.outside)}</span></div>
@@ -2479,7 +2495,7 @@ function buildPdf(q) {
   if (q.client.address) { const lines = doc.splitTextToSize(q.client.address, 105); doc.text(lines, M, cy); cy += 4 * lines.length + 0.5; }
   y = Math.max(cy, y + 12) + 4;
 
-  const own = liveItems(q).filter((it) => !it.out), outs = liveItems(q).filter((it) => it.out);
+  const own = q.items.filter((it) => !it.out), outs = q.items.filter((it) => it.out);
   const itemRows = (list) => list.map((it, i) => [i + 1, it.desc, upUn(it.un), String(parseNum(it.qty)).replace(".", ","), money(parseNum(it.price)), money(lineTotal(it))]);
   const COLS = { 0: { cellWidth: 9, halign: "center" }, 2: { cellWidth: 13, halign: "center" }, 3: { cellWidth: 15, halign: "right" }, 4: { cellWidth: 28, halign: "right" }, 5: { cellWidth: 30, halign: "right" } };
   if (own.length || !outs.length) {
@@ -2667,6 +2683,7 @@ const sendQuote = async (q) => {
 $("btn-pdf").onclick = async () => {
   if (!window.jspdf) { toast("O gerador de PDF não carregou. Verifique a internet e abra de novo."); return; }
   if (!quote.client.name.trim()) { toast("Preencha o nome do cliente"); $("c-name").focus(); return; }
+  warnPicked();
   await saveQuote(true);
   await sendQuote(quote);
 };
@@ -2745,6 +2762,7 @@ $("pv-pages").onclick = (e) => {
 };
 // na tela do orçamento: mostra como está agora, sem salvar e sem gastar número
 $("bar-view").onclick = () => {
+  warnPicked();
   const q = JSON.parse(JSON.stringify(quote));
   if (!q.number) q.number = parseNum(profile.next) || 1;
   if (q.sample) q.client.name = q.client.name.replace(/\s*\(exemplo\)/i, "");
@@ -2973,7 +2991,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "60";
+const APP_VERSION = "61";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------

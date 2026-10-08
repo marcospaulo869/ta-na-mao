@@ -241,13 +241,13 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - **Na folha:** dá para rolar por todas as páginas (orçamento e pré-contrato). Tocar na folha aumenta e tocar de novo volta. "Fechar" ou o botão voltar do celular fecham a folha. "Enviar PDF" fecha a folha e faz o mesmo que o botão Enviar PDF (na tela do orçamento, salva e envia).
 - **Sem internet:** a folha é desenhada pelo pdf.js (carrega na primeira vez). Se ele não carregar, aparece "Baixar o PDF".
 
-## Atualização (08/10/2026): Un. menor e caixinha para tirar o item da conta (versão 60)
+## Atualização (08/10/2026): Un. menor e caixinha para conferir a soma (versões 60 e 61)
 
 - **Campo Un. menor:** no notebook o Un. tem largura fixa pequena e o espaço foi para Qtd. e Preço. No celular também ficou mais estreito.
-- **Caixinha em cada item:** fica ao lado do total do item (no notebook, à direita do ×; no celular, embaixo do ×). Marcada, o item continua na lista, apagado e riscado, com a etiqueta "FORA DA CONTA", e o valor dele sai dos Materiais (ou do Comprar fora), da mão de obra automática e do total. Desmarcando, volta.
-- **Todos:** no topo da lista de itens. Marca ou desmarca todos de uma vez; fica meio marcado quando só alguns estão marcados.
-- **PDF:** os itens marcados não aparecem no PDF. O orçamento salvo guarda a marcação (it.off), e o valor nos Salvos e no recibo também fica sem eles.
-- Embaixo dos totais aparece "N itens marcados ficam fora da conta e do PDF (R$ X)".
+- **Caixinha em cada item:** fica ao lado do total do item (no notebook, à direita do ×; no celular, embaixo do ×). No topo da lista, **Todos** seleciona ou limpa todos de uma vez (fica meio marcado quando só alguns estão).
+- **Para que serve (Marcos, 08/10):** conferir a soma antes de gerar o PDF, item por item, para achar erro de soma. O item selecionado fica apagado, com o total riscado e a etiqueta "SELECIONADO", e aparece o quadro **Conferência** acima dos totais: "Selecionados (N itens)", "Materiais sem os selecionados" e, se houver, "Comprar fora sem os selecionados".
+- **Não muda o orçamento:** os totais de baixo, a barra, o PDF, os Salvos e o recibo continuam com todos os itens. A seleção não é salva; some ao reabrir o orçamento ou recarregar a página. Ver PDF e Enviar PDF avisam quando há itens selecionados ("O PDF sai com todos os itens").
+- A versão 60 tirava os selecionados da conta e do PDF; a 61 corrigiu para só conferir, depois que o Marcos explicou o uso.
 
 ## Próximos passos
 
