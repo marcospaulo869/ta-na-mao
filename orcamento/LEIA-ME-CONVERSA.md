@@ -249,6 +249,14 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - **Não muda o orçamento:** os totais de baixo, a barra, o PDF, os Salvos e o recibo continuam com todos os itens. A seleção não é salva; some ao reabrir o orçamento ou recarregar a página. Ver PDF e Enviar PDF avisam quando há itens selecionados ("O PDF sai com todos os itens").
 - A versão 60 tirava os selecionados da conta e do PDF; a 61 corrigiu para só conferir, depois que o Marcos explicou o uso.
 
+## Atualização (09/10/2026): o app lê o PDF do app antigo (versão 62)
+
+- **O problema:** no celular, em "Importar orçamentos", o PDF do app antigo aparecia apagado e não dava para tocar. O botão só aceitava o arquivo de importação (.txt) que o Claude montava.
+- **Agora:** "Importar orçamentos" (Início e Salvos) aceita o próprio PDF do app antigo (Orcamento_a-NN.pdf), e dá para escolher vários de uma vez. O app lê o PDF (com o mesmo leitor do Ver PDF, precisa de internet) e mostra "Importar N orçamentos?" com número, cliente e total.
+- **O que ele lê:** cliente, contato, endereço (cidade e UF, ou rua quando tem número), número do orçamento, criado em, válido até, os itens (descrição, quantidade e preço; descrição em duas linhas vira uma só), o total e as observações. A descrição do projeto que fica embaixo do cliente vai para o início do Obs como "PROJETO: ...". Igual à transcrição manual do a-22.
+- **Conferência:** se a soma dos itens não bater com o total do PDF, a pergunta mostra um aviso "Atenção" para conferir depois. PDF que não é do app antigo aparece como "não deu para ler".
+- O arquivo .txt de importação continua funcionando. Importar o mesmo PDF de novo não duplica.
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.

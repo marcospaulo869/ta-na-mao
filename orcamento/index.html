@@ -491,7 +491,7 @@ body.pv-open { overflow: hidden; }
       <div class="stat"><div class="k">A receber</div><div class="v" id="st-open">R$ 0,00</div></div>
     </div>
     <div class="feedback" id="home-import">
-      <p><b>Tem orçamentos de outro app?</b> Importe o arquivo de orçamentos e eles entram nos Salvos, sem apagar nada.</p>
+      <p><b>Tem orçamentos do app antigo?</b> Escolha o PDF do orçamento (pode ser mais de um) e ele entra nos Salvos, sem apagar nada.</p>
       <button class="btn imp bk-load" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><path d="M8 8l4-4 4 4"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>Importar orçamentos</button>
     </div>
     <div class="trust"><span>PDF com sua logomarca</span><span>Assinatura digital na tela</span><span>Envio pelo WhatsApp</span></div>
@@ -899,12 +899,12 @@ body.pv-open { overflow: hidden; }
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="bk-title">
     <h2 id="bk-title">Restaurar a cópia de segurança?</h2>
     <p id="bk-info"></p>
-    <p class="hint" id="bk-note"></p>
+    <p class="hint" id="bk-note" style="white-space: pre-line"></p>
     <p class="err" id="bk-err" hidden></p>
     <div class="row"><button class="btn primary" id="bk-yes" type="button">Restaurar</button><button class="btn" id="bk-no" type="button">Cancelar</button></div>
   </div>
 </div>
-<input type="file" id="bk-file" accept=".txt,.json,text/plain,application/json" hidden>
+<input type="file" id="bk-file" accept=".txt,.json,.pdf,text/plain,application/json,application/pdf" multiple hidden>
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -2991,7 +2991,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "61";
+const APP_VERSION = "62";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -3031,8 +3031,11 @@ async function makeBackup() {
 $("btn-bk-save").onclick = makeBackup;
 let bkPending = null;
 for (const b of document.querySelectorAll(".bk-load")) b.onclick = () => $("bk-file").click();
+const isPdfFile = (f) => /\.pdf$/i.test(f.name || "") || f.type === "application/pdf";
 $("bk-file").onchange = async (e) => {
-  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const files = [...e.target.files]; e.target.value = ""; if (!files.length) return;
+  if (files.some(isPdfFile)) return importPdfs(files.filter(isPdfFile), files.length - files.filter(isPdfFile).length);
+  const f = files[0];
   let d = null; try { d = JSON.parse(await f.text()); } catch {}
   const imp = !!d && d.kind === "importar";
   if (!d || d.app !== BK_APP || (!imp && (!d.profile || typeof d.profile !== "object")) || !Array.isArray(d.quotes) || !Array.isArray(d.receipts || [])) {
@@ -3042,12 +3045,8 @@ $("bk-file").onchange = async (e) => {
   $("bk-yes").disabled = false; showErr("bk-err", "");
   if (imp) {
     if (fresh) { toast("Faça o cadastro primeiro. Depois importe em Orçamento → Salvos."); return; }
-    d.receipts = d.receipts || []; bkPending = d;
-    const n = d.quotes.length;
-    $("bk-title").textContent = n === 1 ? "Importar 1 orçamento?" : `Importar ${n} orçamentos?`;
-    $("bk-info").textContent = d.quotes.slice(0, 6).map((q) => `Nº ${pad4(q.number)} · ${(q.client && q.client.name) || "Sem nome"} · ${money(calc(q).total)}`).join("\n") + (n > 6 ? `\n… e mais ${n - 6}` : "");
-    $("bk-note").textContent = "Eles entram nos Salvos do Orçamento. Nada do que já está neste aparelho é apagado. Se um deles já foi importado antes e você mudou alguma coisa, fica a sua versão.";
-    $("bk-yes").textContent = "Importar"; $("bk-ask").hidden = false;
+    d.receipts = d.receipts || [];
+    askImport(d, "");
     return;
   }
   $("bk-title").textContent = "Restaurar a cópia de segurança?"; $("bk-yes").textContent = "Restaurar";
@@ -3061,6 +3060,15 @@ $("bk-file").onchange = async (e) => {
     : "O que já está neste aparelho continua. Os orçamentos e recibos da cópia entram nos Salvos e, se o mesmo estiver nos dois, fica a versão mais nova. Os dados da empresa passam a ser os da cópia, e a sua senha continua a mesma.";
   $("bk-ask").hidden = false;
 };
+// pergunta antes de importar: a lista do que vai entrar e os avisos da leitura do PDF
+function askImport(d, warn) {
+  bkPending = d; $("bk-yes").disabled = false; showErr("bk-err", "");
+  const n = d.quotes.length;
+  $("bk-title").textContent = n === 1 ? "Importar 1 orçamento?" : `Importar ${n} orçamentos?`;
+  $("bk-info").textContent = d.quotes.slice(0, 6).map((q) => `Nº ${pad4(q.number)} · ${(q.client && q.client.name) || "Sem nome"} · ${money(calc(q).total)}`).join("\n") + (n > 6 ? `\n… e mais ${n - 6}` : "");
+  $("bk-note").textContent = (warn ? warn + "\n\n" : "") + "Eles entram nos Salvos do Orçamento. Nada do que já está neste aparelho é apagado. Se um deles já foi importado antes e você mudou alguma coisa, fica a sua versão.";
+  $("bk-yes").textContent = "Importar"; $("bk-ask").hidden = false;
+}
 $("bk-no").onclick = () => { bkPending = null; $("bk-ask").hidden = true; };
 $("bk-yes").onclick = async () => {
   const d = bkPending; if (!d) return;
@@ -3072,7 +3080,140 @@ $("bk-yes").onclick = async () => {
   try { sessionStorage.setItem("orc.restored", imp ? "imp:" + d.quotes.length : "1"); if (imp) sessionStorage.setItem("orc.view", "saved"); } catch {}
   location.reload(); // abre de novo como numa visita normal: Entrar, ou a tela onde você estava
 };
-// Orçamentos de outro app (Claude lê o PDF e monta o arquivo): só entram nos Salvos, sem mexer no cadastro, na numeração nem na
+/* ---------- PDF do app antigo (Orcamento_a-NN.pdf): o app lê sozinho ---------- */
+// O pdf.js (o mesmo do Ver PDF) dá cada pedaço de texto com a posição na folha. Os pedaços viram linhas, e os campos são
+// achados pelos rótulos do app antigo: Cliente, Contato, Endereço, ORÇAMENTO Nº, Criado em, Valido até, a tabela
+// Descrição / Qtd / Val. Unit / Valor, Total e Observações. A descrição do projeto (embaixo do cliente) vai para o Obs.
+async function pdfLines(file) {
+  const lib = await loadPdfjs();
+  const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+  const lines = [];
+  try {
+    for (let p = 1; p <= doc.numPages; p++) {
+      const tc = await (await doc.getPage(p)).getTextContent(), rows = [];
+      for (const it of tc.items) {
+        const str = String(it.str || "").replace(/\s+/g, " ").trim(); if (!str) continue;
+        const x = it.transform[4], y = it.transform[5];
+        let r = rows.find((r) => Math.abs(r.y - y) < 3);
+        if (!r) rows.push((r = { p, y, parts: [] }));
+        r.parts.push({ x, w: it.width || 0, s: str });
+      }
+      rows.sort((a, b) => b.y - a.y);
+      for (const r of rows) {
+        r.parts.sort((a, b) => a.x - b.x);
+        r.text = r.parts.map((t) => t.s).join(" "); r.x = r.parts[0].x; r.right = Math.max(...r.parts.map((t) => t.x + t.w));
+        lines.push(r);
+      }
+    }
+  } finally { doc.destroy(); }
+  return lines;
+}
+const oldDate = (s) => {
+  const m = String(s || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if (!m) return "";
+  return `${m[3].length === 2 ? "20" + m[3] : m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+};
+// "PASSO DE TORRES SC" -> cidade e UF; com número ou vírgula é rua
+const oldAddress = (a) => {
+  const t = String(a || "").trim().replace(/[\s,-]+$/, ""), m = t.match(/^(.*?)[\s,\/-]+(\p{L}{2})$/u);
+  const uf = m && UFS.has(m[2].toLowerCase()) ? m[2].toUpperCase() : "", rest = (uf ? m[1] : t).trim();
+  return /\d|,/.test(rest) ? { street: rest, uf } : { city: rest, uf };
+};
+function parseOldQuote(lines) {
+  const at = (re) => lines.findIndex((l) => re.test(l.text));
+  const find = (re) => { for (const l of lines) { const m = l.text.match(re); if (m) return m[1]; } return ""; };
+  const after = (text, re) => text.replace(re, "").trim();
+  const iCli = at(/^Cliente:/i), code = find(/OR[ÇC]AMENTO\s*N\S*\s*:\s*(\S+)/i), iTab = at(/^Descri[çc][ãa]o:/i);
+  if (iCli < 0 || !code || iTab < 0) return null;
+  const head = new Set(lines.slice(0, iCli).map((l) => l.text)); // cabeçalho da empresa: repetido em outra página, é pulado
+  // Cliente e Contato na mesma linha
+  const cl = lines[iCli], ci = cl.parts.findIndex((t) => /^Contato:/i.test(t.s));
+  const name = after(cl.parts.slice(0, ci < 0 ? cl.parts.length : ci).map((t) => t.s).join(" "), /^Cliente:/i);
+  const phone = ci < 0 ? "" : after(cl.parts.slice(ci).map((t) => t.s).join(" "), /^Contato:/i);
+  const iEnd = at(/^Endere[çc]o:/i), iNum = at(/OR[ÇC]AMENTO\s*N\S*\s*:/i);
+  const stop = [iEnd, iNum, iTab].filter((i) => i > iCli).sort((a, b) => a - b)[0];
+  const project = lines.slice(iCli + 1, stop).map((l) => l.text).join(" ").replace(/\s+/g, " ").trim();
+  const addr = iEnd >= 0 ? after(lines[iEnd].text, /^Endere[çc]o:/i) : "";
+  // tabela: as colunas de número são achadas pelo cabeçalho (o número fica alinhado à direita do rótulo)
+  const colsOf = (l) => {
+    const c = {}, put = (k, re) => { const t = l.parts.find((t) => re.test(t.s)); if (t) c[k] = t.x + t.w; };
+    put("qty", /^Qtd/i); put("unit", /^Val\.?\s*Unit/i); put("val", /^Valor/i);
+    const xq = l.parts.find((t) => /^Qtd/i.test(t.s));
+    return c.qty == null ? null : { ...c, from: xq.x - 15 };
+  };
+  let cols = colsOf(lines[iTab]); if (!cols) return null;
+  const items = [], obsL = []; let total = null, state = "items";
+  for (let i = iTab + 1; i < lines.length; i++) {
+    const l = lines[i];
+    if (head.has(l.text)) continue;
+    if (state === "items") {
+      if (/^Descri[çc][ãa]o:/i.test(l.text)) { cols = colsOf(l) || cols; continue; }
+      if (/^Total:/i.test(l.text)) { total = parseNum(after(l.text, /^Total:/i)); state = "after"; continue; }
+      const desc = l.parts.filter((t) => t.x < cols.from).map((t) => t.s).join(" "), nums = l.parts.filter((t) => t.x >= cols.from);
+      if (nums.length) {
+        const v = {};
+        for (const t of nums) {
+          const r = t.x + t.w, k = ["qty", "unit", "val"].filter((k) => cols[k] != null).sort((a, b) => Math.abs(cols[a] - r) - Math.abs(cols[b] - r))[0];
+          v[k] = parseNum(t.s);
+        }
+        items.push({ desc, ...v });
+      } else if (items.length && desc) items[items.length - 1].desc += " " + desc;
+    } else if (state === "after") {
+      if (/^Observa[çc][õo]es:/i.test(l.text)) { state = "obs"; const rest = after(l.text, /^Observa[çc][õo]es:/i); if (rest) obsL.push({ ...l, text: rest }); }
+    } else {
+      if (/^Assinatura$/i.test(l.text) || /(feira|s[áa]bado|domingo)\s*,?.*\bde \d{4}$/i.test(l.text)) break;
+      obsL.push(l);
+    }
+  }
+  if (!items.length) return null;
+  // Observações: linha cheia que continua na de baixo vira uma frase só; espaço maior entre linhas separa parágrafos
+  const maxW = Math.max(...lines.map((l) => l.right - l.x)), gaps = obsL.slice(1).map((l, i) => obsL[i].y - l.y).filter((g) => g > 4);
+  const step = gaps.length ? Math.min(...gaps) : 15;
+  let obs = "";
+  obsL.forEach((l, i) => {
+    const prev = obsL[i - 1];
+    if (prev) obs += prev.p !== l.p ? "\n" : prev.y - l.y > step * 1.5 ? "\n\n" : prev.right - prev.x > maxW * 0.85 ? " " : "\n";
+    obs += l.text;
+  });
+  const start = oldDate(find(/Criado em:\s*(\S+)/i)) || todayISO(), valid = oldDate(find(/V[aá]lido at[ée]:\s*(\S+)/i)) || start;
+  const rows = items.map((it) => {
+    const qty = it.qty || 1, price = it.unit != null ? it.unit : it.val != null ? cents(it.val / qty) : 0;
+    return { desc: upperName(it.desc.replace(/\s+/g, " ").trim()), un: "UN", qty, price, val: it.val };
+  });
+  const warn = [], sum = cents(rows.reduce((s, it) => s + it.qty * it.price, 0));
+  const bad = rows.findIndex((it) => it.val != null && Math.abs(cents(it.qty * it.price) - it.val) > 0.01);
+  if (bad >= 0) warn.push(`no item ${bad + 1}, quantidade × preço não dá o valor do PDF`);
+  if (total != null && Math.abs(sum - total) > 0.01) warn.push(`a soma dos itens dá ${money(sum)} e o PDF diz ${money(total)}`);
+  const client = { name: "", doc: "", phone: "", email: "", cep: "", street: "", number: "", comp: "", district: "", city: "", uf: "", address: "", ...oldAddress(addr), name, phone };
+  normalizeClient(client);
+  const number = /^\d+$/.test(code) ? "ant-" + code : code; // número puro não pode se misturar com a numeração do app
+  return {
+    warn,
+    q: {
+      id: "antigo-" + code.toLowerCase().replace(/[^\p{L}\p{N}-]+/gu, "-"), number, start, valid, datesSet: true, client,
+      items: rows.map(({ val, ...it }) => it),
+      labor: 0, laborAuto: false, discount: 0, discountPct: 0, // o preço do PDF antigo já é o do móvel pronto
+      obs: [project && "PROJETO: " + project, obs].filter(Boolean).join("\n\n"), clientSig: "", updated: start + "T12:00:00.000Z",
+    },
+  };
+}
+async function importPdfs(pdfs, others) {
+  if (!profile.registered || !profile.pwHash) { toast("Faça o cadastro primeiro. Depois importe em Orçamento → Salvos."); return; }
+  toast(pdfs.length === 1 ? "Lendo o PDF…" : `Lendo ${pdfs.length} PDFs…`, 60000);
+  const got = new Map(), notes = [];
+  let noLib = false;
+  for (const f of pdfs) {
+    let r = null;
+    try { r = parseOldQuote(await pdfLines(f)); } catch (e) { if (!window.pdfjsLib) noLib = true; }
+    if (!r) { notes.push(`${f.name}: não deu para ler. Ele precisa ser um orçamento do app antigo.`); continue; }
+    got.set(r.q.id, r.q);
+    if (r.warn.length) notes.push(`Atenção, Nº ${r.q.number}: ${r.warn.join("; ")}. Confira depois de importar.`);
+  }
+  clearTimeout(toast.h); $("toast").hidden = true;
+  if (!got.size) { toast(noLib ? "Não consegui abrir o leitor de PDF. Verifique a internet e tente de novo." : pdfs.length === 1 ? "Não consegui ler este PDF. Ele precisa ser um orçamento do app antigo." : "Não consegui ler esses PDFs. Eles precisam ser orçamentos do app antigo.", 6000); return; }
+  if (others) notes.push("Os arquivos que não são PDF ficaram de fora.");
+  askImport({ app: BK_APP, kind: "importar", v: 1, quotes: [...got.values()], receipts: [] }, notes.join("\n"));
+}
+// Orçamentos de outro app (o app lê o PDF antigo, ou Claude monta o arquivo): só entram nos Salvos, sem mexer no cadastro, na numeração nem na
 // lista de materiais (os preços de lá são de móveis prontos). Mesmo id = mesmo orçamento: fica a versão mais nova.
 async function importQuotes(d) {
   for (const q of d.quotes) {
