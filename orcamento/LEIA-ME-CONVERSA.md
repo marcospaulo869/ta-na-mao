@@ -1,0 +1,279 @@
+# App de Orçamento e Recibo: onde paramos
+
+Este arquivo guarda o resumo da conversa com o Claude para retomarmos depois.
+Para continuar, peça ao Claude: "leia a pasta orcamento do ta-na-mao e vamos retomar de onde paramos".
+
+## Panorama (05/10/2026, noite)
+
+### Onde o app está
+- **Link próprio (o do celular):** https://marcospaulo869.github.io/ta-na-mao/orcamento/ . Aqui funcionam o "Segure e fale", a digital e o envio do PDF anexado. Os dados ficam só no aparelho em que foram feitos.
+- **Link no Claude:** https://claude.ai/artifact/7yzK28BqRJmSpzt61nXdLG . Os dados ficam na sua conta do Claude (usado no notebook), mas ali o microfone e a digital são bloqueados.
+- **Código:** `orcamento/index.html` no GitHub (`marcospaulo869/ta-na-mao`, branch `claude/project-thread-o7weyg`, PR #1 aberto e ainda não juntado na branch principal).
+
+### O que já está pronto
+1. **Entrada:** tela de boas-vindas com o selo da Madeira Forte e reflexo de luz; cadastro completo da empresa (CPF/CNPJ, IE, Instagram, endereço, logomarca, assinatura); senha com olhinho; entrar com a digital; apagar tudo e recomeçar.
+2. **Orçamento:** botão "COMPRAR FORA" (06/10/2026): itens com letras e números em verde (o fundo fica igual ao resto da página, sem vermelho) e soma própria; os totais seguem a ordem do Marcos (06/10/2026): Materiais, Comprar fora, Total dos materiais (a soma dos dois), Mão de obra (igual ao Total dos materiais), Desconto e VALOR TOTAL, na tela e no PDF (a conta não mudou, só a ordem), onde os itens vão numa tabela separada igual à dos materiais, só com as letras em verde; os botões "+ Adicionar material", "COMPRAR FORA" e "Segure e dite" ficam presos logo acima da barra do Total enquanto a lista de materiais está na tela (06/10/2026; no celular ficam lado a lado numa linha); "+ Inserir item entre X e Y" virou um botão em destaque no meio da linha tracejada; cliente com endereço em campos e botões de copiar; validade em dias úteis; materiais com sugestões da aba Materiais; nome do material em MAIÚSCULAS com acentos automáticos; unidade (Un.) com lista para escolher num toque (UN, PAR, CX, CH, M, M², JG, KIT, PCT, RL, BR, TB, LT, GL, L, KG e "Outra" para digitar), sempre em MAIÚSCULAS, também na aba Materiais e no PDF (06/10/2026); ditado "Segure e fale"; inserir e reordenar itens; mão de obra automática igual ao valor total da compra dos materiais, incluindo os de Comprar fora (materiais × 1; regra do Marcos de 06/10/2026). Digitar outro valor deixa a mão de obra fixa, e o botão "Igualar ao valor dos materiais" (ou apagar o campo) volta ao automático; botões "Recibo" dentro do orçamento (06/10/2026): um no topo, ao lado das abas (no celular fica na linha do "Meus dados", porque ao lado das abas não cabe), e outro na barra de baixo, ao lado do "Enviar PDF" (no celular a barra fica em duas linhas: o Total em cima e Salvar, Recibo e Enviar PDF embaixo). Na aba Orçamento eles salvam o orçamento da tela e abrem o recibo dele, com o cliente e o valor que falta receber (o saldo, se já houver recibo de entrada); se um recibo de outro cliente estiver começado e não salvo, o primeiro toque só avisa; nas abas Salvos e Materiais só abrem o recibo; desconto em %; os campos Mão de obra e Desconto ficam lado a lado, do mesmo tamanho e alinhados, também no celular, com a explicação da mão de obra automática embaixo dos dois (06/10/2026); pré-contrato; assinatura do cliente.
+2b. **Entrar (07/10/2026, pedido do Marcos no celular):** ao concluir o cadastro, ao entrar com a senha e ao trocar a senha, o app pede ao navegador para guardar a senha (no Chrome aparece "Salvar senha?"; o usuário é o e-mail do cadastro), e o login virou um formulário de verdade para o Chrome preencher sozinho. Logo depois de entrar com a senha, se o celular tiver leitor e a digital ainda não estiver ativada, aparece "Entrar com a digital?" com "Ativar a digital" e "Agora não" (pergunta uma vez por aparelho; dá para ativar depois em Meus dados). Dentro do Claude não aparece.
+3. **Recibo:** valor por extenso; tipo (total, entrada, parcela, saldo); forma de pagamento; assinaturas; gerar a partir de um orçamento com o saldo que falta. Quando o recibo vem de um orçamento, o tipo ajusta o valor sozinho (pedido do Marcos, 06/10/2026): Pagamento total e Saldo final = o que falta receber; Entrada e Parcela = uma porcentagem do valor total do orçamento (botões 20%, 30%, 40%, 50% e "Outra" para digitar; começa em 50%), sem passar do que falta receber. O valor ainda pode ser digitado à mão. No PDF e na lista aparece "Entrada (50%)". O "Referente a" já vem pronto e se ajusta sozinho ao tipo, à porcentagem e aos valores, com o campo "Mão de obra de fabricação de" para completar (ex.: "Entrada de 50% (R$ 5.366,63) do valor total de R$ 10.733,26 do serviço de mão de obra de fabricação de móveis planejados da cozinha (orçamento nº 0001)."); o próximo recibo do mesmo orçamento já vem com esse campo preenchido; se o texto for mudado à mão, ele para de se ajustar até tocar em "Voltar ao texto automático"; no PDF a frase fica "referente à entrada..." / "referente ao saldo final..." (pedido do Marcos, 06/10/2026). No recibo há o par dos botões "Recibo" do orçamento: botões **Orçamento** no topo (ao lado das abas Recibo/Salvos; no celular na linha do "Meus dados") e na barra de baixo (Salvar, Orçamento, Enviar recibo), que abrem o orçamento de onde o recibo veio (sem orçamento ligado, ou na lista de recibos, abrem a aba Orçamento como estava; se houver um orçamento novo não salvo aberto, o primeiro toque só avisa). Do orçamento, "Recibo" volta ao mesmo recibo dele (começado ou já salvo); com o recibo salvo e saldo a receber aparece o botão "Fazer recibo do saldo (R$ ...)" para o próximo (pedido do Marcos, 06/10/2026: "transitar de um para o outro dentro do mesmo contexto").
+4. **PDF:** cabeçalho com logomarca e dados; QR Code (WhatsApp, Instagram ou "Orçamento com valor estimado", que abre o link de autoatendimento colado em Meus dados) com o selo dourado no meio; estilo preto e dourado ou verde; assinaturas em azul BIC.
+5. **Envio:** tela de compartilhar do celular com o PDF anexado (botão verde "Enviar o PDF"); no notebook, salva o PDF e abre a conversa no WhatsApp. Se o telefone do cliente (ou de quem pagou, no recibo) for igual ao seu de Meus dados, o app avisa embaixo do campo e, na hora de enviar, não mostra "Abrir WhatsApp de ..." (abriria a conversa com você mesmo; caso da Fabiana em 06/10/2026).
+6. **Facilidades:** o que está na tela fica guardado ao atualizar a página, ao tocar em Sair ou se o app fechar, e a tela inicial mostra "Continuar" para o orçamento ou recibo que ficou pela metade (o cadastro também se guarda, menos a senha); item novo aparece no meio da tela; tocar num campo seleciona o que já está nele; listas de salvos; aba Materiais com os preços. **Pensado para o celular** (06/10/2026: 90% ou mais do uso é no celular): todos os botões têm área de toque de pelo menos 44 px (o tamanho da ponta do dedo); a barra de baixo mostra o Total, Salvar e Enviar PDF maiores numa linha só; as abas, o "‹ Início" e as setas ↑ ↓ e o × de cada item ficaram maiores; a etiqueta "COMPRAR FORA ✕" fica ao lado do número do item.
+
+### Pré-contrato da Madeira Forte (06/10/2026)
+- O pré-contrato do Marcos (20 itens, tirado do Orcamento_a-17.pdf) foi transcrito com acentos, pontuação e digitação corrigidos e virou o texto padrão quando a empresa é Madeira Forte (Meus dados e cada orçamento novo; orçamentos que ainda estavam com o texto genérico passam a mostrar o dele). Continua editável. Quem testa o app fica com o texto genérico.
+- Os campos do pré-contrato têm a correção ortográfica do navegador e do teclado ligada.
+- No PDF, texto longo sai com letra 9 e usa a página inteira; as assinaturas vão no fim.
+- Cópia do texto: pre-contrato-madeira-forte.txt na pasta do projeto.
+
+### Testes com outras pessoas (06/10/2026)
+- Quem testa abre o link próprio no celular, instala na tela inicial e faz o cadastro com a própria empresa. Os dados ficam só no aparelho de cada um.
+- A tela inicial tem o botão verde **Mandar sugestão**, que abre o WhatsApp do Marcos com uma mensagem pronta (diz se é celular ou computador e o tamanho da tela). Para o próprio Marcos o botão não aparece.
+- O link do autoatendimento da Madeira Forte só vem preenchido no QR Code quando o nome da empresa é Madeira Forte; quem testa coloca o próprio link.
+
+### O que falta para terminar a validação
+- Em Meus dados, escolher no QR Code a opção "Orçamento com valor estimado" (criada em 06/10/2026). O link do autoatendimento, https://orcamento.madeiraforteplanejados.com.br, já vem preenchido e pode ser trocado. Antes de vender, tirar esse link padrão para cada comprador colocar o seu.
+- Testar no celular: "Segure e fale", digital, botão "Enviar o PDF" e ler o QR Code com outro celular.
+- No celular: colocar a logomarca, escolher preto e dourado e corrigir o campo IE (saiu o e-mail nele).
+- Revisar o texto padrão do pré-contrato (forma de pagamento, prazo e garantia).
+- Celular e notebook não se enxergam: escolher um aparelho principal ou fazermos a cópia de segurança (exportar e importar).
+- Atualizar a cópia da pasta do PC (Documentos\ta-na-mao\orcamento), que está antiga.
+- Juntar o PR #1 na branch principal quando você estiver satisfeito.
+
+### O que falta para vender
+- Contas no servidor: login de verdade, recuperar senha por e-mail e os mesmos dados no celular e no notebook (o backend do ta-na-mao já tem cadastro e planos).
+- Cobrança dos planos (Stripe, que o ta-na-mao já usa).
+- PDF gerado no servidor, com o selo travado de verdade.
+- Termos de uso e política de privacidade (LGPD).
+- Publicar na Play Store.
+- Opcional: envio automático pelo WhatsApp (API oficial do WhatsApp Business, paga) e importar a lista de preços do fornecedor por planilha.
+
+## O que você pediu (03/10/2026)
+
+> Quero criar um app em que eu consiga gerar um orçamento de materiais, com quantidades e preços, e enviar para o cliente. Tem que ter data inicial e data de validade, tem que salvar em PDF, tem que ter assinatura no final e uma página "Obs" para já inserir o pré-contrato e enviar junto com o orçamento.
+
+## O que decidimos
+
+- O app é **separado**. Ele não mexe no app de medição do ta-na-mao, só fica guardado nesta pasta.
+- Vamos ajustando ao longo da criação.
+
+## O que já está pronto
+
+- **App online:** https://claude.ai/artifact/7yzK28BqRJmSpzt61nXdLG
+- **Código:** `orcamento/index.html`, um arquivo só. Ele também abre direto no navegador do computador (precisa de internet para carregar o gerador de PDF).
+- **No GitHub:** repositório `marcospaulo869/ta-na-mao`, branch `claude/project-thread-o7weyg`.
+- **Exemplo de PDF:** `exemplo-orcamento-0001.pdf`, nesta pasta.
+
+### Telas
+1. **Orçamento:** cliente (nome, CPF/CNPJ, telefone, e-mail, endereço da obra), data inicial, válido até, materiais (descrição, unidade, quantidade, preço unitário e total), mão de obra, desconto e total. Tem também o texto Obs/pré-contrato e a assinatura do cliente, que é opcional e feita no celular.
+2. **Salvos:** lista dos orçamentos com selo de válido ou vencido. Dá para abrir, duplicar ou excluir.
+3. **Meus dados:** nome ou empresa, CPF/CNPJ, telefone, e-mail, endereço, logo, sua assinatura (desenhada uma vez), validade padrão em dias, próximo número e texto padrão do pré-contrato.
+
+### PDF
+- **Página 1:** seus dados e logo, "ORÇAMENTO Nº 0001", cliente, data inicial, validade, tabela de materiais e totais.
+- **Última página:** "Observações e pré-contrato", local e data, e as assinaturas do prestador e do cliente.
+- No texto do pré-contrato, os campos {CLIENTE}, {TOTAL}, {VALIDADE} e {EMPRESA} são trocados automaticamente pelos dados do orçamento.
+
+### Envio
+O botão "Enviar PDF" salva o orçamento e leva o PDF ao WhatsApp (veja a atualização de 04/10).
+
+## Atualização (03/10/2026, à tarde): cadastro e senha
+
+Você disse que quer **vender o app depois**, então:
+- **Primeiro acesso:** abre a tela de cadastro com seu nome, nome da empresa, CPF/CNPJ, inscrição estadual, profissão ou ramo, telefone/WhatsApp, e-mail, Instagram, CEP, rua e número, bairro, cidade, UF e logomarca. Nessa mesma tela você cria a senha (mínimo de 6 caracteres, digitada duas vezes).
+- **Próximos acessos:** tela "Entrar" com a logomarca, o nome da empresa e o campo de senha. Tem também um botão "Sair" e, em Meus dados, a opção "Trocar senha".
+- **QR Code:** aparece no topo do PDF, ao lado dos seus dados, e abre o seu WhatsApp ou o seu Instagram (você escolhe). Também dá para tirar.
+- **Limite atual:** a senha protege o app neste navegador, mas ainda não é uma conta de verdade num servidor. Para vender, cada cliente precisa de uma conta própria, com recuperação de senha por e-mail e cobrança. O backend do ta-na-mao já tem cadastro com senha, planos e pagamento pelo Stripe, e pode servir de base para isso.
+- Sua última mensagem terminou em "E logo abaixo...". Falta você dizer o que vai abaixo dos dados.
+
+## Atualização (03/10/2026, noite): um app com duas funções
+
+Decidimos fazer **um app só**, com Orçamento e Recibo juntos (mesmo cadastro, logomarca e senha; o recibo nasce do orçamento).
+- **Tela inicial:** foto real de um profissional (imagens do próprio ta-na-mao, em `img/`), uma chamada que passa confiança e dois botões grandes, **Orçamento** (azul-petróleo, para passar confiança) e **Recibo** (laranja, para chamar a ação). Embaixo aparecem os números: orçamentos feitos, recebido no mês e quanto falta receber.
+- **Recibo:** data, tipo (total, entrada, parcela ou saldo), quem pagou, valor com **valor por extenso** automático, forma de pagamento (Pix, dinheiro, cartão etc.), "referente a" e as assinaturas na tela de quem recebeu e de quem pagou. O PDF tem o texto "Recebi(emos) de..." e a quitação.
+- **Gerar recibo** a partir de um orçamento salvo: preenche o cliente e o valor. Se já houver pagamentos, sugere o saldo e mostra no PDF o total, o que já foi recebido e o que falta.
+- O cabeçalho do app mostra sua logomarca e o nome da empresa (ao tocar, volta para o início).
+
+## Atualização (03/10/2026, noite): ditado por voz e inserir itens
+
+- **Ditar item:** cada item da tabela tem o botão **Ditar** (microfone). Você fala, por exemplo, "MDF chapa branco TX 18 milímetros, quatro unidades, valor 289,90", e o app separa material, unidade, quantidade e preço sozinho. Também há o botão **Ditar novo item**, que cria a linha e já abre o ditado.
+- Onde o navegador não deixa o app usar o microfone (como dentro da página do Claude), aparece uma caixa: você toca no microfone do teclado do celular, fala e toca em **Preencher**. O resultado é o mesmo.
+- Palavras que o app entende como unidade: chapa, unidade/peça, metro, metro quadrado, par, caixa, rolo, barra, litro, quilo, pacote, jogo, kit, lata, galão, tubo. "Milímetros" e "centímetros" viram mm e cm na descrição. O valor pode ser dito como "valor 289,90", "R$ 42", "18 reais e 50 centavos" ou "valor R$ 225,00 a unidade" (veja a versão 64 mais abaixo).
+- **Inserir entre itens:** entre duas linhas aparece "+ Inserir item entre 1 e 2". Cada item também tem as setas ↑ ↓ para mudar a ordem.
+
+## Atualização (03/10/2026, noite): boas-vindas e recomeçar
+
+- **Ordem das telas:** 1) **Boas-vindas** (foto da moça com o celular, chamada "Feche mais serviços com orçamentos que passam confiança", três vantagens, "Como funciona" em 3 passos e o botão laranja **Começar cadastro**); 2) **Cadastro** (dados, logomarca e senha, com "‹ Voltar"); 3) **Página inicial** com os botões Orçamento e Recibo. Nas próximas vezes, abre direto em **Entrar** (senha).
+- **Recomeçar do zero:** em Meus dados, "Apagar tudo e recomeçar". Na tela Entrar, "Esqueci minha senha → Apagar tudo e cadastrar de novo". Os dois pedem dois toques. Serve para simular o primeiro acesso de um cliente que comprou o app.
+
+## Decisão (03/10/2026, 22h): validar antes de vender
+
+Marcos vai usar o app no dia a dia com os dados reais da empresa e a logomarca, para validar e anotar ajustes. Só depois de validado é que vamos montar a estrutura para vender (Play Store ou venda online), com contas no servidor, recuperação de senha e cobrança.
+
+## Atualização (04/10/2026, manhã): Enviar PDF pelo WhatsApp e link próprio
+
+- **Enviar PDF:** cada orçamento salvo tem o botão verde **Enviar PDF** (e cada recibo, **Enviar recibo**). O botão laranja da barra de baixo agora também se chama **Enviar PDF** / **Enviar recibo**.
+  - No navegador do celular (Chrome), abre a tela de compartilhar já com o PDF anexado: escolha o WhatsApp e o contato.
+  - Dentro do app do Claude (ou no computador), o app salva o PDF e mostra o botão **Abrir WhatsApp de (cliente)**, que abre a conversa com o número do cliente e a mensagem pronta. Lá você toca no clipe, em Documento, e escolhe o PDF.
+- **Abas fixas:** as abas Orçamento / Salvos e Recibo / Salvos ficam presas no topo ao rolar a tela.
+- **Link próprio (Chrome / Edge):** o app também pode abrir como site pelo GitHub Pages, em https://marcospaulo869.github.io/ta-na-mao/orcamento/ (depois de ativar em Configurações → Pages do repositório, branch `claude/project-thread-o7weyg`, pasta raiz). Ali o microfone do ditado e o compartilhar com o PDF anexado funcionam direto. No Chrome, "Adicionar à tela inicial" cria um ícone como se fosse um app. O ícone do app na tela do celular é o selo dourado da Madeira Forte em fundo branco (07/10/2026, pedido do Marcos; primeiro saiu em fundo preto e ele pediu branco com dourado; arquivos img/icone-selo-branco-*.png, com versão "maskable" para o ícone redondo do Android). Para trocar um ícone já instalado, é preciso remover o atalho e adicionar de novo. Na versão de venda, o ícone terá de ser outro (ou o de cada comprador).
+  - Os dados do site ficam guardados no navegador do celular, separados dos dados do app no Claude. Por isso o cadastro é feito de novo lá. Limpar os dados do navegador apaga os orçamentos desse site.
+
+## Atualização (04/10/2026, 9h30): botão Novo em destaque
+
+- O botão **+ Novo orçamento** agora é grande, ocupa a largura toda e fica no topo da tela do orçamento e da lista de Salvos (azul-petróleo). No recibo, **+ Novo recibo** (laranja), também no topo do recibo e da lista.
+- Se o orçamento ou recibo atual ainda não foi salvo, o primeiro toque avisa "Toque de novo: o atual não foi salvo", para não perder o que foi digitado.
+
+## Atualização (04/10/2026, 11h40): selo no centro do QR Code e logomarca na cor das letras
+
+Marcos pediu uma marca discreta (o app vai ser vendido), então a marca d'água grande no fundo das páginas foi tirada. No lugar, o selo Madeira Forte ficou dentro do QR Code (versão final na atualização das 12h30) e a logomarca do cliente pode sair em silhueta na cor das letras (opção "mono" em Meus dados).
+- Corrigido: cidade repetida no cabeçalho do PDF quando "Rua e número" ficava em branco.
+
+## Atualização (04/10/2026, 11h50): estilo preto e dourado
+
+Marcos achou o azul-petróleo desalinhado com a página e com a logomarca dourada, e pediu uma versão em preto e dourado.
+- Em **Meus dados → "Cores do app e do PDF"** há três estilos: **Preto e dourado** (logomarca nas cores originais), **Azul-petróleo com logomarca em silhueta** e **Azul-petróleo com logomarca original**. A troca aparece na hora; é guardada ao tocar em "Salvar meus dados".
+- **Preto e dourado no PDF:** título e linhas em dourado escuro, cabeçalho da tabela preto com letras douradas, linhas e fundos num tom areia, textos em quase preto.
+- **Preto e dourado no app:** papel claro quente com botões pretos e letras douradas; no modo escuro, fundo preto-quente com dourado vivo nos botões e destaques. O botão verde do WhatsApp continua verde.
+- O azul-petróleo continua disponível, e é o padrão para quem comprar o app.
+
+## Atualização (04/10/2026, 12h30): selo dourado fixo no QR e plano para a versão vendida
+
+Marcos aprovou o estilo preto e dourado e decidiu:
+- **Versão vendida:** o cabeçalho do PDF (nome da empresa, dados e logomarca) é todo editável por quem comprar, em Meus dados. Isso já funciona assim.
+- **QR Code:** continua levando os dados de quem comprou (WhatsApp ou Instagram dele).
+- **Selo da Madeira Forte fixo no QR:** dourado e quase transparente no centro, em todo PDF, sem opção para o cliente tirar. No PDF, o QR ficou um pouco maior (21 mm) e abre um espaço limpo no meio para o selo (opacidade 55%, 24% da largura do QR).
+- Limite honesto: o selo está dentro do próprio arquivo do app. Quem tiver o arquivo pode editá-lo. Na versão de venda (loja de aplicativos ou servidor), o PDF e o selo devem ser gerados pelo servidor, aí o selo fica realmente travado.
+- Teste com leitor automático: o QR continua lendo o WhatsApp. Falta o teste no celular de verdade (apontar a câmera para o PDF de exemplo).
+
+## Atualização (04/10/2026, 15h30): maiúsculas automáticas
+
+Pedido do Marcos: as palavras iniciais começarem com maiúscula nos campos do orçamento e do recibo, mesmo com o caps lock ligado, e correção de digitação.
+- **Nomes (cliente e quem pagou) e endereço da obra:** cada palavra com inicial maiúscula, "da/de/do/dos/das/e" em minúscula (ex.: "JOÃO DA SILVA" vira "João da Silva"). No endereço a sigla do estado no fim fica em maiúsculas ("... - SP"). Nomes com maiúscula no meio ("McDonald", "iFood") não são mexidos.
+- **Material e "Referente a":** só a primeira letra da frase em maiúscula. Se vier tudo em caps lock, o app passa para minúsculas e preserva siglas (MDF, MDP, PVC, LED, TX...). Medidas como "18MM" viram "18mm". No texto do recibo ("referente a ...") a primeira palavra volta para minúscula no meio da frase.
+- **Quando corrige:** ao sair do campo e também ao salvar ou enviar. A correção não acontece enquanto digita, para não mexer no cursor (problema que já tivemos no celular).
+- **Teclado do celular:** os campos pedem maiúscula automática ao teclado (nomes: cada palavra; textos: início da frase) e ligam a correção ortográfica do próprio celular.
+- Limite: o app não tem dicionário próprio de português. A correção de erros de digitação é a do teclado do celular (ou o sublinhado do Chrome no notebook).
+
+## Atualização (04/10/2026, 16h): campo de e-mail que cabe tudo
+
+Pedido do Marcos: o campo de e-mail mostrar a informação inteira.
+- O campo de **e-mail** (cliente no orçamento, quem pagou no recibo e Meus dados / cadastro) agora ocupa a **linha inteira**.
+- Se o e-mail ainda for maior que o campo, a **letra diminui sozinha** até caber tudo (até 12 px no mínimo). Num celular de 360 px, um e-mail de uns 35 caracteres cabe com letra de uns 13 px. Acima de uns 45 caracteres no celular, o texto rola dentro do campo.
+- Se quiser o mesmo ajuste em nome ou endereço, é só pedir.
+
+## Atualização (04/10/2026, 16h30): endereço completo, botões de copiar e validade em dias úteis
+
+Pedidos do Marcos: um endereço completo com botão de copiar (para nota fiscal ou pré-contrato) e as datas do orçamento novo se ajustando sozinhas.
+- **Endereço da obra** agora tem campos separados: CEP, número, rua ou avenida, complemento, bairro, cidade e UF. Logo abaixo aparece o **Endereço completo** montado sozinho, por exemplo: "Rua das Flores, 120, Apto 32 - Centro, Passo de Torres - SC, CEP 88980-000". Isso também vai no PDF.
+- O CEP ganha o traço sozinho ("88980000" vira "88980-000"), a UF fica em maiúsculas e rua, bairro e cidade recebem as maiúsculas automáticas.
+- Botões: **Copiar endereço** (só a linha do endereço) e **Copiar dados do cliente** (nome, CPF/CNPJ, telefone, e-mail e endereço, um por linha). Em Meus dados: **Copiar dados da empresa**.
+- Se o navegador não deixar copiar, o texto fica selecionado na tela para copiar pelo menu.
+- Orçamentos antigos: o endereço que estava em um campo só vai para "Rua ou avenida", nada se perde.
+- Pré-contrato: além de {CLIENTE}, {TOTAL}, {VALIDADE} e {EMPRESA}, agora aceita **{DOCUMENTO}** (CPF/CNPJ do cliente) e **{ENDERECO}** (endereço completo). O texto padrão para cadastros novos já usa os dois no item 1. O texto que você já salvou em Meus dados não foi alterado; se quiser, coloque {DOCUMENTO} e {ENDERECO} nele.
+- **Datas automáticas:** todo orçamento novo abre com a data de hoje e validade de **10 dias úteis** (segunda a sexta, sem contar feriados nacionais e a Sexta-feira Santa). Feriados da cidade ou do estado não entram na conta. Se trocar a data inicial, a validade anda junto. Em Meus dados → Preferências, o campo agora é "Validade padrão (dias úteis)"; quem tinha 15 (o padrão antigo) passou para 10.
+
+## Atualização (04/10/2026, 17h): memória de materiais e aba Materiais
+
+Pedidos do Marcos: (1) ao digitar um material (ex.: "chapa MDF branco"), abrir sozinha uma janela com o que já foi usado e, com um toque, preencher tudo; (2) um "banco de dados" separado, ao lado de Orçamento e Salvos, para atualizar nomes e preços (MDFs que saem de linha, preços que mudam na planilha do fornecedor).
+- **Sugestões ao digitar:** no campo Material, a partir de 2 letras aparece a janela "Da sua memória" com até 6 materiais. Pode digitar só o começo das palavras, em qualquer ordem e sem acento ("mdf br" acha "Chapa MDF branco TX 18 mm"). Um toque preenche material, unidade e preço e o cursor vai para a quantidade. No notebook também dá para usar as setas e o Enter (Tab fecha a janela e vai para Un.). A janela fica logo abaixo do campo e empurra Un./Qtd./Preço para baixo, sem cobrir nada. Se o material não tiver preço na lista, o preço fica vazio e o cursor vai para ele.
+- **Aba Materiais** (Orçamento | Salvos | Materiais): a lista completa em ordem alfabética, com busca. Dá para mudar nome, unidade e preço de cada material, criar um material novo ("+ Novo material") e apagar (dois toques). Mostra em quantos orçamentos cada um foi usado e a data do último uso.
+- **Como a lista se enche:** ao salvar um orçamento, os materiais novos entram na lista. A lista manda: salvar um orçamento não muda nome nem preço de um material que já está nela (só completa unidade ou preço se estiverem vazios). Preço novo, você muda na aba Materiais. Orçamentos já salvos não mudam.
+- Materiais apagados ou renomeados na lista não voltam sozinhos quando você salva de novo um orçamento antigo ou faz uma cópia dele.
+- Na primeira vez que o app abre com essa versão, a lista é montada com os materiais dos orçamentos que você já tinha salvo.
+- "18mm" e "18 mm", "2,75x1,85" e "2,75 x 1,85", "m2" e "m²" contam como o mesmo material (não criam repetidos). Preços da lista ficam sempre em centavos (1,255 vira 1,26). A lista guarda até 500 materiais; passou disso, saem os que estão há mais tempo sem uso.
+- A lista fica na sua conta: é a mesma no celular e no notebook. O app busca a versão mais nova ao abrir um orçamento, ao tocar no campo Material e ao abrir a aba Materiais. Se a internet falhar, nenhuma mudança grava por cima da lista guardada: ela fica esperando e é guardada na próxima vez. "Apagar tudo e recomeçar" também apaga a lista.
+- Antes de publicar, a versão passou por uma revisão com cinco revisores (celular, dados entre aparelhos, aba Materiais, integração e busca); os problemas encontrados foram corrigidos e conferidos com os próprios testes deles.
+
+## Atualização (04/10/2026, 17h30): Orçamento e Recibo abrem na lista
+
+Pedido do Marcos: ao tocar em Orçamento na tela inicial, ver o botão "+ Novo orçamento" e, logo abaixo, todos os orçamentos já salvos, em vez de cair direto no formulário.
+- **Orçamento** (tela inicial) abre a aba Salvos: "+ Novo orçamento" em cima e a lista "Orçamentos salvos (N)" embaixo, do mais novo para o mais antigo. "Abrir" leva ao formulário daquele orçamento.
+- **Recibo** ficou igual: "+ Novo recibo" em cima e "Recibos salvos" embaixo.
+- A aba "Orçamento" lá em cima continua levando ao formulário (por exemplo, para voltar a um orçamento que ainda não foi salvo).
+
+## Atualização (04/10/2026, 21h): microfone como no WhatsApp
+
+Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem segurando) e pediu o jeito do WhatsApp.
+- **Segure e fale**: segure o botão do microfone enquanto fala; ao soltar, o item é preenchido (material, unidade, quantidade, valor). Arrastar o dedo para longe do botão cancela. Toque rápido mostra o aviso "Segure o botão enquanto fala".
+- **Por que não ouvia**: dentro do link do Claude a página não recebe permissão para usar o microfone (não existe essa permissão para apps publicados lá). O app agora detecta isso: o botão vira "Ditar", um toque abre o campo já com o teclado e a mensagem "O microfone do app está bloqueado aqui. Toque no 🎤 do teclado e fale. Depois toque em Preencher." No notebook com Windows a dica é "Windows + H".
+- O "segurar e falar" de verdade funciona onde o navegador libera o microfone: o app aberto como site próprio ou a futura versão da Play Store.
+
+## Atualização (04/10/2026, 23h): ditado dentro do Claude
+
+- No notebook (app do Claude), o app mostrou "Ditar" e a caixa com "Windows + H": a página não recebe o microfone ali. Dentro do Claude, o jeito que funciona é o microfone do teclado (celular: 🎤 do teclado; notebook: Windows + H) e depois "Preencher".
+- A caixa agora mostra, em letra pequena, o motivo do bloqueio ("Motivo: ...").
+- Corrigido: o total do item saía do painel na tela larga (versão 20); o toque no Ditar às vezes caía em outro botão logo depois de a caixa abrir (versão 21).
+- Em aberto: escolher entre ficar no Claude (recomendado enquanto valida) ou abrir um link próprio (GitHub Pages), onde o "Segure e fale" funciona no Chrome, mas os dados ficam só no aparelho.
+
+## Atualização (05/10/2026): link próprio no celular e ajustes do dia
+
+- **Link próprio ligado** (GitHub Pages). Cada vez que o app muda, ele se atualiza sozinho em cerca de 1 minuto.
+- **Tela inicial:** selo da Madeira Forte acima do título, com um reflexo de luz passando (testamos no canto e voltamos para cima).
+- **Material em MAIÚSCULAS** com acentos e erros comuns corrigidos ao sair do campo ("dobradica" vira DOBRADIÇA).
+- **Rascunho:** atualizar a página não apaga mais os itens; o app volta na mesma tela.
+- **Digital** para entrar (ativa em Meus dados) e **olhinho** para ver a senha. A senha continua valendo.
+- **Tocar num campo** seleciona o que já está nele; tocar de novo põe o cursor no lugar.
+- **Desconto em %** sobre materiais + mão de obra.
+- **Assinaturas em azul BIC**, inclusive as antigas.
+- **Envio do PDF:** o WhatsApp não deixa site nenhum anexar arquivo direto na conversa; o PDF só vai pela tela de compartilhar do celular. Quando ela não abre sozinha, aparece o botão verde "Enviar o PDF".
+
+## Atualização (07/10/2026, madrugada): dados sumiram no celular e cópia de segurança
+
+- **O que houve:** Marcos abriu o app pelo ícone no celular depois da versão de "Salvar senha" e o cadastro tinha sumido. O código não apaga nada ao atualizar (só "Apagar tudo", com dois toques); testamos atualizar no meio e depois do cadastro, e também abrir com a versão anterior. O mais provável é que os dados tenham ficado em outro navegador ou que o celular tenha limpado os dados do site. O banco do app no Claude continua com os testes de 03 a 05/10, intactos. O orçamento da Fabiana está no notebook.
+- **Cópia de segurança** (Meus dados → "Cópia de segurança"): "Fazer cópia agora" cria um arquivo `copia-de-seguranca-orcamento-AAAA-MM-DD.txt` com o cadastro (com a senha protegida), os orçamentos, os recibos, a lista de materiais e o que está aberto na tela. No celular abre o compartilhar (WhatsApp, e-mail, Drive); no computador baixa o arquivo. O arquivo é .txt porque o compartilhar do Android não aceita .json.
+- **Restaurar:** "Restaurar uma cópia" (Meus dados) ou "Já tenho uma cópia de segurança" (boas-vindas e cadastro). Num aparelho sem cadastro, tudo volta e você entra com a senha que usava. Num aparelho com cadastro, os orçamentos e recibos se juntam (vale a versão mais nova de cada um), os dados da empresa passam a ser os da cópia e a senha do aparelho continua. Serve também para passar tudo do notebook para o celular.
+- **Lembrete no Início:** "Faça uma cópia de segurança" aparece quando há orçamento ou recibo salvo e nunca houve cópia, ou quando já passaram 3 dias e algo mudou depois da última.
+- O app também pede ao navegador para não apagar os dados do site sozinho (no Chrome não aparece pergunta).
+
+## Atualização (07/10/2026, madrugada): importar orçamentos do app antigo
+
+- Marcos manda o PDF de um orçamento do app antigo (o primeiro foi o Orcamento_a-22.pdf, da Sandra) e o Claude transcreve: cliente, cidade, datas, itens, quantidades, preços e observações.
+- As transcrições ficam em `/mnt/project-files/orcamento/importar/antigos.json`. O `gerar.py` da mesma pasta monta o arquivo `importar-orcamentos-AAAA-MM-DD.txt`, sempre com todos os orçamentos já transcritos.
+- **No app:** botão **Importar orçamentos** no Início (cartão "Tem orçamentos de outro app?") e em Orçamento → Salvos, logo abaixo do "+ Novo orçamento" (também serve o "Restaurar uma cópia" de Meus dados). O fim do Início mostra a versão do app ("Versão N"), para conferir se o celular já abriu a versão nova. Aparece "Importar 1 orçamento?" com a lista, e eles entram nos Salvos.
+- **Nada é apagado:** o cadastro, a numeração e a lista de materiais não mudam. Importar o mesmo arquivo de novo não duplica, e se você mudou um importado, fica a sua versão.
+- O importado guarda o código do app antigo ("a-22") no lugar do número: aparece assim na lista, no título, no PDF e no recibo, e fica depois dos orçamentos do app na lista.
+- O preço do PDF antigo já é o do móvel pronto, por isso a mão de obra vem zerada e digitada (não automática) e o total fica igual ao do PDF.
+
+## Atualização (07/10/2026, madrugada): botão "Ver PDF" (versão 59)
+
+- **Para que serve:** ver a folha do orçamento exatamente como o cliente vai receber, antes de enviar. Não salva, não envia, não baixa e não gasta número.
+- **Onde fica:** em Orçamento → Salvos, cada cartão tem **Ver PDF** ao lado do Excluir. Na tela do orçamento, **Ver PDF** fica na barra de baixo, ao lado do Total (antes de Salvar e Enviar PDF); ali ele mostra o que está na tela agora, mesmo sem salvar, já com o número que o orçamento vai ganhar.
+- **Na folha:** dá para rolar por todas as páginas (orçamento e pré-contrato). Tocar na folha aumenta e tocar de novo volta. "Fechar" ou o botão voltar do celular fecham a folha. "Enviar PDF" fecha a folha e faz o mesmo que o botão Enviar PDF (na tela do orçamento, salva e envia).
+- **Sem internet:** a folha é desenhada pelo pdf.js (carrega na primeira vez). Se ele não carregar, aparece "Baixar o PDF".
+
+## Atualização (08/10/2026): Un. menor e caixinha para conferir a soma (versões 60 e 61)
+
+- **Campo Un. menor:** no notebook o Un. tem largura fixa pequena e o espaço foi para Qtd. e Preço. No celular também ficou mais estreito.
+- **Caixinha em cada item:** fica ao lado do total do item (no notebook, à direita do ×; no celular, embaixo do ×). No topo da lista, **Todos** seleciona ou limpa todos de uma vez (fica meio marcado quando só alguns estão).
+- **Para que serve (Marcos, 08/10):** conferir a soma antes de gerar o PDF, item por item, para achar erro de soma. O item selecionado fica apagado, com o total riscado e a etiqueta "SELECIONADO", e aparece o quadro **Conferência** acima dos totais: "Selecionados (N itens)", "Materiais sem os selecionados" e, se houver, "Comprar fora sem os selecionados".
+- **Não muda o orçamento:** os totais de baixo, a barra, o PDF, os Salvos e o recibo continuam com todos os itens. A seleção não é salva; some ao reabrir o orçamento ou recarregar a página. Ver PDF e Enviar PDF avisam quando há itens selecionados ("O PDF sai com todos os itens").
+- A versão 60 tirava os selecionados da conta e do PDF; a 61 corrigiu para só conferir, depois que o Marcos explicou o uso.
+
+## Atualização (09/10/2026): o app lê o PDF do app antigo (versão 62)
+
+- **O problema:** no celular, em "Importar orçamentos", o PDF do app antigo aparecia apagado e não dava para tocar. O botão só aceitava o arquivo de importação (.txt) que o Claude montava.
+- **Agora:** "Importar orçamentos" (Início e Salvos) aceita o próprio PDF do app antigo (Orcamento_a-NN.pdf), e dá para escolher vários de uma vez. O app lê o PDF (com o mesmo leitor do Ver PDF, precisa de internet) e mostra "Importar N orçamentos?" com número, cliente e total.
+- **O que ele lê:** cliente, contato, endereço (cidade e UF, ou rua quando tem número), número do orçamento, criado em, válido até, os itens (descrição, quantidade e preço; descrição em duas linhas vira uma só), o total e as observações. A descrição do projeto que fica embaixo do cliente vai para o início do Obs como "PROJETO: ...". Igual à transcrição manual do a-22.
+- **Conferência:** se a soma dos itens não bater com o total do PDF, a pergunta mostra um aviso "Atenção" para conferir depois. PDF que não é do app antigo aparece como "não deu para ler".
+- O arquivo .txt de importação continua funcionando. Importar o mesmo PDF de novo não duplica.
+
+## Atualização (10/10/2026): Total da barra muda ao marcar itens (versão 63)
+
+- **Pedido do Marcos:** com a lista comprida no celular, ele marca e desmarca itens e precisa ver a diferença no Total de baixo, sem rolar até os totais.
+- **Agora:** com algum item marcado, o Total da barra de baixo passa a ser a conta sem os marcados (mão de obra automática e desconto refeitos), em destaque, e em cima aparece "Sem marcados: −R$ X" com quanto saiu. Desmarcou tudo, volta a "Total" com todos os itens.
+- O quadro Conferência ganhou "Mão de obra sem os marcados" (quando a mão de obra é automática) e "Total sem os marcados".
+- Os textos agora falam em **marcar**, como o Marcos chama: etiqueta "MARCADO", "Marcados (N itens)", "Materiais sem os marcados".
+- Continua só na tela: o quadro de totais, o PDF, os Salvos, o recibo e o orçamento salvo seguem com todos os itens.
+
+## Atualização (10/10/2026): ditado pega o valor no fim da frase (versão 64)
+
+- **Pedido do Marcos:** ditando "chapa de MDF branco TX Ultra, 6 milímetros, 4 unidades, valor R$ 225,00 a unidade", o app preenchia material, unidade e quantidade, mas não o valor.
+- **Causa provável:** o leitor da frase já entendia esse texto. O que se perdia era o fim da fala: ao soltar o botão, o app esperava só 2,5 s pelo celular terminar de entender, e o valor é a última coisa falada.
+- **Agora, ao soltar o botão:** o app ainda ouve mais um instante (a última palavra não é cortada) e espera até 6 s o celular entregar o fim da frase. O botão mostra "Aguarde…" e a caixa diz "Terminando de entender o que você falou…".
+- **Se mesmo assim faltar o valor (ou a quantidade):** a caixa do ditado fica aberta, mostra "O celular ouviu: ..." com a frase inteira e diz o que faltou. Basta segurar o microfone do item e falar só o que faltou ("valor 225", "225" ou "4 unidades"); o resto do item fica como estava (a unidade CH não vira UN). Ou digitar no campo.
+- **O leitor da frase entende mais jeitos de falar o valor:** "a unidade", "cada", "cada uma", "por unidade", "o metro", "o par"; "no valor de", "com o valor de", "valor é"; "R$ 225.00" e "225 00"; valor por extenso ("duzentos e vinte e cinco reais", "mil e duzentos"); e o número solto logo depois da quantidade no fim ("4 chapas 225").
+- **Descrição mais limpa:** "chapa de MDF branco" vira "MDF BRANCO" com unidade CH (antes ficava "DE MDF BRANCO"), e medidas com vírgula como "2,75 x 1,84" não ganham mais espaço depois da vírgula.
+
+## Próximos passos
+
+Veja "O que falta" no Panorama, no começo deste arquivo.
