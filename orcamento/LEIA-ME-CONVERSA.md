@@ -257,6 +257,14 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - **Conferência:** se a soma dos itens não bater com o total do PDF, a pergunta mostra um aviso "Atenção" para conferir depois. PDF que não é do app antigo aparece como "não deu para ler".
 - O arquivo .txt de importação continua funcionando. Importar o mesmo PDF de novo não duplica.
 
+## Atualização (10/10/2026): Total da barra muda ao marcar itens (versão 63)
+
+- **Pedido do Marcos:** com a lista comprida no celular, ele marca e desmarca itens e precisa ver a diferença no Total de baixo, sem rolar até os totais.
+- **Agora:** com algum item marcado, o Total da barra de baixo passa a ser a conta sem os marcados (mão de obra automática e desconto refeitos), em destaque, e em cima aparece "Sem marcados: −R$ X" com quanto saiu. Desmarcou tudo, volta a "Total" com todos os itens.
+- O quadro Conferência ganhou "Mão de obra sem os marcados" (quando a mão de obra é automática) e "Total sem os marcados".
+- Os textos agora falam em **marcar**, como o Marcos chama: etiqueta "MARCADO", "Marcados (N itens)", "Materiais sem os marcados".
+- Continua só na tela: o quadro de totais, o PDF, os Salvos, o recibo e o orçamento salvo seguem com todos os itens.
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.
