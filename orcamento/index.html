@@ -136,7 +136,8 @@ input.caps::placeholder { text-transform: none; }
 .mic.off { background: var(--danger); border-color: var(--danger); color: var(--bg); }
 .mic.off svg { color: var(--bg); animation: none; }
 .dict-st { margin: 0; font-weight: 700; }
-.dict-st:empty, .dict-why:empty { display: none; }
+.dict-st:empty, .dict-why:empty, .dict-heard:empty { display: none; }
+.dict-heard { margin: 0; overflow-wrap: anywhere; }
 .dict-why { font-size: 0.75rem; }
 .dict-st.live::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: #D93025; vertical-align: 1px; animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.35; } }
@@ -1852,6 +1853,7 @@ function renderItems() {
       <div class="ihead"><span class="inum">Item ${i + 1}</span><span class="seltag" ${picked.has(it) ? "" : "hidden"}>MARCADO</span>${it.out ? `<button class="outtag" type="button" data-a="out" title="Tirar de Comprar fora" aria-label="Item ${i + 1} é para comprar fora. Tocar tira a marcação">COMPRAR FORA ✕</button>` : ""}<span class="itools"><button class="mv" type="button" data-d="-1" title="Subir" aria-label="Subir item ${i + 1}" ${i === 0 ? "disabled" : ""}>↑</button><button class="mv" type="button" data-d="1" title="Descer" aria-label="Descer item ${i + 1}" ${i === quote.items.length - 1 ? "disabled" : ""}>↓</button><button class="mic" type="button" aria-label="Ditar o item ${i + 1}">${MIC_SVG}<span></span></button></span></div>
       <div class="dict" hidden>
         <p class="dict-st" role="status" aria-live="polite"></p>
+        <p class="dict-heard"></p>
         <p class="hint">Fale assim: "MDF chapa branco TX 18 milímetros, quatro unidades, valor 289,90".</p>
         <div class="row"><input id="it-x-${i}" autocomplete="off" placeholder="O que você ditar aparece aqui"><button class="btn small warm" type="button" data-a="fill">Preencher</button><button class="btn small" type="button" data-a="close">Fechar</button></div>
         <p class="hint dict-why"></p>
@@ -1971,24 +1973,47 @@ const UNIT_RE = "metros? quadrados?|metros? lineares?|chapas?|unidades?|unids?|p
 const unitOf = (w) => { w = w.toLowerCase(); for (const [re, u] of UNIT_WORDS) if (re.test(w)) return u; return ""; };
 const QTY_RE = "\\d+(?:[.,]\\d+)?|" + Object.keys(NUM_WORDS).sort((a, b) => b.length - a.length).join("|");
 const qtyOf = (s) => { s = s.toLowerCase(); return s in NUM_WORDS ? NUM_WORDS[s] : parseFloat(s.replace(",", ".")); };
+// valor falado por extenso ("duzentos e vinte e cinco reais"): vira algarismo antes de procurar o preço
+const NUM_BIG = { cem: 100, cento: 100, duzentos: 200, duzentas: 200, trezentos: 300, trezentas: 300, quatrocentos: 400, quatrocentas: 400, quinhentos: 500, quinhentas: 500, seiscentos: 600, seiscentas: 600, setecentos: 700, setecentas: 700, oitocentos: 800, oitocentas: 800, novecentos: 900, novecentas: 900, mil: 1000 };
+const MONEY_WORD = "(?:" + [...Object.keys(NUM_WORDS).filter((w) => !/^mei[ao]$/.test(w)), ...Object.keys(NUM_BIG)].sort((a, b) => b.length - a.length).join("|") + ")";
+const MONEY_WORDS_RE = "\\b" + MONEY_WORD + "(?:\\s+(?:e\\s+)?" + MONEY_WORD + ")*\\b";
+function wordsToNum(seq) {
+  let total = 0, cur = 0;
+  for (const w of seq.toLowerCase().split(/\s+/)) {
+    if (w === "e" || !w) continue;
+    if (w === "mil") { total += (cur || 1) * 1000; cur = 0; } else cur += NUM_BIG[w] ?? NUM_WORDS[w] ?? 0;
+  }
+  return total + cur;
+}
+// "a unidade", "cada", "o metro", "por chapa": diz que o número antes é o preço de cada um
+const EACH_RE = "cada(?:\\s+uma?)?|(?:a|o|por|cada)\\s+(?:unidade|pe[çc]a|chapa|metro(?:\\s+quadrado)?|par|caixa|barra|rolo|kit|jogo|lata|litro|quilo|pacote|gal[ãa]o|tubo)";
 
 function parseDictation(raw) {
   let s = " " + String(raw || "").replace(/(?<!\d)[.…]+|[.…]+(?!\d)/g, " ").replace(/\s+/g, " ").trim() + " ";
   const out = { desc: "", un: "", qty: null, price: null };
   // "item 1", "item um" no começo
   s = s.replace(/^\s*(?:o\s+)?item\s+(?:n[úu]mero\s+)?(?:\d+|[a-zçê]+)[.,:;]?\s/i, " ");
-  // preço: "valor R$ 289,90", "preço 289 reais e 90 centavos", "R$ 42", "a 18,50 cada"
-  const priceRe = /(?:(?:valor|pre[çc]o|unit[aá]rio|custa|custando|por|a)\s+(?:de\s+|unit[aá]rio\s+)?)?(?:R\$\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?|\d+\.\d{1,2})(?:\s*(?:reais|real|R\$))?(?:\s*e\s*(\d{1,2})\s*centavos?)?(?:\s*(?:cada|a unidade|o metro|a chapa|por unidade))?/gi;
+  // "225 00" (os centavos ditos separados) é 225,00
+  s = s.replace(/\b(\d+) 00\b/g, "$1,00");
+  // número por extenso: "duzentos e vinte e cinco reais", "valor de mil e duzentos", "trinta e cinco milímetros"
+  s = s.replace(new RegExp("(" + MONEY_WORDS_RE + ")(?=\\s*(?:reais|real|centavos?|mil[íi]metros?|cent[íi]metros?)\\b)", "gi"), (m) => String(wordsToNum(m)))
+    .replace(new RegExp("(\\b(?:valor|pre[çc]o)\\s+(?:unit[aá]rio\\s+)?(?:de\\s+|é\\s+)?)(" + MONEY_WORDS_RE + ")", "gi"), (m, a, n) => a + wordsToNum(n));
+  // preço: "valor R$ 289,90", "preço 289 reais e 90 centavos", "R$ 42", "a 18,50 cada", "valor R$ 225,00 a unidade"
+  const priceRe = new RegExp("(?:(?:(?:no|o|com o|pelo)\\s+)?(?:(?:valor|pre[çc]o)(?:\\s+unit[aá]rio)?|unit[aá]rio|custa|custando|por|a)\\s+(?:de\\s+|é\\s+)?)?(?:R\\s?\\$\\s*)?"
+    + "(\\d{1,3}(?:\\.\\d{3})+(?:,\\d{1,2})?(?!\\d)|\\d+\\.\\d{1,2}(?![\\d.])|\\d+(?:,\\d{1,2})?(?!\\d))"
+    + "(?:\\s*(?:reais|real|R\\s?\\$))?(?:\\s*e\\s*(\\d{1,2})\\s*centavos?)?(?:\\s*(?:" + EACH_RE + ")s?\\b)?", "gi");
+  const moneyOf = (m) => {
+    let n = m[1];
+    n = n.includes(",") ? n.replace(/\./g, "").replace(",", ".") : /\.\d{3}$/.test(n) ? n.replace(/\./g, "") : n;
+    return parseFloat(n) + (m[2] ? parseInt(m[2], 10) / 100 : 0);
+  };
   let best = null;
   for (const m of s.matchAll(priceRe)) {
-    const txt = m[0];
-    const strong = /valor|pre[çc]o|custa|R\$|reais|real|centavo/i.test(txt);
+    const strong = new RegExp("valor|pre[çc]o|custa|R\\s?\\$|reais|real|centavo|(?:" + EACH_RE + ")s?$", "i").test(m[0]);
     if (strong) best = m; // o último com cara de dinheiro vence
   }
   if (best) {
-    let n = best[1];
-    n = n.includes(",") ? n.replace(/\./g, "").replace(",", ".") : /\.\d{3}$/.test(n) ? n.replace(/\./g, "") : n;
-    out.price = parseFloat(n) + (best[2] ? parseInt(best[2], 10) / 100 : 0);
+    out.price = moneyOf(best);
     s = s.slice(0, best.index) + " " + s.slice(best.index + best[0].length);
   }
   // quantidade: "quatro unidades", "4 chapas", "quantidade 4", "50 metros"
@@ -1997,6 +2022,9 @@ function parseDictation(raw) {
   // "18 milímetros" é medida do material, não quantidade: só aceita se a unidade não for medida
   if (qm) {
     out.qty = qtyOf(qm[1]); out.un = unitOf(qm[2]);
+    // "4 unidades, 225" no fim da frase: o número solto logo depois da quantidade é o preço
+    const tail = out.price == null && s.slice(qm.index + qm[0].length).match(new RegExp("^[\\s,;]*(?:(?:a|por|de)\\s+)?" + priceRe.source + "[\\s,;]*$", "i"));
+    if (tail) { out.price = moneyOf(tail); s = s.slice(0, qm.index + qm[0].length); }
     s = s.slice(0, qm.index) + " " + s.slice(qm.index + qm[0].length);
   } else {
     const q2 = s.match(new RegExp("quantidade\\s*(?:de\\s*)?(" + QTY_RE + ")\\b", "i"));
@@ -2008,11 +2036,12 @@ function parseDictation(raw) {
     .replace(/\b(\d+(?:[.,]\d+)?)\s*cent[íi]metros?\b/gi, "$1 cm")
     .replace(/\b(\d+(?:[.,]\d+)?)\s*metros?\b/gi, "$1 m")
     .replace(/\b(\d+(?:[.,]\d+)?)\s*(?:por|x)\s*(\d+(?:[.,]\d+)?)\b/gi, "$1 x $2")
-    .replace(/(?:^|\s)(?:material|descri[çc][ãa]o|valor|pre[çc]o|quantidade)(?=\s|,|$)/gi, " ")
-    .replace(/\s*[.;:]\s*/g, " ").replace(/\s*,\s*(?=\S)/g, ", ")
+    .replace(/(?:^|\s)(?:(?:no|o|com o|pelo)\s+)?(?:material|descri[çc][ãa]o|valor|pre[çc]o|quantidade)(?:\s+de)?(?=\s|,|$)/gi, " ")
+    // vírgula entre algarismos é decimal ("2,75"): fica como está
+    .replace(/\s*[.;:]\s*/g, " ").replace(/\s*,\s*(?=\S)/g, (m, o, str) => m === "," && /\d/.test(str[o - 1]) && /\d/.test(str[o + 1]) ? m : ", ")
     .replace(/\s+/g, " ").replace(/^[\s,]+|[\s,]+$/g, "");
-  // se a quantidade veio como "unidades" mas o material diz "chapa", a unidade é chapa
-  if ((!out.un || out.un === "UN") && /\bchapas?\b/i.test(d)) { out.un = "CH"; d = d.replace(/\s*\bchapas?\b/i, "").replace(/\s+/g, " ").trim(); }
+  // se a quantidade veio como "unidades" mas o material diz "chapa", a unidade é chapa; "chapa de MDF" vira "MDF"
+  if ((!out.un || out.un === "UN" || out.un === "CH") && /\bchapas?\b/i.test(d)) { out.un = "CH"; d = d.replace(/\s*\bchapas?(?:\s+de)?\b/i, "").replace(/\s+/g, " ").replace(/^[\s,]+/, "").trim(); }
   out.desc = d ? d.charAt(0).toUpperCase() + d.slice(1) : "";
   return out;
 }
@@ -2031,7 +2060,9 @@ let micWhy = !SpeechRec ? "este navegador não tem reconhecimento de voz" : !mic
   : /; wv\)/.test(navigator.userAgent) ? "app aberto dentro de outro aplicativo (WebView)" : "";
 let speechBlocked = !!micWhy;
 let micPerm = "", micAsked = false, press = null, talk = null;
-const HOLD_MS = 200, CANCEL_PX = 80, FATAL = ["not-allowed", "service-not-allowed", "audio-capture", "network", "language-not-supported"];
+// TAIL_MS: ao soltar, ainda ouve um instante (a última palavra, quase sempre o valor, não é cortada);
+// STOP_WAIT: quanto espera o celular terminar de entender o fim da frase antes de preencher com o que já tem
+const HOLD_MS = 200, CANCEL_PX = 80, TAIL_MS = 600, STOP_WAIT = 6000, FATAL = ["not-allowed", "service-not-allowed", "audio-capture", "network", "language-not-supported"];
 try {
   navigator.permissions.query({ name: "microphone" }).then((st) => {
     const upd = () => { micPerm = st.state; if (st.state === "denied") setSpeechBlocked("permissão do microfone negada"); };
@@ -2060,6 +2091,7 @@ function dictState(i, text, live, why) {
   const x = $(`it-x-${i}`); if (!x) return;
   const box = x.closest(".dict"), st = box.querySelector(".dict-st");
   st.textContent = text; st.classList.toggle("live", !!live);
+  box.querySelector(".dict-heard").textContent = "";
   box.querySelector(".dict-why").textContent = why ? "Motivo: " + why + "." : "";
 }
 // precisa rodar dentro do toque (soltar o dedo) para o celular abrir o teclado
@@ -2183,12 +2215,17 @@ function endTalk(cancel, quiet) {
   t.stopping = true; t.cancel = cancel; t.quiet = quiet;
   clearTimeout(t.watch);
   if (cancel || !t.rec) { try { t.rec && t.rec.abort(); } catch {} finishTalk(t); return; }
-  try { t.rec.stop(); } catch { finishTalk(t); return; }
-  t.stopWatch = setTimeout(() => finishTalk(t), 2500); // se o celular não avisar que terminou
+  t.btn.querySelector("span").textContent = "Aguarde…";
+  dictState(t.i, "Terminando de entender o que você falou…", true);
+  t.tail = setTimeout(() => {
+    if (talk !== t) return;
+    try { t.rec.stop(); } catch { finishTalk(t); return; }
+    t.stopWatch = setTimeout(() => finishTalk(t), STOP_WAIT); // se o celular não avisar que terminou
+  }, TAIL_MS);
 }
 function finishTalk(t) {
   if (talk !== t) return;
-  talk = null; clearTimeout(t.watch); clearTimeout(t.stopWatch);
+  talk = null; clearTimeout(t.watch); clearTimeout(t.stopWatch); clearTimeout(t.tail);
   paintMic(t.btn);
   const text = talkText(t), x = $(`it-x-${t.i}`);
   if (t.cancel) {
@@ -2208,7 +2245,7 @@ function finishTalk(t) {
 // desliga o microfone na hora, sem preencher nem apagar a caixa
 function dropTalk() {
   const t = talk; if (!t) return null;
-  talk = null; clearTimeout(t.watch); clearTimeout(t.stopWatch);
+  talk = null; clearTimeout(t.watch); clearTimeout(t.stopWatch); clearTimeout(t.tail);
   try { t.rec && t.rec.abort(); } catch {}
   paintMic(t.btn);
   return t;
@@ -2228,13 +2265,30 @@ function applyDictation(i, text) {
   const it = quote.items[i]; if (!it || !String(text || "").trim()) return;
   const r = parseDictation(text);
   if (!r.desc && r.qty == null && r.price == null) { toast("Não entendi. Tente: material, quantidade e valor."); return; }
+  // só um número ("225"), para completar o item: vai para o preço se ele ainda está vazio, senão para a quantidade
+  if (r.qty == null && r.price == null && /^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$|^\d+(?:[.,]\d{1,2})?$/.test(r.desc)) {
+    if (!parseNum(it.price)) r.price = parseNum(r.desc); else r.qty = parseNum(r.desc);
+    r.desc = "";
+  }
   if (r.desc) it.desc = fixCase(r.desc, "upper");
-  if (r.un) it.un = r.un;
+  // completando só a quantidade ("4 unidades"): a unidade que já estava (CH, M...) fica
+  if (r.un && (r.desc || r.un !== "UN" || !it.un)) it.un = r.un;
   if (r.qty != null && !Number.isNaN(r.qty)) it.qty = r.qty;
   if (r.price != null && !Number.isNaN(r.price)) it.price = r.price;
   renderItems(); renderTotals();
-  const missing = [r.qty == null && "quantidade", r.price == null && "valor"].filter(Boolean);
-  toast(missing.length ? `Item ${i + 1} preenchido. Confira: faltou ${missing.join(" e ")}.` : `Item ${i + 1} preenchido`);
+  // ditou o item inteiro e faltou algo: a caixa continua aberta com o que o celular ouviu, para ver se o valor
+  // chegou a ser ouvido; dá para segurar de novo e falar só o que faltou, ou digitar no campo
+  const noQty = !!r.desc && r.qty == null, noPrice = !parseNum(it.price);
+  if (!noQty && !noPrice) { toast(`Item ${i + 1} preenchido`); return; }
+  const what = noQty && noPrice ? "a quantidade e o valor" : noQty ? "a quantidade" : "o valor";
+  const say = noQty && noPrice ? `"4 unidades, valor 225"` : noQty ? `"4 unidades"` : `"valor 225"`;
+  const x = openDictBox(i);
+  if (x) {
+    x.value = text;
+    dictState(i, `Faltou ${what}. Segure o microfone e fale só isso, por exemplo ${say}, ou digite no campo.`);
+    x.closest(".dict").querySelector(".dict-heard").textContent = `O celular ouviu: "${text}"`;
+  }
+  toast(`Item ${i + 1} preenchido. Faltou ${what}.`, 4000);
 }
 function renderTotals() {
   const t = calc(quote);
@@ -3005,7 +3059,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "63";
+const APP_VERSION = "64";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------

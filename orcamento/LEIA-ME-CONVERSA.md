@@ -97,7 +97,7 @@ Decidimos fazer **um app só**, com Orçamento e Recibo juntos (mesmo cadastro, 
 
 - **Ditar item:** cada item da tabela tem o botão **Ditar** (microfone). Você fala, por exemplo, "MDF chapa branco TX 18 milímetros, quatro unidades, valor 289,90", e o app separa material, unidade, quantidade e preço sozinho. Também há o botão **Ditar novo item**, que cria a linha e já abre o ditado.
 - Onde o navegador não deixa o app usar o microfone (como dentro da página do Claude), aparece uma caixa: você toca no microfone do teclado do celular, fala e toca em **Preencher**. O resultado é o mesmo.
-- Palavras que o app entende como unidade: chapa, unidade/peça, metro, metro quadrado, par, caixa, rolo, barra, litro, quilo, pacote, jogo, kit, lata, galão, tubo. "Milímetros" e "centímetros" viram mm e cm na descrição. O valor pode ser dito como "valor 289,90", "R$ 42" ou "18 reais e 50 centavos".
+- Palavras que o app entende como unidade: chapa, unidade/peça, metro, metro quadrado, par, caixa, rolo, barra, litro, quilo, pacote, jogo, kit, lata, galão, tubo. "Milímetros" e "centímetros" viram mm e cm na descrição. O valor pode ser dito como "valor 289,90", "R$ 42", "18 reais e 50 centavos" ou "valor R$ 225,00 a unidade" (veja a versão 64 mais abaixo).
 - **Inserir entre itens:** entre duas linhas aparece "+ Inserir item entre 1 e 2". Cada item também tem as setas ↑ ↓ para mudar a ordem.
 
 ## Atualização (03/10/2026, noite): boas-vindas e recomeçar
@@ -264,6 +264,15 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - O quadro Conferência ganhou "Mão de obra sem os marcados" (quando a mão de obra é automática) e "Total sem os marcados".
 - Os textos agora falam em **marcar**, como o Marcos chama: etiqueta "MARCADO", "Marcados (N itens)", "Materiais sem os marcados".
 - Continua só na tela: o quadro de totais, o PDF, os Salvos, o recibo e o orçamento salvo seguem com todos os itens.
+
+## Atualização (10/10/2026): ditado pega o valor no fim da frase (versão 64)
+
+- **Pedido do Marcos:** ditando "chapa de MDF branco TX Ultra, 6 milímetros, 4 unidades, valor R$ 225,00 a unidade", o app preenchia material, unidade e quantidade, mas não o valor.
+- **Causa provável:** o leitor da frase já entendia esse texto. O que se perdia era o fim da fala: ao soltar o botão, o app esperava só 2,5 s pelo celular terminar de entender, e o valor é a última coisa falada.
+- **Agora, ao soltar o botão:** o app ainda ouve mais um instante (a última palavra não é cortada) e espera até 6 s o celular entregar o fim da frase. O botão mostra "Aguarde…" e a caixa diz "Terminando de entender o que você falou…".
+- **Se mesmo assim faltar o valor (ou a quantidade):** a caixa do ditado fica aberta, mostra "O celular ouviu: ..." com a frase inteira e diz o que faltou. Basta segurar o microfone do item e falar só o que faltou ("valor 225", "225" ou "4 unidades"); o resto do item fica como estava (a unidade CH não vira UN). Ou digitar no campo.
+- **O leitor da frase entende mais jeitos de falar o valor:** "a unidade", "cada", "cada uma", "por unidade", "o metro", "o par"; "no valor de", "com o valor de", "valor é"; "R$ 225.00" e "225 00"; valor por extenso ("duzentos e vinte e cinco reais", "mil e duzentos"); e o número solto logo depois da quantidade no fim ("4 chapas 225").
+- **Descrição mais limpa:** "chapa de MDF branco" vira "MDF BRANCO" com unidade CH (antes ficava "DE MDF BRANCO"), e medidas com vírgula como "2,75 x 1,84" não ganham mais espaço depois da vírgula.
 
 ## Próximos passos
 
