@@ -274,6 +274,15 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - **O leitor da frase entende mais jeitos de falar o valor:** "a unidade", "cada", "cada uma", "por unidade", "o metro", "o par"; "no valor de", "com o valor de", "valor é"; "R$ 225.00" e "225 00"; valor por extenso ("duzentos e vinte e cinco reais", "mil e duzentos"); e o número solto logo depois da quantidade no fim ("4 chapas 225").
 - **Descrição mais limpa:** "chapa de MDF branco" vira "MDF BRANCO" com unidade CH (antes ficava "DE MDF BRANCO"), e medidas com vírgula como "2,75 x 1,84" não ganham mais espaço depois da vírgula.
 
+## Atualização (10/10/2026): botão voltar do celular volta uma tela (versão 65)
+
+- **Pedido do Marcos:** a flechinha de voltar do celular (a do quadradinho e da bolinha) fechava o app, até com o Ver PDF aberto. Ele queria que ela fizesse o mesmo que o Fechar: voltar para a tela anterior.
+- **Agora cada tela aberta por um toque vira um passo do voltar.** Por exemplo: Início, Orçamento (Salvos), aba Orçamento, Ver PDF. A flechinha fecha o PDF, depois volta para os Salvos, depois para o Início. No Início ela sai do app, como em qualquer app do Android.
+- **O que está por cima da tela fecha primeiro:** a folha do Ver PDF, a janela de enviar pelo WhatsApp e a pergunta de importar ou restaurar. Voltar fecha só elas e a tela continua onde estava.
+- **Botão Início (em cima) e "‹ Início":** levam ao Início e zeram os passos. Depois disso, a flechinha sai do app.
+- **Abrir um orçamento dos Salvos** e depois voltar leva de volta aos Salvos. O mesmo vale entre Orçamento e Recibo.
+- Recarregar a página no meio mantém a tela e os passos. Depois de "Sair", a flechinha não abre o app sem a senha.
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.

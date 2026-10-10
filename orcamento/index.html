@@ -2724,7 +2724,7 @@ async function sendDoc({ doc, name, who, phone, message }) {
   $("sh-wa-any").textContent = num ? "Escolher outro contato" : "Abrir WhatsApp e escolher o contato";
   $("sh-wa-any").className = num || share ? "btn small" : "btn wa";
   $("sh-save").textContent = share ? "Salvar o PDF" : "Salvar o PDF de novo";
-  $("sheet").hidden = false;
+  $("sheet").hidden = false; openLayer("sheet");
   if (share) { $("sh-saved").textContent = "Salve o PDF no celular."; return; }
   $("sh-saved").textContent = "Salvando o PDF…";
   const r = await savePdfFile(blob, name);
@@ -2732,7 +2732,7 @@ async function sendDoc({ doc, name, who, phone, message }) {
 }
 $("sh-share").onclick = async () => {
   if (!sending || !sending.file) return;
-  try { await navigator.share({ files: [sending.file], text: sending.message }); $("sheet").hidden = true; }
+  try { await navigator.share({ files: [sending.file], text: sending.message }); closeSheet(); }
   catch (e) { if (e && e.name === "AbortError") return; $("sh-share-why").textContent = "Não abriu: " + shareWhy(e) + ". Use o outro jeito abaixo."; }
 };
 $("sh-save").onclick = async () => {
@@ -2740,8 +2740,13 @@ $("sh-save").onclick = async () => {
   const r = await savePdfFile(sending.blob, sending.name);
   $("sh-saved").textContent = r === "saved" ? "PDF salvo no celular." : "O PDF não foi salvo.";
 };
-$("sh-close").onclick = () => { $("sheet").hidden = true; };
-$("sheet").onclick = (e) => { if (e.target.id === "sheet") $("sheet").hidden = true; };
+function closeSheet(fromBack) {
+  if ($("sheet").hidden) return;
+  $("sheet").hidden = true;
+  if (!fromBack) leaveLayer("sheet");
+}
+$("sh-close").onclick = () => closeSheet();
+$("sheet").onclick = (e) => { if (e.target.id === "sheet") closeSheet(); };
 $("sh-copy").onclick = () => copyText($("sh-msg").textContent, $("sh-msg"), "Mensagem copiada");
 const sendQuote = async (q) => {
   await prepLogo();
@@ -2782,7 +2787,7 @@ async function viewPdf(q, onSend) {
   const box = $("pv-pages"); box.textContent = ""; box.classList.remove("zoom"); box.scrollTop = 0;
   pvMsg("Montando o PDF…");
   $("pv").hidden = false; document.body.classList.add("pv-open");
-  try { if (!(history.state && history.state.pv)) history.pushState({ pv: 1 }, ""); } catch {} // o botão voltar do celular fecha a folha
+  openLayer("pv"); // o botão voltar do celular fecha a folha
   try {
     await prepLogo();
     const blob = buildPdf({ ...q, clientSig: await inkBlue(q.clientSig) }).output("blob");
@@ -2812,10 +2817,8 @@ async function viewPdf(q, onSend) {
 function closePv(fromBack) {
   if ($("pv").hidden) return;
   pvToken++; $("pv").hidden = true; $("pv-pages").textContent = ""; document.body.classList.remove("pv-open");
-  if (!fromBack) try { if (history.state && history.state.pv) history.back(); } catch {}
+  if (!fromBack) leaveLayer("pv");
 }
-addEventListener("popstate", () => closePv(true));
-try { if (history.state && history.state.pv) history.replaceState(null, ""); } catch {} // recarregou com a folha aberta
 $("pv-close").onclick = () => closePv();
 $("pv-send").onclick = () => { const go = pv && pv.onSend; closePv(); if (go) go(); };
 $("pv-dl").onclick = async () => { if (!pv || !pv.blob) return; const r = await savePdfFile(pv.blob, pv.name); toast(r === "saved" ? "PDF salvo" : "O PDF não foi salvo"); };
@@ -3050,7 +3053,7 @@ function confirmReset(btn) {
 }
 $("btn-reset").onclick = (e) => confirmReset(e.currentTarget);
 $("btn-reset-login").onclick = (e) => confirmReset(e.currentTarget);
-$("btn-logout").onclick = () => { saveDraft(); session.set(false); bioAuto = false; gate("login"); }; // depois de Sair, a digital só abre se tocar no botão
+$("btn-logout").onclick = () => { saveDraft(); session.set(false); bioAuto = false; navHome(); gate("login"); }; // depois de Sair, a digital só abre se tocar no botão
 
 // Orçamento importado do app antigo guarda o código de lá ("a-22") no lugar do número: aparece assim no app e no PDF,
 // fica depois dos números do app na lista e não mexe no "Próximo número"
@@ -3059,7 +3062,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "64";
+const APP_VERSION = "65";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -3126,7 +3129,7 @@ $("bk-file").onchange = async (e) => {
   $("bk-note").textContent = fresh
     ? "Seu cadastro, seus orçamentos e seus recibos voltam como estavam. Depois é só entrar com a senha que você usava quando fez a cópia."
     : "O que já está neste aparelho continua. Os orçamentos e recibos da cópia entram nos Salvos e, se o mesmo estiver nos dois, fica a versão mais nova. Os dados da empresa passam a ser os da cópia, e a sua senha continua a mesma.";
-  $("bk-ask").hidden = false;
+  $("bk-ask").hidden = false; openLayer("bk");
 };
 // pergunta antes de importar: a lista do que vai entrar e os avisos da leitura do PDF
 function askImport(d, warn) {
@@ -3135,9 +3138,14 @@ function askImport(d, warn) {
   $("bk-title").textContent = n === 1 ? "Importar 1 orçamento?" : `Importar ${n} orçamentos?`;
   $("bk-info").textContent = d.quotes.slice(0, 6).map((q) => `Nº ${pad4(q.number)} · ${(q.client && q.client.name) || "Sem nome"} · ${money(calc(q).total)}`).join("\n") + (n > 6 ? `\n… e mais ${n - 6}` : "");
   $("bk-note").textContent = (warn ? warn + "\n\n" : "") + "Eles entram nos Salvos do Orçamento. Nada do que já está neste aparelho é apagado. Se um deles já foi importado antes e você mudou alguma coisa, fica a sua versão.";
-  $("bk-yes").textContent = "Importar"; $("bk-ask").hidden = false;
+  $("bk-yes").textContent = "Importar"; $("bk-ask").hidden = false; openLayer("bk");
 }
-$("bk-no").onclick = () => { bkPending = null; $("bk-ask").hidden = true; };
+function closeBk(fromBack) {
+  if ($("bk-ask").hidden) return;
+  bkPending = null; $("bk-ask").hidden = true;
+  if (!fromBack) leaveLayer("bk");
+}
+$("bk-no").onclick = () => closeBk();
 $("bk-yes").onclick = async () => {
   const d = bkPending; if (!d) return;
   $("bk-yes").disabled = true;
@@ -3146,6 +3154,8 @@ $("bk-yes").onclick = async () => {
   catch { $("bk-yes").disabled = false; showErr("bk-err", imp ? "Não consegui importar tudo. Pode faltar espaço neste aparelho. Tente de novo." : "Não consegui restaurar tudo. Pode faltar espaço neste aparelho. Tente de novo."); return; }
   bkPending = null;
   try { sessionStorage.setItem("orc.restored", imp ? "imp:" + d.quotes.length : "1"); if (imp) sessionStorage.setItem("orc.view", "saved"); } catch {}
+  // a pergunta sai do histórico; depois de importar, a página volta aberta nos Salvos
+  try { const st = history.state || {}; history.replaceState({ v: imp ? "saved" : st.v, d: st.d || 0 }, ""); } catch {}
   location.reload(); // abre de novo como numa visita normal: Entrar, ou a tela onde você estava
 };
 /* ---------- PDF do app antigo (Orcamento_a-NN.pdf): o app lê sozinho ---------- */
@@ -3804,6 +3814,45 @@ $("tab-profile").onclick = () => show("profile");
 
 /* ---------- Telas ---------- */
 const APP_VIEWS = ["home", "editor", "saved", "materials", "receipt", "receipts", "profile"];
+/* Botão voltar do celular (a flechinha): cada tela aberta por um toque vira um passo no histórico do navegador, então
+   voltar leva à tela anterior, como o Fechar. O Início é sempre o primeiro passo (voltar no Início sai do app, como em
+   qualquer app do Android). A folha do Ver PDF, a janela de enviar e a pergunta de importar ou restaurar também são um
+   passo: voltar fecha só elas. Estado de cada passo: { v: tela, d: quantos passos acima do Início, layer: camada }. */
+let curView = "", navBacks = 0, navQueue = [], navTimer = 0;
+const navState = () => history.state || {};
+try { history.scrollRestoration = "manual"; } catch {}
+// recarregou a página com uma camada aberta: ela não volta aberta, então o passo vira só a tela
+try { const st = navState(); if (st.layer || st.pv) history.replaceState(st.v ? { v: st.v, d: st.d || 0 } : null, ""); } catch {}
+// as voltas que o próprio app pede (Fechar, Início) chegam depois; o que vier antes delas espera na fila
+function navRun(op) { if (navBacks) navQueue.push(op); else try { op(); } catch {} }
+function navBack(n) {
+  navBacks++; clearTimeout(navTimer);
+  navTimer = setTimeout(navSettle, 1000); // se o navegador não avisar, libera a fila assim mesmo
+  try { history.go(-n); } catch { navSettle(); }
+}
+function navSettle() {
+  navBacks = 0; clearTimeout(navTimer);
+  while (navQueue.length && !navBacks) { const op = navQueue.shift(); try { op(); } catch {} } // parou numa nova volta: o resto espera ela
+}
+function openLayer(name) {
+  navRun(() => { const st = navState(); if (st.layer !== name) history.pushState({ v: st.v || curView, d: (st.d || 0) + 1, layer: name }, ""); });
+}
+function leaveLayer(name) { navRun(() => { if (navState().layer === name) navBack(1); }); }
+function navHome() { navRun(() => { const d = navState().d || 0; if (d > 0) navBack(d); else history.replaceState({ v: "home", d: 0 }, ""); }); }
+function navPush(view) {
+  navRun(() => { const st = navState(); if (st.v !== view || st.layer) history.pushState({ v: view, d: (st.d || 0) + 1 }, ""); });
+}
+addEventListener("popstate", () => {
+  if (navBacks) { if (--navBacks === 0) navSettle(); return; } // volta pedida pelo app: a tela já está certa
+  const st = navState();
+  // a flechinha fecha primeiro o que está por cima da tela
+  if (st.layer !== "pv") closePv(true);
+  if (st.layer !== "sheet") closeSheet(true);
+  if (st.layer !== "bk") closeBk(true);
+  if ($("topbar").hidden) return; // tela de entrar ou de cadastro: o voltar não abre o app sem a senha
+  const v = APP_VIEWS.includes(st.v) ? st.v : "home";
+  if (v !== curView) show(v, "pop");
+});
 function gate(which) {
   for (const v of [...APP_VIEWS, "loading", "welcome", "signup", "login"]) $("view-" + v).hidden = v !== which;
   fitSoon();
@@ -3826,9 +3875,15 @@ function enterApp() {
   $("topbar").hidden = false;
   renderBrand(); keepStorage();
   let last = ""; try { last = sessionStorage.getItem("orc.view") || ""; } catch {}
-  show(APP_VIEWS.includes(last) ? last : "home");
+  const st = navState();
+  if (APP_VIEWS.includes(st.v)) show(st.v, "pop"); // recarregou: os passos do voltar continuam valendo
+  else show(APP_VIEWS.includes(last) ? last : "home", "replace");
 }
-function show(view) {
+// how: "push" (toque da pessoa, vira um passo do voltar), "pop" (veio do voltar), "replace" (abrir o app)
+function show(view, how = "push") {
+  if (how === "push") { if (view === "home") navHome(); else navPush(view); }
+  else if (how === "replace") navRun(() => history.replaceState({ v: view, d: navState().d || 0 }, ""));
+  curView = view;
   fitSoon();
   try { sessionStorage.setItem("orc.view", view); } catch {}
   for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", String(b.dataset.view === view));
