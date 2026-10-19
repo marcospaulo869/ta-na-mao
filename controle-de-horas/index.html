@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controle de Horas</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#1c2530;--mut:#5d6b7a;--line:#dde3ea;--pri:#0b6e4f;--pri2:#e3f4ed;--warn:#b45309;--warnbg:#fef3c7;--err:#b91c1c;--ext:#1d4ed8;--extbg:#e0e9ff}
+@media (prefers-color-scheme:dark){:root{--bg:#111820;--card:#1a232e;--ink:#e8edf2;--mut:#93a1b0;--line:#2c3947;--pri:#34d399;--pri2:#12332a;--warn:#fbbf24;--warnbg:#3a2e0b;--err:#f87171;--ext:#7aa2ff;--extbg:#1a2a52}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:14px 16px;background:var(--pri);color:#fff}
+header h1{margin:0;font-size:19px}
+header small{opacity:.85}
+nav{display:flex;gap:4px;padding:8px 12px 0;overflow-x:auto;background:var(--bg);position:sticky;top:0;z-index:5;border-bottom:1px solid var(--line)}
+nav button{border:0;background:none;color:var(--mut);padding:10px 14px;font:inherit;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav button.on{color:var(--pri);border-color:var(--pri)}
+main{padding:12px;max-width:1200px;margin:auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 10px;font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+label{display:block;font-size:12px;color:var(--mut);font-weight:600}
+input,select,button.b{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:7px;padding:7px 8px;width:100%}
+input[type=checkbox]{width:auto}
+button.b{width:auto;cursor:pointer;font-weight:600}
+button.p{background:var(--pri);color:#fff;border-color:var(--pri)}
+button.d{color:var(--err)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:10px}
+.row>div{flex:1;min-width:150px}
+.sum{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+.sum div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+.sum span{display:block;font-size:12px;color:var(--mut)}
+.sum b{font-size:18px}
+.sum .hi{background:var(--pri2);border-color:var(--pri)}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:860px}
+th,td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+th{font-size:12px;color:var(--mut);background:var(--bg);position:sticky;top:0}
+td.l,th.l{text-align:left}
+td input,td select{padding:5px;min-width:92px}
+td select{min-width:120px}
+tr.dom td{background:var(--bg);color:var(--mut)}
+tr.fer td.v{font-weight:700}
+.ext{color:var(--ext);font-weight:700}
+.al{font-size:12px;color:var(--warn);white-space:normal;text-align:left;min-width:150px}
+.note{font-size:12.5px;color:var(--mut);margin:8px 0}
+.warn{background:var(--warnbg);color:var(--warn);border-radius:8px;padding:8px 10px;margin:8px 0;font-size:13px}
+table.r{min-width:0}
+table.r td{text-align:left}
+table.r td:last-child,table.r th:last-child{text-align:right}
+table.r tr.t td{font-weight:700;background:var(--pri2)}
+.hide{display:none}
+@media print{header,nav,.noprint,.row button{display:none!important}body{background:#fff;color:#000}.card,.sum div{border-color:#999}main{max-width:none}td input,td select{border:0;background:none;padding:0;appearance:none}}
+</style>
+</head>
+<body>
+<header><h1>Controle de Horas</h1><small>Carteira assinada (CLT) e diaristas · segunda a sábado</small></header>
+<nav id="tabs">
+<button data-t="emp" class="on">Colaboradores</button>
+<button data-t="folha">Folha do mês</button>
+<button data-t="resc">Rescisão e direitos</button>
+<button data-t="cfg">Parâmetros e backup</button>
+</nav>
+<main>
+<section id="t-emp"></section>
+<section id="t-folha" class="hide"></section>
+<section id="t-resc" class="hide"></section>
+<section id="t-cfg" class="hide"></section>
+</main>
+<script>
+/* ===== utilitários ===== */
+const $=s=>document.querySelector(s);
+const brl=n=>(isFinite(n)?n:0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const r2=n=>Math.round((n+Number.EPSILON)*100)/100;
+const hm=min=>{min=Math.round(min);const s=min<0?'-':'';min=Math.abs(min);return s+Math.floor(min/60)+':'+String(min%60).padStart(2,'0')};
+const tmin=v=>{if(!v)return null;const [h,m]=v.split(':').map(Number);return h*60+m};
+const pad=n=>String(n).padStart(2,'0');
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dim=(y,m)=>new Date(Date.UTC(y,m,0)).getUTCDate();
+const pd=s=>{if(!s)return null;const [y,m,d]=s.split('-').map(Number);return {y,m,d}};
+const toD=o=>new Date(Date.UTC(o.y,o.m-1,o.d));
+const fromD=dt=>({y:dt.getUTCFullYear(),m:dt.getUTCMonth()+1,d:dt.getUTCDate()});
+const addDays=(o,n)=>{const dt=toD(o);dt.setUTCDate(dt.getUTCDate()+n);return fromD(dt)};
+const addMonths=(o,n)=>{const t=o.y*12+(o.m-1)+n,y=Math.floor(t/12),m=t%12+1;return {y,m,d:Math.min(o.d,dim(y,m))}};
+const cmp=(a,b)=>toD(a)-toD(b);
+const fmtD=o=>o?pad(o.d)+'/'+pad(o.m)+'/'+o.y:'';
+const todayS=()=>{const t=new Date();return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate())};
+
+/* ===== estado ===== */
+const KEY='controle-horas-v1';
+let S;
+function load(){try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+ if(!S||!S.emps)S={cfg:{minimo:1621},emps:[],rec:{},sel:null,ym:todayS().slice(0,7)};
+ if(!S.ym)S.ym=todayS().slice(0,7)}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const emp=()=>S.emps.find(e=>e.id===S.sel);
+function newEmp(){return {id:'e'+Date.now(),nome:'Novo colaborador',tipo:'clt',salario:S.cfg.minimo,base:220,metaSem:8,metaSab:4,capSemana:44,adicExtra:50,adicFer:100,
+ valorHora:10,jornada:8,pagaExtra:false,adm:'',deslig:todayS(),motivo:'sem_justa',feriasGozadas:0,fgtsSaldo:'',mediaExtras:0}}
+
+/* ===== cálculo da folha ===== */
+function calcMonth(e,ym){
+ const [Y,M]=ym.split('-').map(Number),n=dim(Y,M),recs=(S.rec[e.id]||{})[ym]||{};
+ const clt=e.tipo==='clt',hora=clt?e.salario/e.base:e.valorHora;
+ const days=[],weeks={};let prevOut=null;
+ const T={norm:0,ext:0,fer:0,total:0,valHoras:0,vExt:0,vFer:0,dAtr:0,dFalta:0,dDsr:0,nDias:0,vDia:0,meia:0,vDiaria:0,vExtD:0};
+ const alerts=[];
+ for(let d=1;d<=n;d++){
+  const wd=new Date(Date.UTC(Y,M-1,d)).getUTCDay(),r=recs[d]||{},x={d,wd,r,al:[]};
+  if(wd===0){x.dom=true;days.push(x);continue}
+  const mon=new Date(Date.UTC(Y,M-1,d-(wd-1))),wk=mon.toISOString().slice(0,10);
+  const W=weeks[wk]=weeks[wk]||{norm:0,falta:false,dias:0};
+  const a=tmin(r.a),b=tmin(r.b),c=tmin(r.c),dd=tmin(r.d),t=r.t||'';
+  let m1=0,m2=0;
+  if(a!=null&&b!=null){if(b>a)m1=b-a;else x.al.push('Saída da manhã antes da entrada')}
+  if(c!=null&&dd!=null){if(dd>c)m2=dd-c;else x.al.push('Saída da tarde antes da entrada')}
+  let w=m1+m2;
+  if(t==='falta'||t==='folga'||t==='just'||t==='nt')w=0;
+  x.w=w;
+  const meta=(wd===6?e.metaSab:e.metaSem)*60;
+  if(w>0){
+   if(b!=null&&c!=null&&c>=b){const alm=c-b;
+    if(w>360&&alm<60)x.al.push('Intervalo menor que 1h (CLT art. 71)');
+    else if(w>240&&w<=360&&alm<15)x.al.push('Intervalo menor que 15min (CLT art. 71)')}
+   if(w>360&&b!=null&&c==null)x.al.push('Jornada acima de 6h sem intervalo')
+   if(clt&&w>(meta+120))x.al.push('Mais de 2h extras no dia (CLT art. 59)');
+   if(clt&&w>600)x.al.push('Jornada acima de 10h');
+   if(prevOut!=null&&a!=null&&(24*60-prevOut+a)<660&&clt)x.al.push('Menos de 11h de descanso desde o dia anterior');
+   if(dd!=null)prevOut=dd;else if(b!=null)prevOut=b;
+  }
+  T.total+=w;
+  if(clt){
+   if(t==='falta'){x.vlr=-e.salario/30;T.dFalta+=e.salario/30;W.falta=true}
+   else if(t==='fer'&&w>0){x.fer=w;T.fer+=w;x.vlr=(w/60)*hora*(1+e.adicFer/100);T.vFer+=(w/60)*hora*e.adicFer/100;T.valHoras+=x.vlr}
+   else if(w>0){
+    const capLeft=Math.max(0,e.capSemana*60-W.norm);
+    const nm=Math.min(w,meta,capLeft),ex=w-nm;
+    W.norm+=nm;x.norm=nm;x.ext=ex;
+    T.norm+=nm;T.ext+=ex;
+    const vn=(nm/60)*hora,ve=(ex/60)*hora*(1+e.adicExtra/100);
+    x.vlr=vn+ve;T.valHoras+=x.vlr;T.vExt+=ve;
+    if(wd!==6&&w<meta&&t===''){const falta=(meta-w)/60*hora;x.desc=falta;T.dAtr+=falta}
+   }
+  }else{
+   if(w>0){
+    x.dia=true;T.nDias++;W.dias++;
+    const nm=e.pagaExtra?Math.min(w,e.jornada*60):w,ex=w-nm;
+    x.norm=nm;x.ext=ex;T.norm+=nm;T.ext+=ex;
+    const vn=(nm/60)*hora,ve=(ex/60)*hora*(1+e.adicExtra/100);
+    x.vlr=vn+ve;T.vDiaria+=vn;T.vExtD+=ve;
+   }
+  }
+  days.push(x);
+ }
+ if(clt){for(const k in weeks)if(weeks[k].falta)T.dDsr+=e.salario/30;
+  T.pagar=e.salario-T.dAtr-T.dFalta-T.dDsr+T.vExt+T.vFer;
+  T.nDsr=Object.values(weeks).filter(w=>w.falta).length}
+ else{T.pagar=T.vDiaria+T.vExtD;
+  for(const k in weeks)if(weeks[k].dias>=3)alerts.push('Semana de '+k.split('-').reverse().join('/')+': '+weeks[k].dias+' dias trabalhados. Três ou mais dias por semana para o mesmo contratante podem caracterizar vínculo (empregado doméstico: LC 150/2015; demais: CLT art. 3º).')}
+ return {days,T,hora,alerts};
+}
+
+/* ===== rescisão (CLT) ===== */
+function mesesComp(ini,fimIncl){ // meses com 15 dias ou mais, de ini a fimIncl
+ let c=0,cur={y:ini.y,m:ini.m,d:1};
+ while(cur.y*12+cur.m<=fimIncl.y*12+fimIncl.m){
+  const s=cmp(cur,ini)<0?ini:cur,l={y:cur.y,m:cur.m,d:dim(cur.y,cur.m)},f=cmp(l,fimIncl)>0?fimIncl:l;
+  if(f.d-s.d+1>=15)c++;cur=addMonths({y:cur.y,m:cur.m,d:1},1)}
+ return c}
+function anosCompletos(adm,fim){let y=0;while(cmp(addMonths(adm,12*(y+1)),fim)<=0)y++;return y}
+function calcRescisao(e,mediaExtras){
+ const adm=pd(e.adm),dl=pd(e.deslig);if(!adm||!dl||cmp(dl,adm)<0)return null;
+ const m=e.motivo,sal=e.salario,rem=sal+(+mediaExtras||0),R={};
+ const anos=anosCompletos(adm,dl);
+ let a=dl,meses=0;while(cmp(addMonths(adm,meses+1),dl)<=0)meses++;
+ const resto=Math.round((toD(dl)-toD(addMonths(adm,meses)))/864e5);
+ R.tempo={anos:Math.floor(meses/12),meses:meses%12,dias:resto};
+ const dg=(m==='sem_justa'||m==='acordo'),acordo=m==='acordo';
+ const avisoDias=dg?Math.min(90,30+3*anos):0;
+ const fimProj=dg?addDays(dl,avisoDias):dl;
+ R.fimProj=fimProj;R.avisoDias=avisoDias;
+ // saldo de salário
+ const ini=(adm.y===dl.y&&adm.m===dl.m)?adm.d:1,dias=Math.min(30,dl.d-ini+1);
+ R.saldoDias=dias;R.saldo=sal/30*dias;
+ R.aviso=dg?rem/30*avisoDias*(acordo?.5:1):0;
+ // 13º
+ const justa=m==='justa';
+ const iniAno=adm.y===fimProj.y?adm:{y:fimProj.y,m:1,d:1};
+ R.m13=justa?0:mesesComp(iniAno,fimProj);
+ R.v13=rem/12*R.m13;
+ // férias
+ const anosP=anosCompletos(adm,fimProj);
+ R.venc=Math.max(0,anosP-(+e.feriasGozadas||0));
+ R.vVenc=R.venc*rem;R.vVenc3=R.vVenc/3;
+ let mp=0;
+ if(!justa){const pi=addMonths(adm,12*anosP);mp=Math.min(12,mesesComp(pi,fimProj))
+  if(mp>=12&&false)mp=12}
+ R.mFer=mp;R.vFer=rem/12*mp;R.vFer3=R.vFer/3;
+ R.verbas=R.saldo+R.aviso+R.v13+R.vVenc+R.vVenc3+R.vFer+R.vFer3;
+ // FGTS
+ const mTot=mesesComp(adm,dl)+0;
+ let totMeses=0;{let cur={y:adm.y,m:adm.m,d:1};while(cur.y*12+cur.m<=dl.y*12+dl.m){totMeses++;cur=addMonths(cur,1)}}
+ R.fgtsEst=e.fgtsSaldo===''||e.fgtsSaldo==null;
+ R.fgtsSaldo=R.fgtsEst?Math.max(0,0.08*rem*Math.max(0,totMeses-1)):+e.fgtsSaldo;
+ R.fgtsVerbas=justa?0:0.08*(R.saldo+R.aviso+R.v13);
+ const pctMulta=m==='sem_justa'?.4:acordo?.2:0;
+ R.pctMulta=pctMulta;R.multa=(R.fgtsSaldo+R.fgtsVerbas)*pctMulta;
+ R.custo=R.verbas+R.fgtsVerbas+R.multa;
+ return R}
+
+/* ===== telas ===== */
+const tabs=['emp','folha','resc','cfg'];
+function show(t){tabs.forEach(k=>{$('#t-'+k).classList.toggle('hide',k!==t)});
+ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+ ({emp:rEmp,folha:rFolha,resc:rResc,cfg:rCfg})[t]()}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>show(b.dataset.t));
+
+function bind(root,obj,onch){root.querySelectorAll('[data-k]').forEach(el=>{
+ const k=el.dataset.k;el.onchange=el.oninput=()=>{let v=el.type==='checkbox'?el.checked:el.value;
+  if(el.type==='number')v=v===''?'':+v;obj[k]=v;save();onch&&onch(k)}})}
+
+function rEmp(){
+ const el=$('#t-emp'),e=emp();
+ let h='<div class="card"><div class="row"><div><label>Colaborador</label><select id="selE">'+
+  S.emps.map(x=>`<option value="${x.id}" ${x.id===S.sel?'selected':''}>${esc(x.nome)} (${x.tipo==='clt'?'CLT':'Diarista'})</option>`).join('')+
+  (S.emps.length?'':'<option>— nenhum cadastrado —</option>')+'</select></div>'+
+  '<button class="b p" id="addE">+ Novo colaborador</button>'+(e?'<button class="b d" id="delE">Excluir</button>':'')+'</div></div>';
+ if(e){const c=e.tipo==='clt';
+  h+=`<div class="card"><h2>Ficha de ${esc(e.nome)}</h2><div class="grid">
+  <div><label>Nome</label><input data-k="nome" value="${esc(e.nome)}"></div>
+  <div><label>Tipo de contratação</label><select data-k="tipo"><option value="clt" ${c?'selected':''}>Carteira assinada (CLT)</option><option value="diaria" ${!c?'selected':''}>Diarista</option></select></div>
+  ${c?`<div><label>Salário mensal (R$)</label><input type="number" step="0.01" data-k="salario" value="${e.salario}"></div>
+  <div><label>Base de horas mensais</label><input type="number" data-k="base" value="${e.base}"></div>
+  <div><label>Jornada seg–sex (horas/dia)</label><input type="number" step="0.25" data-k="metaSem" value="${e.metaSem}"></div>
+  <div><label>Jornada sábado (horas)</label><input type="number" step="0.25" data-k="metaSab" value="${e.metaSab}"></div>
+  <div><label>Limite semanal (horas)</label><input type="number" data-k="capSemana" value="${e.capSemana}"></div>
+  <div><label>Adicional hora extra (%)</label><input type="number" data-k="adicExtra" value="${e.adicExtra}"></div>
+  <div><label>Adicional feriado trabalhado (%)</label><input type="number" data-k="adicFer" value="${e.adicFer}"></div>
+  <div><label>Data de admissão</label><input type="date" data-k="adm" value="${e.adm}"></div>`:
+  `<div><label>Valor da hora (R$)</label><input type="number" step="0.01" data-k="valorHora" value="${e.valorHora}"></div>
+  <div><label>Jornada de referência (horas/dia)</label><input type="number" step="0.25" data-k="jornada" value="${e.jornada}"></div>
+  <div><label>Pagar hora extra acima da jornada?</label><select data-k="pagaExtra"><option value="">Não</option><option value="1" ${e.pagaExtra?'selected':''}>Sim</option></select></div>
+  <div><label>Adicional hora extra (%)</label><input type="number" data-k="adicExtra" value="${e.adicExtra}"></div>`}
+  </div>
+  <p class="note">${c?'Valor da hora = salário ÷ base de horas (padrão 220). Salário mínimo vigente nos parâmetros.':'Pagamento por horas corridas: horas trabalhadas × valor da hora, sem diária fixa. Sem módulo de rescisão (não há vínculo empregatício).'}</p></div>`}
+ else h+='<div class="card">Cadastre o primeiro colaborador para começar.</div>';
+ el.innerHTML=h;
+ const sel=$('#selE');if(sel)sel.onchange=()=>{S.sel=sel.value;save();rEmp()};
+ $('#addE').onclick=()=>{const x=newEmp();S.emps.push(x);S.sel=x.id;save();rEmp()};
+ const del=$('#delE');if(del)del.onclick=()=>{if(confirm('Excluir '+e.nome+' e todos os lançamentos?')){S.emps=S.emps.filter(x=>x!==e);delete S.rec[e.id];S.sel=S.emps[0]?.id||null;save();rEmp()}};
+ if(e)bind(el,e,k=>{if(k==='pagaExtra')e.pagaExtra=!!e.pagaExtra;if(k==='tipo'||k==='nome')rEmp()});
+ const pe=el.querySelector('[data-k=pagaExtra]');if(pe)pe.onchange=()=>{e.pagaExtra=pe.value==='1';save()};
+}
+
+function rFolha(){
+ const el=$('#t-folha'),e=emp();
+ if(!e){el.innerHTML='<div class="card">Cadastre um colaborador na aba Colaboradores.</div>';return}
+ const clt=e.tipo==='clt';
+ const opts=clt?[['','Normal'],['fer','Feriado trabalhado'],['folga','Folga / feriado não trabalhado'],['just','Falta justificada'],['falta','Falta injustificada']]:[['','Trabalhou'],['nt','Não trabalhou']];
+ el.innerHTML=`<div class="card noprint"><div class="row"><div><label>Colaborador</label><select id="fE">${S.emps.map(x=>`<option value="${x.id}" ${x.id===S.sel?'selected':''}>${esc(x.nome)}</option>`).join('')}</select></div>
+ <div><label>Mês</label><input type="month" id="fM" value="${S.ym}"></div><button class="b" onclick="window.print()">Imprimir / PDF</button></div></div>
+ <div class="sum" id="sum"></div><div id="alr"></div>
+ <div class="tw"><table><thead><tr><th class="l">Dia</th><th>Situação</th><th>Entrada manhã</th><th>Saída manhã</th><th>Entrada tarde</th><th>Saída tarde</th><th>Total</th><th>Normais</th><th>Extras</th><th>Valor do dia</th><th class="l">Alertas</th></tr></thead><tbody id="tb"></tbody></table></div>
+ <p class="note">${clt?'Dia em branco = sem lançamento (não desconta). Marque "Falta injustificada" quando o colaborador faltar. Sábado não tem desconto por jornada menor (é opcional). Valor do dia é informativo (horas × valor da hora); o total a pagar parte do salário fixo.':'Horas corridas: total de horas trabalhadas × valor da hora (hora extra só se ativada na ficha).'}</p>`;
+ $('#fE').onchange=ev=>{S.sel=ev.target.value;save();rFolha()};
+ $('#fM').onchange=ev=>{if(ev.target.value){S.ym=ev.target.value;save();rFolha()}};
+ const [Y,M]=S.ym.split('-').map(Number),rec=(S.rec[e.id]=S.rec[e.id]||{}),mr=(rec[S.ym]=rec[S.ym]||{});
+ const dn=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+ let rows='';
+ for(let d=1;d<=dim(Y,M);d++){const wd=new Date(Date.UTC(Y,M-1,d)).getUTCDay();
+  if(wd===0){rows+=`<tr class="dom"><td class="l">${pad(d)} Dom</td><td colspan="10" class="l">Descanso semanal</td></tr>`;continue}
+  const r=mr[d]||{};
+  rows+=`<tr data-d="${d}"><td class="l">${pad(d)} ${dn[wd]}</td><td><select data-f="t">${opts.map(o=>`<option value="${o[0]}" ${r.t===o[0]||(!r.t&&o[0]==='')?'selected':''}>${o[1]}</option>`).join('')}</select></td>`+
+  ['a','b','c','d'].map(f=>`<td><input type="time" data-f="${f}" value="${r[f]||''}"></td>`).join('')+
+  `<td class="c-tot"></td><td class="c-n"></td><td class="c-e ext"></td><td class="c-v v"></td><td class="al c-al"></td></tr>`}
+ $('#tb').innerHTML=rows;
+ const paint=()=>{const R=calcMonth(e,S.ym);
+  R.days.forEach(x=>{if(x.dom)return;const tr=document.querySelector(`tr[data-d="${x.d}"]`);
+   tr.querySelector('.c-tot').textContent=x.w?hm(x.w):'';
+   tr.querySelector('.c-n').textContent=x.fer?'':(x.norm?hm(x.norm):'');
+   tr.querySelector('.c-e').textContent=x.fer?hm(x.fer)+' (feriado)':(x.ext?hm(x.ext):'');
+   tr.querySelector('.c-v').textContent=x.vlr!=null?brl(x.vlr):'';
+   tr.querySelector('.c-al').textContent=x.al.join(' · ')+(x.desc?(x.al.length?' · ':'')+'Desconto jornada: '+brl(x.desc):'')});
+  const T=R.T;let s='';
+  if(clt)s=`<div><span>Horas normais</span><b>${hm(T.norm)}</b></div><div><span>Horas extras</span><b class="ext">${hm(T.ext)}</b></div>${T.fer?`<div><span>Feriado trabalhado</span><b>${hm(T.fer)}</b></div>`:''}
+   <div><span>Valor da hora</span><b>${brl(R.hora)}</b></div><div><span>Valor das horas trabalhadas</span><b>${brl(T.valHoras)}</b></div>
+   <div><span>Salário base</span><b>${brl(e.salario)}</b></div><div><span>Descontos (atrasos/faltas/DSR)</span><b>${brl(T.dAtr+T.dFalta+T.dDsr)}</b></div>
+   <div><span>Extras e feriados (adicional)</span><b>${brl(T.vExt+T.vFer)}</b></div><div class="hi"><span>TOTAL A PAGAR (bruto)</span><b>${brl(T.pagar)}</b></div>`;
+  else s=`<div><span>Dias trabalhados</span><b>${T.nDias}</b></div><div><span>Horas no mês</span><b>${hm(T.total)}</b></div>
+   <div><span>Valor da hora</span><b>${brl(R.hora)}</b></div><div><span>Horas normais</span><b>${brl(T.vDiaria)}</b></div><div><span>Extras</span><b>${brl(T.vExtD)}</b></div><div class="hi"><span>TOTAL A PAGAR</span><b>${brl(T.pagar)}</b></div>`;
+  $('#sum').innerHTML=s;
+  $('#alr').innerHTML=R.alerts.map(a=>`<div class="warn">${esc(a)}</div>`).join('')+
+   (clt&&T.nDsr?`<div class="warn">Falta injustificada em ${T.nDsr} semana(s): perda do descanso semanal remunerado (Lei 605/49), descontado 1/30 do salário por semana.</div>`:'')};
+ $('#tb').addEventListener('input',ev=>{const f=ev.target.dataset.f;if(!f)return;const d=ev.target.closest('tr').dataset.d;
+  const r=mr[d]=mr[d]||{};r[f]=ev.target.value;save();paint()});
+ paint();
+}
+
+function rResc(){
+ const el=$('#t-resc'),e=emp();
+ if(!e){el.innerHTML='<div class="card">Cadastre um colaborador.</div>';return}
+ if(e.tipo!=='clt'){el.innerHTML='<div class="card">Diarista não tem rescisão contratual: o pagamento é apenas o total das diárias trabalhadas (aba Folha do mês). Se houver habitualidade, consulte o contador sobre vínculo.</div>';return}
+ const mot={sem_justa:'Dispensa sem justa causa',pedido:'Pedido de demissão',justa:'Dispensa por justa causa',acordo:'Acordo (CLT art. 484-A)'};
+ el.innerHTML=`<div class="card noprint"><div class="row"><div><label>Colaborador</label><select id="rE">${S.emps.filter(x=>x.tipo==='clt').map(x=>`<option value="${x.id}" ${x.id===S.sel?'selected':''}>${esc(x.nome)}</option>`).join('')}</select></div></div>
+ <div class="grid"><div><label>Data de admissão</label><input type="date" data-k="adm" value="${e.adm}"></div>
+ <div><label>Data de desligamento (padrão: hoje)</label><input type="date" data-k="deslig" value="${e.deslig}"></div>
+ <div><label>Tipo de desligamento</label><select data-k="motivo">${Object.entries(mot).map(([k,v])=>`<option value="${k}" ${e.motivo===k?'selected':''}>${v}</option>`).join('')}</select></div>
+ <div><label>Períodos de férias já gozados</label><input type="number" min="0" data-k="feriasGozadas" value="${e.feriasGozadas}"></div>
+ <div><label>Média mensal de horas extras (R$)</label><input type="number" step="0.01" data-k="mediaExtras" value="${e.mediaExtras}"></div>
+ <div><label>Saldo do FGTS (extrato). Vazio = estimar</label><input type="number" step="0.01" data-k="fgtsSaldo" value="${e.fgtsSaldo}"></div></div>
+ <div class="row" style="margin-top:10px"><button class="b" id="useAvg">Usar total de extras do mês selecionado como média</button><button class="b" onclick="window.print()">Imprimir / PDF</button></div></div><div id="rOut"></div>`;
+ const rr=$('#rE');rr.onchange=()=>{S.sel=rr.value;save();rResc()};
+ const paint=()=>{const R=calcRescisao(e,e.mediaExtras),o=$('#rOut');
+  if(!R){o.innerHTML='<div class="warn">Informe a data de admissão e um desligamento igual ou posterior a ela.</div>';return}
+  const L=(n,v,d)=>`<tr><td>${n}${d?`<br><small style="color:var(--mut)">${d}</small>`:''}</td><td>${brl(v)}</td></tr>`;
+  o.innerHTML=`<div class="sum"><div><span>Tempo de serviço</span><b>${R.tempo.anos}a ${R.tempo.meses}m ${R.tempo.dias}d</b></div>
+  <div class="hi"><span>Total das verbas ao colaborador</span><b>${brl(R.verbas)}</b></div>
+  <div><span>FGTS + multa (conta vinculada)</span><b>${brl(R.fgtsVerbas+R.multa)}</b></div><div><span>Custo total da rescisão</span><b>${brl(R.custo)}</b></div></div>
+  <div class="card"><h2>Verbas rescisórias — ${mot[e.motivo]}</h2><table class="r"><tbody>
+  ${L('Saldo de salário',R.saldo,R.saldoDias+' dia(s) trabalhado(s) no mês')}
+  ${L('Aviso prévio indenizado',R.aviso,R.avisoDias?R.avisoDias+' dias (30 + 3 por ano completo, máx. 90 — Lei 12.506/11)'+(e.motivo==='acordo'?', 50% no acordo':''):'Não devido neste tipo de desligamento')}
+  ${L('13º salário proporcional',R.v13,R.m13+'/12 avos (mês com 15+ dias conta; projeta o aviso)')}
+  ${L('Férias vencidas',R.vVenc,R.venc+' período(s) não gozado(s)')}
+  ${L('1/3 constitucional sobre férias vencidas',R.vVenc3)}
+  ${L('Férias proporcionais',R.vFer,R.mFer+'/12 avos')}
+  ${L('1/3 constitucional sobre férias proporcionais',R.vFer3)}
+  <tr class="t"><td>Total das verbas (bruto)</td><td>${brl(R.verbas)}</td></tr></tbody></table></div>
+  <div class="card"><h2>FGTS</h2><table class="r"><tbody>
+  ${L('Saldo do FGTS'+(R.fgtsEst?' (estimado: 8% × remuneração × meses)':' (informado)'),R.fgtsSaldo)}
+  ${L('FGTS 8% sobre verbas rescisórias',R.fgtsVerbas,'saldo de salário, aviso e 13º')}
+  ${L('Multa rescisória '+(R.pctMulta*100)+'%',R.multa,R.pctMulta?'depositada na conta do FGTS':'não devida neste tipo de desligamento')}
+  </tbody></table>${e.motivo==='acordo'?'<p class="note">No acordo, o colaborador saca 80% do saldo do FGTS e não tem direito ao seguro-desemprego.</p>':''}</div>
+  <p class="note">Valores brutos, sem descontos de INSS e IRRF. Cálculo de apoio: confirme com o contador, pois convenção coletiva, adicionais, banco de horas e médias podem alterar o resultado.</p>`};
+ bind(el,e,paint);
+ $('#useAvg').onclick=()=>{const R=calcMonth(e,S.ym);e.mediaExtras=r2(R.T.vExt+R.T.vFer);save();rResc()};
+ paint();
+}
+
+function rCfg(){
+ const el=$('#t-cfg');
+ el.innerHTML=`<div class="card"><h2>Parâmetros gerais</h2><div class="grid"><div><label>Salário mínimo vigente (R$)</label><input type="number" step="0.01" data-k="minimo" value="${S.cfg.minimo}"></div></div>
+ <p class="note">Usado como salário padrão ao cadastrar um colaborador CLT. Em 2026 o salário mínimo nacional é R$ 1.621,00; confira o valor vigente.</p></div>
+ <div class="card"><h2>Backup</h2><p class="note">Os dados ficam salvos só neste navegador. Exporte um backup de vez em quando.</p>
+ <div class="row"><button class="b p" id="exp">Exportar backup (JSON)</button><div><label>Importar backup</label><input type="file" id="imp" accept=".json"></div></div></div>
+ <div class="card"><h2>Regras aplicadas</h2><ul class="note">
+ <li>Valor da hora = salário ÷ 220 (jornada de 44h semanais, já inclui o descanso semanal).</li>
+ <li>Jornada normal: 8h de segunda a sexta e 4h no sábado, com limite de 44h por semana. O que passar disso é hora extra.</li>
+ <li>Hora extra: no mínimo 50% (Constituição art. 7º, XVI); feriado trabalhado sem folga compensatória: 100% (Lei 605/49, Súm. 146 TST).</li>
+ <li>Alertas: intervalo mínimo (CLT art. 71), limite de 2h extras por dia (art. 59), descanso de 11h entre jornadas (art. 66).</li>
+ <li>Falta injustificada: desconto de 1/30 do salário e perda do descanso semanal da semana (Lei 605/49).</li>
+ <li>Rescisão: aviso prévio proporcional (Lei 12.506/11), 13º e férias proporcionais com 1/3, multa de FGTS de 40% (20% no acordo, art. 484-A).</li>
+ <li>Diarista: pago por horas corridas (horas × valor da hora), sem rescisão; alerta se trabalhar 3 ou mais dias na semana para o mesmo contratante.</li></ul>
+ <p class="note">Este sistema é uma ferramenta de apoio e não substitui a orientação de contador ou advogado trabalhista.</p></div>`;
+ bind(el,S.cfg);
+ $('#exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='controle-horas-backup-'+todayS()+'.json';a.click()};
+ $('#imp').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.emps)throw 0;if(confirm('Substituir os dados atuais pelo backup?')){S=d;save();show('emp')}}catch(x){alert('Arquivo inválido')}};r.readAsText(f)};
+}
+
+load();if(!S.sel&&S.emps[0])S.sel=S.emps[0].id;show('emp');
+</script>
+</body>
+</html>
