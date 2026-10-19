@@ -2,7 +2,14 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b6e4f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Horas">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Controle de Horas</title>
 <style>
 :root{--bg:#f4f6f8;--card:#fff;--ink:#1c2530;--mut:#5d6b7a;--line:#dde3ea;--pri:#0b6e4f;--pri2:#e3f4ed;--warn:#b45309;--warnbg:#fef3c7;--err:#b91c1c;--ext:#1d4ed8;--extbg:#e0e9ff}
@@ -50,16 +57,40 @@ table.r td{text-align:left}
 table.r td:last-child,table.r th:last-child{text-align:right}
 table.r tr.t td{font-weight:700;background:var(--pri2)}
 .hide{display:none}
+header{padding-top:max(14px,env(safe-area-inset-top))}
+td.sel{min-width:120px}
+@media(max-width:720px){
+ body{font-size:16px}
+ input,select,button.b{font-size:16px;min-height:44px}
+ main{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+ nav{position:fixed;top:auto;bottom:0;left:0;right:0;padding:0 0 env(safe-area-inset-bottom);justify-content:space-around;background:var(--card);border-top:1px solid var(--line);border-bottom:0}
+ nav button{flex:1;padding:12px 2px;font-size:13px;border-bottom:0;border-top:3px solid transparent}
+ nav button.on{border-top-color:var(--pri)}
+ .tw{border:0;background:none;overflow:visible}
+ table{min-width:0;display:block}
+ thead{display:none}
+ tbody{display:block}
+ tbody tr{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
+ tbody tr.dom{display:block;padding:8px 10px}
+ tr.dom td{background:none}
+ tbody td{display:block;border:0;padding:0;text-align:left;white-space:normal}
+ td[data-l]::before{content:attr(data-l);display:block;font-size:11px;color:var(--mut);font-weight:600}
+ td.l,td.sel,td.al{grid-column:1/-1}
+ td.l{font-weight:700}
+ td.al:empty{display:none}
+ td input,td select{width:100%;min-width:0}
+ td.c-tot,td.c-n,td.c-e,td.c-v{display:inline-block}
+}
 @media print{header,nav,.noprint,.row button{display:none!important}body{background:#fff;color:#000}.card,.sum div{border-color:#999}main{max-width:none}td input,td select{border:0;background:none;padding:0;appearance:none}}
 </style>
 </head>
 <body>
 <header><h1>Controle de Horas</h1><small>Carteira assinada (CLT) e diaristas · segunda a sábado</small></header>
 <nav id="tabs">
-<button data-t="emp" class="on">Colaboradores</button>
-<button data-t="folha">Folha do mês</button>
-<button data-t="resc">Rescisão e direitos</button>
-<button data-t="cfg">Parâmetros e backup</button>
+<button data-t="emp" class="on">Equipe</button>
+<button data-t="folha">Folha</button>
+<button data-t="resc">Rescisão</button>
+<button data-t="cfg">Ajustes</button>
 </nav>
 <main>
 <section id="t-emp"></section>
@@ -269,9 +300,9 @@ function rFolha(){
  for(let d=1;d<=dim(Y,M);d++){const wd=new Date(Date.UTC(Y,M-1,d)).getUTCDay();
   if(wd===0){rows+=`<tr class="dom"><td class="l">${pad(d)} Dom</td><td colspan="10" class="l">Descanso semanal</td></tr>`;continue}
   const r=mr[d]||{};
-  rows+=`<tr data-d="${d}"><td class="l">${pad(d)} ${dn[wd]}</td><td><select data-f="t">${opts.map(o=>`<option value="${o[0]}" ${r.t===o[0]||(!r.t&&o[0]==='')?'selected':''}>${o[1]}</option>`).join('')}</select></td>`+
-  ['a','b','c','d'].map(f=>`<td><input type="time" data-f="${f}" value="${r[f]||''}"></td>`).join('')+
-  `<td class="c-tot"></td><td class="c-n"></td><td class="c-e ext"></td><td class="c-v v"></td><td class="al c-al"></td></tr>`}
+  rows+=`<tr data-d="${d}"><td class="l">${pad(d)} ${dn[wd]}</td><td class="sel" data-l="Situação"><select data-f="t">${opts.map(o=>`<option value="${o[0]}" ${r.t===o[0]||(!r.t&&o[0]==='')?'selected':''}>${o[1]}</option>`).join('')}</select></td>`+
+  [['a','Entrada manhã'],['b','Saída manhã'],['c','Entrada tarde'],['d','Saída tarde']].map(([f,l])=>`<td data-l="${l}"><input type="time" data-f="${f}" value="${r[f]||''}"></td>`).join('')+
+  `<td class="c-tot" data-l="Total"></td><td class="c-n" data-l="Normais"></td><td class="c-e ext" data-l="Extras"></td><td class="c-v v" data-l="Valor do dia"></td><td class="al c-al"></td></tr>`}
  $('#tb').innerHTML=rows;
  const paint=()=>{const R=calcMonth(e,S.ym);
   R.days.forEach(x=>{if(x.dom)return;const tr=document.querySelector(`tr[data-d="${x.d}"]`);
@@ -355,6 +386,7 @@ function rCfg(){
  $('#imp').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.emps)throw 0;if(confirm('Substituir os dados atuais pelo backup?')){S=d;save();show('emp')}}catch(x){alert('Arquivo inválido')}};r.readAsText(f)};
 }
 
+try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js')}catch(e){}
 load();if(!S.sel&&S.emps[0])S.sel=S.emps[0].id;show('emp');
 </script>
 </body>
