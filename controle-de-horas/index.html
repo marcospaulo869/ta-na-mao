@@ -62,6 +62,10 @@ tr.off td{background:var(--bg);color:var(--mut)}
 tr.hol small.st{color:var(--hol)}
 tr.falta small.st{color:var(--err)}
 tr.wkrow td{background:var(--pri2);text-align:left;padding:8px 12px;border-bottom:2px solid var(--pri);white-space:normal}
+tr.wkrow .wkl{display:flex;flex-wrap:wrap;gap:2px 20px;align-items:baseline}
+tr.wkrow .wkx{color:var(--ext);font-weight:600}
+tr.wkrow .wkx b{font-size:15px}
+tr.wkrow .mut{color:var(--mut);font-size:12px;font-weight:400}
 tr.wkrow .wk2{font-size:15px;margin-top:2px}
 tr.wkrow .wk2 b{color:var(--pri);font-size:17px}
 tr.today td:first-child{box-shadow:inset 3px 0 0 var(--pri)}
@@ -272,7 +276,7 @@ function calcMonth(e,ym,recs,today){
  for(let d=1;d<=n;d++){
   const ds=ym+'-'+pad(d),wd=new Date(Date.UTC(Y,M-1,d)).getUTCDay(),r=recs[d]||{},t=r.t||'',hol=holName(ds);
   const off=(wd+6)%7,wk=new Date(Date.UTC(Y,M-1,d-off)).toISOString().slice(0,10);
-  const W=weeks[wk]=weeks[wk]||{wk,ini:d,fim:d,dias:0,min:0,val:0,ext:0,falta:false,norm:0};W.fim=d;
+  const W=weeks[wk]=weeks[wk]||{wk,ini:d,fim:d,dias:0,min:0,val:0,ext:0,vn:0,ve:0,vf:0,falta:false,norm:0};W.fim=d;
   const x={d,ds,wd,hol,r,al:[],st:'',sched:dias.includes(wd)};
   if(adm&&ds<adm){x.pre=true;x.st='Antes da admissão';days.push(x);continue}
   const a=tmin(r.a),b=tmin(r.b),c=tmin(r.c),dd=tmin(r.d);
@@ -304,7 +308,7 @@ function calcMonth(e,ym,recs,today){
   else if(t==='nt'){x.st='Não trabalhou'}
   else if(w>0){
    if(clt&&(hol||wd===0)){
-    x.fer=w;T.fer+=w;x.vlr=(w/60)*hora*(1+e.adicFer/100);T.vFer+=(w/60)*hora*e.adicFer/100;T.valHoras+=x.vlr;
+    x.fer=w;T.fer+=w;x.vlr=(w/60)*hora*(1+e.adicFer/100);x.vf=x.vlr;W.vf+=x.vlr;T.vFer+=(w/60)*hora*e.adicFer/100;T.valHoras+=x.vlr;
     x.st=hol?'Feriado trabalhado: '+hol:'Domingo trabalhado';
    }else{
     let nm,ex;
@@ -312,7 +316,7 @@ function calcMonth(e,ym,recs,today){
     else{nm=e.pagaExtra?Math.min(w,e.jornada*60):w;ex=w-nm;if(!e.pagaExtra&&w>e.jornada*60){x.acima=w-e.jornada*60;T.acima+=x.acima}}
     x.norm=nm;x.ext=ex;T.norm+=nm;T.ext+=ex;W.ext+=ex;
     const vn=(nm/60)*hora,ve=(ex/60)*hora*(1+e.adicExtra/100);
-    x.vlr=vn+ve;T.valHoras+=x.vlr;T.vNorm+=vn;T.vExt+=ve;
+    x.vlr=vn+ve;x.vn=vn;x.ve=ve;W.vn+=vn;W.ve+=ve;T.valHoras+=x.vlr;T.vNorm+=vn;T.vExt+=ve;
     if(clt&&x.sched&&w<meta){x.atr=meta-w;x.desc=(meta-w)/60*hora;T.dAtr+=x.desc;x.al.push('Atraso / saída antecipada: '+hm(meta-w))}
     if(hol)x.st='Feriado: '+hol;
    }
@@ -510,7 +514,7 @@ function rFolha(){
    tr.querySelector('.c-v').textContent=x.vlr!=null?brl(x.vlr):(x.falta?'− '+brl(x.desc):'');
    tr.querySelector('.c-al').textContent=x.al.join(' · ')});
   document.querySelectorAll('#tb tr.wkrow').forEach(tr=>{const W=R.weeks.find(w=>w.wk===tr.dataset.wk);
-   tr.firstElementChild.innerHTML=W?`<div><b>Semana ${pad(W.ini)} a ${pad(W.fim)}</b> · ${W.dias} dia(s) trabalhado(s) · ${hm(W.min)}${W.ext?` <span class="ext">(${hm(W.ext)} de extras)</span>`:''}</div><div class="wk2">Valor acumulado da semana: <b>${brl(W.val)}</b></div>`:''});
+   tr.firstElementChild.innerHTML=W?`<div class="wkl"><span><b>Semana ${pad(W.ini)} a ${pad(W.fim)}</b> · ${W.dias} dia(s) trabalhado(s) · ${hm(W.min)}${W.ext?` <span class="ext">(${hm(W.ext)} de extras)</span>`:''}</span>${W.ve?`<span class="wkx">Valor das horas extras: <b>${brl(W.ve)}</b></span>`:''}${W.vf?`<span class="wkx">Domingo/feriado: <b>${brl(W.vf)}</b></span>`:''}</div><div class="wk2">Valor acumulado da semana: <b>${brl(W.val)}</b>${W.ve||W.vf?` <small class="mut">(horas normais ${brl(W.vn)}${W.ve?' + extras '+brl(W.ve):''}${W.vf?' + domingo/feriado '+brl(W.vf):''})</small>`:''}</div>`:''});
   const T=R.T;
   $('#sum').innerHTML=clt?`<div><span>Horas normais</span><b>${hm(T.norm)}</b></div><div><span>Horas extras</span><b class="ext">${hm(T.ext)}</b></div>${T.fer?`<div><span>Domingos e feriados</span><b>${hm(T.fer)}</b></div>`:''}
    <div><span>Faltas</span><b>${T.nFaltas}</b></div><div><span>Valor da hora</span><b>${brl(R.hora)}</b></div><div><span>Salário base</span><b>${brl(e.salario)}</b></div>
@@ -551,8 +555,8 @@ function semanaAlvo(now=new Date()){const mon=mondayOf(todayS()),wd=now.getDay()
 function calcSemana(e,mon){const fim=addD(mon,6),cm={},days=[];
  new Set([mon.slice(0,7),fim.slice(0,7)]).forEach(ym=>cm[ym]=calcMonth(e,ym,null,todayS()));
  for(let i=0;i<7;i++){const ds=addD(mon,i),x=cm[ds.slice(0,7)].days.find(z=>z.ds===ds);if(x)days.push(x)}
- const W={mon,fim,days,dias:0,min:0,ext:0,fer:0,val:0,faltas:0};
- days.forEach(x=>{if(x.w>0){W.dias++;W.min+=x.w}W.ext+=x.ext||0;W.acima=(W.acima||0)+(x.acima||0);W.fer+=x.fer||0;W.val+=x.vlr||0;if(x.falta)W.faltas++});
+ const W={mon,fim,days,dias:0,min:0,ext:0,fer:0,val:0,vn:0,ve:0,vf:0,faltas:0};
+ days.forEach(x=>{if(x.w>0){W.dias++;W.min+=x.w}W.vn+=x.vn||0;W.ve+=x.ve||0;W.vf+=x.vf||0;W.ext+=x.ext||0;W.acima=(W.acima||0)+(x.acima||0);W.fer+=x.fer||0;W.val+=x.vlr||0;if(x.falta)W.faltas++});
  W.vales=(e.vales||[]).filter(v=>v.d>=mon&&v.d<=fim).reduce((a,v)=>a+(+v.v||0),0);
  W.pago=(e.pagamentos||[]).filter(p=>p.ref===mon).reduce((a,p)=>a+(+p.v||0),0);
  W.pagar=Math.max(0,W.val-W.vales-W.pago);return W}
@@ -586,7 +590,7 @@ function rPag(fresh){
  <div class="card"><h2>Fechamento: ${esc(e.nome)}</h2>
  <div class="pg-grid" style="margin-bottom:10px"><div class="sum" style="display:contents">
   <div><span>Dias trabalhados</span><b>${W.dias}</b></div><div><span>Horas na semana</span><b>${hm(W.min)}</b></div><div><span>Horas extras</span><b class="ext">${hm(W.ext)}</b></div>
-  <div><span>Valor das horas</span><b>${brl(W.val)}</b></div>${W.vales?`<div><span>Vales</span><b>− ${brl(W.vales)}</b></div>`:''}${W.pago?`<div><span>Já pago</span><b>− ${brl(W.pago)}</b></div>`:''}
+  <div><span>Valor das horas</span><b>${brl(W.val)}</b></div>${W.ve?`<div><span>Das horas extras</span><b class="ext">${brl(W.ve)}</b></div>`:''}${W.vales?`<div><span>Vales</span><b>− ${brl(W.vales)}</b></div>`:''}${W.pago?`<div><span>Já pago</span><b>− ${brl(W.pago)}</b></div>`:''}
   <div class="hi"><span>A PAGAR</span><b>${brl(W.pagar)}</b></div></div></div>
  <div class="tw"><table class="dsem"><tbody>${W.days.map(x=>`<tr><td>${DN[x.wd]} ${fmtBR(x.ds)}</td><td>${x.w?[x.r.a&&x.r.b?x.r.a+'–'+x.r.b:'',x.r.c&&x.r.d?x.r.c+'–'+x.r.d:''].filter(Boolean).join(' · '):esc(x.st||'')}</td><td>${x.w?hm(x.w):''}</td><td>${x.vlr!=null?brl(x.vlr):''}</td></tr>`).join('')}</tbody></table></div>
  ${W.acima?`<div class="warn">${hm(W.acima)} acima da jornada estão sendo pagas pelo valor normal: a opção <b>"Pagar hora extra"</b> está desmarcada na ficha (aba Equipe).</div>`:''}
