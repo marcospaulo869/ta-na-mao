@@ -267,7 +267,7 @@ function calcMonth(e,ym,recs,today){
  const hora=clt?sal/(+e.base||220):(+e.valorHora||0);
  const dias=e.dias||[1,2,3,4,5,6],adm=e.adm||'';
  const days=[],weeks={},alerts=[];
- const T={norm:0,ext:0,fer:0,total:0,diasTrab:0,valHoras:0,vNorm:0,vExt:0,vFer:0,dAtr:0,dFalta:0,dDsr:0,dAdm:0,nFaltas:0,nDsr:0};
+ const T={norm:0,ext:0,fer:0,total:0,diasTrab:0,valHoras:0,vNorm:0,vExt:0,vFer:0,dAtr:0,dFalta:0,dDsr:0,dAdm:0,nFaltas:0,nDsr:0,acima:0};
  let prev=null;
  for(let d=1;d<=n;d++){
   const ds=ym+'-'+pad(d),wd=new Date(Date.UTC(Y,M-1,d)).getUTCDay(),r=recs[d]||{},t=r.t||'',hol=holName(ds);
@@ -309,7 +309,7 @@ function calcMonth(e,ym,recs,today){
    }else{
     let nm,ex;
     if(clt){const capLeft=Math.max(0,e.capSemana*60-W.norm);nm=Math.min(w,meta,capLeft);ex=w-nm;W.norm+=nm}
-    else{nm=e.pagaExtra?Math.min(w,e.jornada*60):w;ex=w-nm}
+    else{nm=e.pagaExtra?Math.min(w,e.jornada*60):w;ex=w-nm;if(!e.pagaExtra&&w>e.jornada*60){x.acima=w-e.jornada*60;T.acima+=x.acima}}
     x.norm=nm;x.ext=ex;T.norm+=nm;T.ext+=ex;W.ext+=ex;
     const vn=(nm/60)*hora,ve=(ex/60)*hora*(1+e.adicExtra/100);
     x.vlr=vn+ve;T.valHoras+=x.vlr;T.vNorm+=vn;T.vExt+=ve;
@@ -420,12 +420,12 @@ function rEmp(){
   <div><label for="f-af">Adicional domingo/feriado (%)</label><input id="f-af" type="number" data-k="adicFer" value="${e.adicFer}"></div>`:
   `<div><label for="f-vhr">Valor da hora (R$)</label><input id="f-vhr" type="number" step="0.01" data-k="valorHora" value="${e.valorHora}"></div>
   <div><label for="f-jor">Jornada de referência (horas/dia)</label><input id="f-jor" type="number" step="0.25" data-k="jornada" value="${e.jornada}"></div>
-  <div><label for="f-ae">Adicional hora extra (%)</label><input id="f-ae" type="number" data-k="adicExtra" value="${e.adicExtra}"></div>`}
+  <div><label for="f-ae">Adicional hora extra (%)</label><input id="f-ae" type="number" data-k="adicExtra" value="${e.adicExtra}" ${e.pagaExtra?'':'disabled'}></div>`}
   <div><label for="f-adm">Data de admissão / início</label><input id="f-adm" type="date" data-k="adm" value="${e.adm}"></div>
   </div>
   <div style="margin-top:12px"><label>Dias liberados para trabalhar</label><div class="chips" id="dias">${ORD.map(d=>`<label class="${e.dias.includes(d)?'on':''}"><input type="checkbox" data-dia="${d}" ${e.dias.includes(d)?'checked':''}>${DN[d]}</label>`).join('')}</div></div>
   ${c?`<label class="ck"><input type="checkbox" id="f-af2" data-k="autoFalta" ${e.autoFalta!==false?'checked':''}>Dia liberado que já passou sem registro conta como falta</label>`:
-  `<label class="ck"><input type="checkbox" id="f-pe" data-k="pagaExtra" ${e.pagaExtra?'checked':''}>Pagar hora extra acima da jornada de referência</label>`}
+  `<label class="ck"><input type="checkbox" id="f-pe" data-k="pagaExtra" ${e.pagaExtra?'checked':''}>Pagar hora extra acima da jornada de referência (desmarcado: todas as horas valem o valor normal)</label>`}
   <label class="ck"><input type="checkbox" id="f-vv" data-k="verValores" ${e.verValores!==false?'checked':''}>Colaborador pode ver os valores em R$ no celular</label>
   <p class="note">${c?'Valor da hora = salário ÷ base de horas (padrão 220). Domingos e feriados trabalhados recebem o adicional de domingo/feriado.':'Horas corridas: horas trabalhadas × valor da hora. Diarista não tem rescisão.'}</p></div>
   <div class="card" id="acc"></div>`}
@@ -438,6 +438,7 @@ function rEmp(){
  bind(el,e,(k,inp)=>{
   if(k==='nome'){$('#fichaT').textContent='Ficha de '+e.nome;const o=sel.querySelector(`option[value="${e.id}"]`);if(o)o.textContent=e.nome}
   if(k==='salario'||k==='base'){const v=$('#f-vh');if(v)v.value=brl(e.salario/(e.base||220))}
+  if(k==='pagaExtra'){const a=$('#f-ae');if(a)a.disabled=!e.pagaExtra}
   persistEmp(e);
   if(k==='tipo')rEmp()});
  el.querySelectorAll('[data-dia]').forEach(cb=>cb.onchange=()=>{const d=+cb.dataset.dia;
@@ -517,6 +518,7 @@ function rFolha(){
    `<div><span>Dias trabalhados</span><b>${T.diasTrab}</b></div><div><span>Horas no mês</span><b>${hm(T.total)}</b></div><div><span>Valor da hora</span><b>${brl(R.hora)}</b></div><div><span>Horas extras</span><b class="ext">${hm(T.ext)}</b></div>${T.vales?`<div><span>Vales</span><b>${brl(T.vales)}</b></div>`:''}`;
   $('#alr').innerHTML=R.alerts.map(a=>`<div class="warn">${esc(a)}</div>`).join('')+
    (clt&&T.nDsr?`<div class="warn">Falta injustificada em ${T.nDsr} semana(s): perde o descanso semanal remunerado (Lei 605/49), desconto de 1/30 do salário por semana.</div>`:'')+
+   (T.acima?`<div class="warn">Atenção: ${hm(T.acima)} trabalhadas acima da jornada de ${e.jornada}h estão sendo pagas pelo valor normal, porque a opção <b>"Pagar hora extra"</b> está desmarcada na ficha de ${esc(e.nome)} (aba Equipe).</div>`:'')+
    (T.dAdm?`<div class="info">Admissão neste mês: salário proporcional, desconto de ${brl(T.dAdm)} pelos dias antes da admissão.</div>`:'');
   paintFoot(R,e)};
  $('#tb').addEventListener('input',ev=>{const f=ev.target.dataset.f;if(!f)return;const d=+ev.target.closest('tr').dataset.d;
@@ -550,7 +552,7 @@ function calcSemana(e,mon){const fim=addD(mon,6),cm={},days=[];
  new Set([mon.slice(0,7),fim.slice(0,7)]).forEach(ym=>cm[ym]=calcMonth(e,ym,null,todayS()));
  for(let i=0;i<7;i++){const ds=addD(mon,i),x=cm[ds.slice(0,7)].days.find(z=>z.ds===ds);if(x)days.push(x)}
  const W={mon,fim,days,dias:0,min:0,ext:0,fer:0,val:0,faltas:0};
- days.forEach(x=>{if(x.w>0){W.dias++;W.min+=x.w}W.ext+=x.ext||0;W.fer+=x.fer||0;W.val+=x.vlr||0;if(x.falta)W.faltas++});
+ days.forEach(x=>{if(x.w>0){W.dias++;W.min+=x.w}W.ext+=x.ext||0;W.acima=(W.acima||0)+(x.acima||0);W.fer+=x.fer||0;W.val+=x.vlr||0;if(x.falta)W.faltas++});
  W.vales=(e.vales||[]).filter(v=>v.d>=mon&&v.d<=fim).reduce((a,v)=>a+(+v.v||0),0);
  W.pago=(e.pagamentos||[]).filter(p=>p.ref===mon).reduce((a,p)=>a+(+p.v||0),0);
  W.pagar=Math.max(0,W.val-W.vales-W.pago);return W}
@@ -587,6 +589,7 @@ function rPag(fresh){
   <div><span>Valor das horas</span><b>${brl(W.val)}</b></div>${W.vales?`<div><span>Vales</span><b>− ${brl(W.vales)}</b></div>`:''}${W.pago?`<div><span>Já pago</span><b>− ${brl(W.pago)}</b></div>`:''}
   <div class="hi"><span>A PAGAR</span><b>${brl(W.pagar)}</b></div></div></div>
  <div class="tw"><table class="dsem"><tbody>${W.days.map(x=>`<tr><td>${DN[x.wd]} ${fmtBR(x.ds)}</td><td>${x.w?[x.r.a&&x.r.b?x.r.a+'–'+x.r.b:'',x.r.c&&x.r.d?x.r.c+'–'+x.r.d:''].filter(Boolean).join(' · '):esc(x.st||'')}</td><td>${x.w?hm(x.w):''}</td><td>${x.vlr!=null?brl(x.vlr):''}</td></tr>`).join('')}</tbody></table></div>
+ ${W.acima?`<div class="warn">${hm(W.acima)} acima da jornada estão sendo pagas pelo valor normal: a opção <b>"Pagar hora extra"</b> está desmarcada na ficha (aba Equipe).</div>`:''}
  <p class="note">${e.tipo==='clt'?'Valor das horas = horas trabalhadas × valor da hora. Para CLT o pagamento oficial é mensal; o fechamento semanal serve como controle ou adiantamento. ':''}Vales lançados na Folha dentro da semana são descontados.</p>
  <div class="row noprint"><button class="b p" id="wZap">Enviar resumo no WhatsApp</button><button class="b" id="wCopy">Copiar resumo</button><button class="b" onclick="window.print()">Imprimir / PDF</button></div>
  ${S.cfg.whats?'':'<p class="note noprint">Dica: cadastre o seu número em Ajustes para o WhatsApp abrir direto na sua conversa.</p>'}</div>
