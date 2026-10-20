@@ -36,9 +36,9 @@ Se os dados do sistema estão no navegador (modo local), eles não se perdem ao 
 - ZIP da versão mais recente (branch `claude/blissful-einstein-hb4333`):
   https://github.com/marcospaulo869/ta-na-mao/archive/refs/heads/claude/blissful-einstein-hb4333.zip
 - Painel do Netlify: https://app.netlify.com/
-- Site em uso: CONFIRMAR COM O USUÁRIO qual é o atual e registrar aqui.
-  - `https://controlehorasmf.netlify.app` (projeto renomeado; painel: https://app.netlify.com/projects/controlehorasmf/deploys)
-  - `https://admirable-llama-f2b59f.netlify.app` (projeto criado por engano ao arrastar na página Drop; painel: https://app.netlify.com/projects/admirable-llama-f2b59f/deploys)
+- Site em uso (confirmado pelo usuário em 20/10/2026): https://controlehorasmf.netlify.app
+  - Painel de deploys: https://app.netlify.com/projects/controlehorasmf/deploys
+  - Existe também o projeto `admirable-llama-f2b59f` (criado por engano, ignorar): https://admirable-llama-f2b59f.netlify.app
 - Prévia no Claude (versão reduzida, só no navegador do dono): https://claude.ai/artifact/PtQZZ9BecJ9wf6kr5XuNiF
 - Repositório: https://github.com/marcospaulo869/ta-na-mao (login do GitHub é pelo Google, e-mail do usuário)
 
