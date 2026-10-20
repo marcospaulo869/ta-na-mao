@@ -57,7 +57,7 @@ declare
 begin
   select * into e from employees where token = p_token;
   if not found then return null; end if;
-  dados := e.data - 'fgtsSaldo' - 'mediaExtras' - 'deslig' - 'motivo' - 'feriasGozadas';
+  dados := e.data - 'fgtsSaldo' - 'mediaExtras' - 'deslig' - 'motivo' - 'feriasGozadas' - 'pagamentos';
   if coalesce(e.data->>'verValores', 'true') = 'false' then
     dados := dados - 'salario' - 'valorHora';
   end if;
@@ -101,3 +101,12 @@ revoke all on function emp_get(uuid, date, date) from public;
 revoke all on function emp_punch(uuid, text, text, text, text) from public;
 grant execute on function emp_get(uuid, date, date) to anon, authenticated;
 grant execute on function emp_punch(uuid, text, text, text, text) to anon, authenticated;
+
+-- Comprovantes de pagamento (fotos e PDFs): pasta privada, cada administrador só acessa a própria.
+insert into storage.buckets (id, name, public) values ('comprovantes', 'comprovantes', false)
+on conflict (id) do nothing;
+
+drop policy if exists comprovantes_owner on storage.objects;
+create policy comprovantes_owner on storage.objects for all to authenticated
+  using (bucket_id = 'comprovantes' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'comprovantes' and (storage.foldername(name))[1] = auth.uid()::text);

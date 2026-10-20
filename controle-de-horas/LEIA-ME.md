@@ -34,3 +34,14 @@ Nunca coloque a chave `service_role` no site.
 - `config.js`: liga ou desliga a nuvem.
 - `supabase.sql`: tabelas, regras de acesso e funções do link do colaborador.
 - `manifest.webmanifest`, `sw.js`, ícones: instalação no celular e funcionamento offline do app.
+
+## Fechamento semanal e pagamentos
+
+- Aba **Pagar**: resumo da semana (dias, horas, extras, vales, valor a pagar), botão para enviar o resumo
+  pelo WhatsApp (abre a conversa com o texto pronto), copiar e imprimir.
+- Na **sexta-feira depois das 18h**, e nos dias seguintes enquanto a semana não tiver pagamento registrado,
+  aparece um aviso no topo do sistema.
+- **Registrar pagamento**: data, valor, forma, observação e comprovante (foto, print ou PDF).
+  O histórico fica por colaborador. No modo nuvem o comprovante vai para uma pasta privada (rode de novo o
+  `supabase.sql`, que cria a pasta `comprovantes`).
+- O envio **automático** do WhatsApp às 18h exige servidor e um serviço de WhatsApp pago; fica para a fase da nuvem.

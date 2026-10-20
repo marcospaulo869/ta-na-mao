@@ -97,7 +97,7 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
  input,select,button.b{font-size:16px;min-height:44px}
  main{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
  nav{position:fixed;top:auto;bottom:0;left:0;right:0;padding:0 0 env(safe-area-inset-bottom);justify-content:space-around;background:var(--card);border-top:1px solid var(--line);border-bottom:0;z-index:7}
- nav button{flex:1;padding:12px 2px;font-size:13px;border-bottom:0;border-top:3px solid transparent}
+ nav button{flex:1;padding:12px 2px;font-size:12.5px;border-bottom:0;border-top:3px solid transparent}
  nav button.on{border-top-color:var(--pri)}
  #foot{bottom:var(--navh,56px);padding:6px 12px}
  #foot .dk{display:none}
@@ -116,8 +116,19 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
  td.l{font-weight:700}
  td.al:empty,td.sel:empty{display:none}
  td input,td select{width:100%;min-width:0}
+ table.dsem,table.r{display:table;width:100%}
+ .dsem tbody,table.r tbody{display:table-row-group}
+ .dsem tbody tr,table.r tbody tr{display:table-row;background:none;border:0;padding:0;margin:0}
+ .dsem tbody td,table.r tbody td{display:table-cell;padding:5px 6px;border-bottom:1px solid var(--line)}
+ .dsem tbody td:nth-child(n+3),table.r tbody td:last-child{text-align:right}
 }
 @media print{header,nav,#foot,.noprint{display:none!important}body{background:#fff;color:#000}main{max-width:none}td input,td select{border:0;background:none;padding:0;appearance:none}}
+.pg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.pgh{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;padding:8px 0;border-bottom:1px solid var(--line);align-items:center;font-size:14px}
+.pgh:last-child{border-bottom:0}.pgh small{color:var(--mut);display:block}
+.pgh .v{font-weight:700;text-align:right}.pgh .ac{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.pgh .ac button{padding:4px 10px;min-height:0}
+.dsem{width:100%;min-width:0;font-size:13.5px}.dsem td{padding:4px 6px;text-align:left}.dsem td:nth-child(n+3){text-align:right}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <script src="config.js"></script>
@@ -128,12 +139,15 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
 <nav id="tabs">
 <button data-t="emp" class="on">Equipe</button>
 <button data-t="folha">Folha</button>
+<button data-t="pag">Pagar</button>
 <button data-t="resc">Rescisão</button>
 <button data-t="cfg">Ajustes</button>
 </nav>
 <main id="main">
+<div id="banner"></div>
 <section id="t-emp"></section>
 <section id="t-folha" class="hide"></section>
+<section id="t-pag" class="hide"></section>
 <section id="t-resc" class="hide"></section>
 <section id="t-cfg" class="hide"></section>
 </main>
@@ -164,6 +178,24 @@ const uuid=()=>crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xx
 let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.remove('hide');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.add('hide'),2600)}
 async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast('Link copiado')}catch(e){if(inp){inp.select();toast('Selecionado: copie com Ctrl+C')}}}
 
+/* ===== comprovantes (imagens e PDF) ===== */
+const FDB={db:null,open(){return new Promise((res,rej)=>{if(this.db)return res(this.db);const r=indexedDB.open('horas-files',1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>{this.db=r.result;res(this.db)};r.onerror=()=>rej(r.error)})},
+ async put(id,blob){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction('f','readwrite');t.objectStore('f').put(blob,id);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})},
+ async get(id){const db=await this.open();return new Promise((res,rej)=>{const q=db.transaction('f').objectStore('f').get(id);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})},
+ async del(id){const db=await this.open();return new Promise((res)=>{const t=db.transaction('f','readwrite');t.objectStore('f').delete(id);t.oncomplete=()=>res();t.onerror=()=>res()})}};
+function compressImg(file){return new Promise(res=>{if(!file.type.startsWith('image/'))return res(file);const img=new Image(),u=URL.createObjectURL(file);
+ img.onload=()=>{const k=Math.min(1,1600/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>{URL.revokeObjectURL(u);res(b||file)},'image/jpeg',.8)};
+ img.onerror=()=>{URL.revokeObjectURL(u);res(file)};img.src=u})}
+async function storeFile(file){const blob=await compressImg(file),id=uuid();
+ if(CLOUD){const {error}=await sb.storage.from('comprovantes').upload(USER.id+'/'+id,blob,{contentType:blob.type});if(error)throw error;return {id,name:file.name,type:blob.type,cloud:true}}
+ await FDB.put(id,blob);return {id,name:file.name,type:blob.type,cloud:false}}
+async function openFile(f){let url;
+ if(f.cloud){const {data,error}=await sb.storage.from('comprovantes').createSignedUrl(USER.id+'/'+f.id,300);if(error)return toast('Não abriu: '+error.message);url=data.signedUrl}
+ else{const b=await FDB.get(f.id);if(!b)return toast('Arquivo não encontrado neste navegador');url=URL.createObjectURL(b)}
+ const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove()}
+async function removeFile(f){try{if(f.cloud)await sb.storage.from('comprovantes').remove([USER.id+'/'+f.id]);else await FDB.del(f.id)}catch(x){}}
+
 /* ===== feriados nacionais (Lei 662/49, 6.802/80, 10.607/02, 14.759/23) ===== */
 function pascoa(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return {y,m:mo,d:da}}
 const HCACHE={};
@@ -185,13 +217,13 @@ const KEY='controle-horas-v1',TOKKEY='horas-emp-token';
 let S;
 function load(){try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
  if(!S||!S.emps)S={cfg:{},emps:[],rec:{},sel:null,ym:todayS().slice(0,7)};
- S.cfg=Object.assign({minimo:1621,feriados:[]},S.cfg||{});S.rec=S.rec||{};
+ S.cfg=Object.assign({minimo:1621,feriados:[],whats:''},S.cfg||{});S.rec=S.rec||{};
  if(!S.ym)S.ym=todayS().slice(0,7);
  S.emps.forEach(fixEmp)}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(CLOUD?{sel:S.sel,ym:S.ym,cfg:{},emps:[],rec:{}}:S))}catch(e){}}
 const emp=()=>S.emps.find(e=>e.id===S.sel);
 const DEF={nome:'Novo colaborador',funcao:'',tipo:'clt',salario:1621,base:220,metaSem:8,metaSab:4,capSemana:44,adicExtra:50,adicFer:100,
- valorHora:10,jornada:8,pagaExtra:false,adm:'',dias:[1,2,3,4,5,6],autoFalta:true,verValores:true,vales:[],deslig:'',motivo:'sem_justa',feriasGozadas:0,fgtsSaldo:'',mediaExtras:0};
+ valorHora:10,jornada:8,pagaExtra:false,adm:'',dias:[1,2,3,4,5,6],autoFalta:true,verValores:true,vales:[],pagamentos:[],deslig:'',motivo:'sem_justa',feriasGozadas:0,fgtsSaldo:'',mediaExtras:0};
 function fixEmp(e){for(const k in DEF)if(e[k]===undefined)e[k]=Array.isArray(DEF[k])?DEF[k].slice():DEF[k];return e}
 function newEmp(){return fixEmp({id:uuid(),salario:S.cfg.minimo,deslig:''})}
 
@@ -212,7 +244,7 @@ async function cloudLoad(){
  const [a,b]=await Promise.all([sb.from('employees').select('id,token,data,created_at').order('created_at'),sb.from('company_settings').select('data').maybeSingle()]);
  if(a.error){toast('Erro ao carregar: '+a.error.message);return}
  S.emps=a.data.map(r=>fixEmp({...r.data,id:r.id,token:r.token}));
- if(b.data&&b.data.data)S.cfg=Object.assign({minimo:1621,feriados:[]},b.data.data);
+ if(b.data&&b.data.data)S.cfg=Object.assign({minimo:1621,feriados:[],whats:''},b.data.data);
  if(!S.emps.find(e=>e.id===S.sel))S.sel=S.emps[0]?.id||null}
 const LOADED={};
 async function loadMonth(ym){if(!CLOUD||!S.emps.length)return;const [y,m]=ym.split('-').map(Number);
@@ -340,11 +372,11 @@ function calcRescisao(e){
 /* ===== telas do administrador ===== */
 function setNavH(){const n=$('#tabs');document.documentElement.style.setProperty('--navh',(innerWidth<=720&&!n.classList.contains('hide')?n.offsetHeight:0)+'px')}
 addEventListener('resize',setNavH);
-const tabs=['emp','folha','resc','cfg'];let CUR='emp';
+const tabs=['emp','folha','pag','resc','cfg'];let CUR='emp';
 function show(t){CUR=t;tabs.forEach(k=>$('#t-'+k).classList.toggle('hide',k!==t));
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
  $('#foot').classList.toggle('hide',t!=='folha');setNavH();document.body.classList.toggle('hasfoot',t==='folha');
- ({emp:rEmp,folha:rFolha,resc:rResc,cfg:rCfg})[t]()}
+ ({emp:rEmp,folha:rFolha,pag:rPag,resc:rResc,cfg:rCfg})[t]();rBanner()}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>show(b.dataset.t));
 
 // liga campos [data-k] ao objeto; não redesenha a tela enquanto digita
@@ -432,7 +464,7 @@ function rFolha(){
  const clt=e.tipo==='clt',ym=S.ym;
  const opts=[['','Automático'],['folga','Folga (paga)'],['just','Falta justificada / atestado'],['falta','Falta injustificada']];
  el.innerHTML=`<div class="card noprint"><div class="row"><div><label for="fE">Colaborador</label>${empSelect('fE')}</div>
- <div><label for="fM">Mês</label><input type="month" id="fM" value="${ym}"></div></div>
+ <div><label for="fM">Mês</label><input type="month" id="fM" value="${ym}"></div><button class="b" id="bPrint">Imprimir / PDF</button><button class="b" id="bCsv">Baixar planilha</button></div>
  <p class="note">${esc(e.funcao||'')}${e.funcao?' · ':''}${clt?'CLT · salário '+brl(e.salario):'Diarista · '+brl(e.valorHora)+'/hora'} · dias liberados: ${ORD.filter(d=>e.dias.includes(d)).map(d=>DN[d]).join(', ')||'nenhum'}</p></div>
  <div class="sum" id="sum"></div><div id="alr"></div>
  <div class="card noprint"><h2>Vales e adiantamentos de ${ymLabel(ym)}</h2><div id="vl"></div><button class="b" id="addV">+ Lançar vale</button></div>
@@ -442,6 +474,13 @@ function rFolha(){
  <div class="row" style="margin-top:8px"><button class="b p" id="impGo">Importar</button></div><div id="impRes"></div></details>
  <div class="tw"><table><thead><tr><th class="l">Dia</th>${clt?'<th>Situação</th>':''}<th>Entrada manhã</th><th>Saída manhã</th><th>Entrada tarde</th><th>Saída tarde</th><th>Total</th><th>Normais</th><th>Extras</th><th>Valor do dia</th><th class="l">Alertas</th></tr></thead><tbody id="tb"></tbody></table></div>
  <p class="note">${clt?'Situação "Automático": o sistema usa a escala e o calendário. Dia liberado que já passou sem horário vira falta; use Folga ou Falta justificada para abonar.':'Diarista: paga só as horas registradas.'} Feriados nacionais são marcados sozinhos; feriados municipais você cadastra em Ajustes.</p>`;
+ $('#bPrint').onclick=()=>window.print();
+ $('#bCsv').onclick=()=>{const R=calcMonth(e,ym),q=v=>'"'+String(v??'').replace(/"/g,'""')+'"',f=n=>(+n||0).toFixed(2).replace('.',',');
+  const rows=[['Data','Dia','Situação','Entrada manhã','Saída manhã','Entrada tarde','Saída tarde','Total','Normais','Extras','Valor do dia']];
+  R.days.forEach(x=>rows.push([x.ds.split('-').reverse().join('/'),DN[x.wd],x.st,x.r.a||'',x.r.b||'',x.r.c||'',x.r.d||'',x.w?hm(x.w):'',x.norm?hm(x.norm):'',(x.ext||x.fer)?hm(x.ext||x.fer):'',x.vlr!=null?f(x.vlr):'']));
+  rows.push([],['Total do mês','','','','','',hm(R.T.total),hm(R.T.norm),hm(R.T.ext),f(R.T.valHoras)],['Vales','','','','','','','','',f(R.T.vales)],['Total a pagar','','','','','','','','',f(R.T.liquido)]);
+  const blob=new Blob(['\ufeff'+rows.map(r=>r.map(q).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(e.nome+'-'+ym+'.csv').replace(/\s+/g,'_');a.click()};
  $('#fE').onchange=ev=>{S.sel=ev.target.value;save();rFolha()};
  $('#fM').onchange=ev=>{if(ev.target.value){S.ym=ev.target.value;save();rFolha()}};
  const [Y,M]=ym.split('-').map(Number),rec=(S.rec[e.id]=S.rec[e.id]||{}),mr=(rec[ym]=rec[ym]||{}),td=todayS();
@@ -494,6 +533,84 @@ function paintFoot(R,e){const T=R.T,clt=e.tipo==='clt';
  <div class="mo"><span>Mês: <b>${T.diasTrab} dias · ${hm(T.total)}</b></span><span class="dk">Valor das horas: <b>${brl(T.valHoras)}</b></span>${clt?`<span class="dk">Descontos: <b>${brl(T.dAtr+T.dFalta+T.dDsr+T.dAdm)}</b></span>`:''}${T.vales?`<span>Total bruto: <b>${brl(T.pagar)}</b></span><span>Vales: <b>− ${brl(T.vales)}</b></span><span class="tot">A pagar após vales: <b>${brl(T.liquido)}</b></span>`:`<span class="tot">Total a pagar no mês${clt?' (bruto)':''}: <b>${brl(T.pagar)}</b></span>`}</div>`}
 setInterval(()=>{if(CLOUD&&USER&&CUR==='folha'&&!document.hidden&&FOLHA)loadMonth(FOLHA.ym).then(()=>FOLHA&&FOLHA.sync())},15000);
 
+/* ===== fechamento semanal e pagamentos ===== */
+const mondayOf=ds=>{const [y,m,d]=ds.split('-').map(Number),wd=new Date(Date.UTC(y,m-1,d)).getUTCDay();return new Date(Date.UTC(y,m-1,d-((wd+6)%7))).toISOString().slice(0,10)};
+const addD=(ds,n)=>{const [y,m,d]=ds.split('-').map(Number);return new Date(Date.UTC(y,m-1,d+n)).toISOString().slice(0,10)};
+const fmtBR=ds=>ds.slice(8)+'/'+ds.slice(5,7);
+function semanaAlvo(now=new Date()){const mon=mondayOf(todayS()),wd=now.getDay();return (wd===5&&now.getHours()>=18)||wd===6||wd===0?mon:addD(mon,-7)}
+function calcSemana(e,mon){const fim=addD(mon,6),cm={},days=[];
+ new Set([mon.slice(0,7),fim.slice(0,7)]).forEach(ym=>cm[ym]=calcMonth(e,ym,null,todayS()));
+ for(let i=0;i<7;i++){const ds=addD(mon,i),x=cm[ds.slice(0,7)].days.find(z=>z.ds===ds);if(x)days.push(x)}
+ const W={mon,fim,days,dias:0,min:0,ext:0,fer:0,val:0,faltas:0};
+ days.forEach(x=>{if(x.w>0){W.dias++;W.min+=x.w}W.ext+=x.ext||0;W.fer+=x.fer||0;W.val+=x.vlr||0;if(x.falta)W.faltas++});
+ W.vales=(e.vales||[]).filter(v=>v.d>=mon&&v.d<=fim).reduce((a,v)=>a+(+v.v||0),0);
+ W.pago=(e.pagamentos||[]).filter(p=>p.ref===mon).reduce((a,p)=>a+(+p.v||0),0);
+ W.pagar=Math.max(0,W.val-W.vales-W.pago);return W}
+function resumoTexto(e,W){const L=[`*Resumo da semana: ${e.nome}*`,`${fmtBR(W.mon)} a ${fmtBR(W.fim)}`,''];
+ W.days.forEach(x=>{const dd=DN[x.wd]+' '+fmtBR(x.ds);
+  if(x.w>0)L.push(`${dd}: ${hm(x.w)}${x.ext?' ('+hm(x.ext)+' extra)':''}${x.fer?' (feriado/domingo)':''} - ${brl(x.vlr)}`);
+  else if(x.falta||x.st==='Falta injustificada'||x.st==='Folga'||x.st==='Falta justificada / atestado'||x.hol)L.push(`${dd}: ${x.falta?'falta':x.hol?'feriado':x.st.toLowerCase()}`)});
+ L.push('',`Total: ${hm(W.min)} em ${W.dias} dia(s)${W.ext?', '+hm(W.ext)+' de extras':''}`,`Valor das horas: ${brl(W.val)}`);
+ if(W.vales)L.push(`Vales: - ${brl(W.vales)}`);if(W.pago)L.push(`Já pago: - ${brl(W.pago)}`);
+ L.push(`*A pagar: ${brl(W.pagar)}*`);return L.join('\n')}
+function rBanner(){const b=$('#banner');if(!b)return;b.innerHTML='';
+ if(CUR==='pag'||!S.emps.length)return;
+ const mon=semanaAlvo(),pend=[];
+ S.emps.forEach(e=>{const W=calcSemana(e,mon);if(W.dias>0&&W.pago<=0)pend.push({e,W})});
+ if(!pend.length)return;
+ const n=new Date(),sex=n.getDay()===5&&n.getHours()>=18;
+ b.innerHTML=`<div class="warn noprint" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>${sex?'Sexta-feira: hora de fechar a semana.':'Semana sem pagamento registrado.'}</b> ${fmtBR(mon)} a ${fmtBR(addD(mon,6))}: ${pend.map(p=>esc(p.e.nome)+' ('+brl(p.W.pagar)+')').join(', ')}</div><button class="b p" id="bnGo">Abrir fechamento</button></div>`;
+ $('#bnGo').onclick=()=>{S.sel=pend[0].e.id;PAG.mon=mon;show('pag')}}
+const PAG={mon:null};
+function rPag(fresh){
+ const el=$('#t-pag'),e=emp();
+ if(!e){el.innerHTML='<div class="card">Cadastre um colaborador na aba Equipe.</div>';return}
+ if(!PAG.mon)PAG.mon=semanaAlvo();
+ const mon=PAG.mon;
+ if(CLOUD&&!fresh){Promise.all([...new Set([mon.slice(0,7),addD(mon,6).slice(0,7)])].map(loadMonth)).then(()=>{if(CUR==='pag')rPag(true)})}
+ const W=calcSemana(e,mon),pagos=(e.pagamentos||[]).slice().sort((a,b)=>(b.d||'').localeCompare(a.d||'')),totPago=pagos.reduce((a,p)=>a+(+p.v||0),0);
+ const FORMAS=['Pix','Dinheiro','Transferência','Outro'];
+ el.innerHTML=`<div class="card noprint"><div class="row"><div><label for="pE">Colaborador</label>${empSelect('pE')}</div>
+  <div><label>Semana</label><div style="display:flex;gap:6px;align-items:center"><button class="b" id="wPrev" aria-label="Semana anterior">‹</button><b style="flex:1;text-align:center;white-space:nowrap">${fmtBR(mon)} a ${fmtBR(W.fim)}</b><button class="b" id="wNext" aria-label="Próxima semana">›</button></div></div>
+  <button class="b" id="wHoje">Semana atual</button></div></div>
+ <div class="card"><h2>Fechamento: ${esc(e.nome)}</h2>
+ <div class="pg-grid" style="margin-bottom:10px"><div class="sum" style="display:contents">
+  <div><span>Dias trabalhados</span><b>${W.dias}</b></div><div><span>Horas na semana</span><b>${hm(W.min)}</b></div><div><span>Horas extras</span><b class="ext">${hm(W.ext)}</b></div>
+  <div><span>Valor das horas</span><b>${brl(W.val)}</b></div>${W.vales?`<div><span>Vales</span><b>− ${brl(W.vales)}</b></div>`:''}${W.pago?`<div><span>Já pago</span><b>− ${brl(W.pago)}</b></div>`:''}
+  <div class="hi"><span>A PAGAR</span><b>${brl(W.pagar)}</b></div></div></div>
+ <div class="tw"><table class="dsem"><tbody>${W.days.map(x=>`<tr><td>${DN[x.wd]} ${fmtBR(x.ds)}</td><td>${x.w?[x.r.a&&x.r.b?x.r.a+'–'+x.r.b:'',x.r.c&&x.r.d?x.r.c+'–'+x.r.d:''].filter(Boolean).join(' · '):esc(x.st||'')}</td><td>${x.w?hm(x.w):''}</td><td>${x.vlr!=null?brl(x.vlr):''}</td></tr>`).join('')}</tbody></table></div>
+ <p class="note">${e.tipo==='clt'?'Valor das horas = horas trabalhadas × valor da hora. Para CLT o pagamento oficial é mensal; o fechamento semanal serve como controle ou adiantamento. ':''}Vales lançados na Folha dentro da semana são descontados.</p>
+ <div class="row noprint"><button class="b p" id="wZap">Enviar resumo no WhatsApp</button><button class="b" id="wCopy">Copiar resumo</button><button class="b" onclick="window.print()">Imprimir / PDF</button></div>
+ ${S.cfg.whats?'':'<p class="note noprint">Dica: cadastre o seu número em Ajustes para o WhatsApp abrir direto na sua conversa.</p>'}</div>
+ <div class="card noprint"><h2>Registrar pagamento</h2><div class="grid">
+  <div><label for="pg-d">Data do pagamento</label><input id="pg-d" type="date" value="${todayS()}"></div>
+  <div><label for="pg-v">Valor pago (R$)</label><input id="pg-v" type="number" step="0.01" value="${r2(W.pagar)}"></div>
+  <div><label for="pg-f">Forma</label><select id="pg-f">${FORMAS.map(f=>`<option>${f}</option>`).join('')}</select></div>
+  <div><label for="pg-r">Referente a</label><select id="pg-r"><option value="${mon}">Semana ${fmtBR(mon)} a ${fmtBR(W.fim)}</option><option value="">Avulso (sem semana)</option></select></div>
+  <div><label for="pg-o">Observação</label><input id="pg-o" placeholder="Ex.: Pix para a chave do telefone"></div>
+  <div><label for="pg-a">Comprovante (foto, print ou PDF)</label><input id="pg-a" type="file" accept="image/*,application/pdf"></div></div>
+  <div class="row" style="margin-top:10px"><button class="b p" id="pgSave">Salvar pagamento</button></div><div id="pgMsg"></div>
+  <p class="note">${CLOUD?'O comprovante é guardado na nuvem, privado para a sua conta.':'<b>Modo local:</b> o comprovante fica guardado só neste navegador e não entra no backup.'}</p></div>
+ <div class="card"><h2>Histórico de pagamentos de ${esc(e.nome)}</h2>
+  ${pagos.length?pagos.map(p=>`<div class="pgh"><div><b>${(p.d||'').split('-').reverse().join('/')}</b></div><div>${esc(p.forma||'')}${p.obs?' · '+esc(p.obs):''}<small>${p.ref?'Semana '+fmtBR(p.ref)+' a '+fmtBR(addD(p.ref,6)):'Avulso'}</small></div><div class="v">${brl(p.v)}</div>
+   <div class="ac noprint">${p.file?`<button class="b" data-pv="${p.id}">Ver comprovante</button>`:'<small>Sem comprovante</small>'}<button class="b d" data-pd="${p.id}">Excluir</button></div></div>`).join('')+`<p class="note"><b>Total pago: ${brl(totPago)}</b></p>`:'<p class="note">Nenhum pagamento registrado.</p>'}</div>`;
+ $('#pE').onchange=ev=>{S.sel=ev.target.value;save();rPag()};
+ $('#wPrev').onclick=()=>{PAG.mon=addD(mon,-7);rPag()};$('#wNext').onclick=()=>{PAG.mon=addD(mon,7);rPag()};$('#wHoje').onclick=()=>{PAG.mon=semanaAlvo();rPag()};
+ const txt=resumoTexto(e,W);
+ $('#wCopy').onclick=()=>copy(txt);
+ $('#wZap').onclick=()=>{let n=(S.cfg.whats||'').replace(/\D/g,'');if(n&&n.length<=11)n='55'+n;window.open('https://wa.me/'+n+'?text='+encodeURIComponent(txt),'_blank')};
+ $('#pgSave').onclick=async()=>{const v=+$('#pg-v').value,d=$('#pg-d').value,msg=$('#pgMsg');
+  if(!d||!(v>0)){msg.innerHTML='<p class="warn">Informe a data e um valor maior que zero.</p>';return}
+  const fl=$('#pg-a').files[0];if(fl&&fl.size>12*1024*1024){msg.innerHTML='<p class="warn">Arquivo muito grande (máximo 12 MB).</p>';return}
+  msg.innerHTML='<p class="note">Salvando…</p>';let file=null;
+  try{if(fl)file=await storeFile(fl)}catch(x){msg.innerHTML='<p class="warn">Não consegui guardar o comprovante: '+esc(x.message||x)+'</p>';return}
+  (e.pagamentos=e.pagamentos||[]).push({id:uuid(),d,v:r2(v),forma:$('#pg-f').value,ref:$('#pg-r').value,obs:$('#pg-o').value.trim(),file});
+  persistEmp(e);toast('Pagamento registrado');rPag(true)};
+ el.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>{const p=e.pagamentos.find(x=>x.id===b.dataset.pv);if(p&&p.file)openFile(p.file)});
+ el.querySelectorAll('[data-pd]').forEach(b=>b.onclick=async()=>{if(b.dataset.ok!=='1'){b.dataset.ok='1';b.textContent='Confirmar exclusão?';setTimeout(()=>{b.dataset.ok='';b.textContent='Excluir'},4000);return}
+  const p=e.pagamentos.find(x=>x.id===b.dataset.pd);if(p&&p.file)await removeFile(p.file);e.pagamentos=e.pagamentos.filter(x=>x!==p);persistEmp(e);rPag(true)});
+}
+
 function rResc(){
  const el=$('#t-resc'),e=emp();
  if(!e){el.innerHTML='<div class="card">Cadastre um colaborador.</div>';return}
@@ -536,7 +653,8 @@ function rResc(){
 
 function rCfg(){
  const el=$('#t-cfg'),y=+S.ym.slice(0,4),nac=feriadosAno(y);
- el.innerHTML=`<div class="card"><h2>Parâmetros gerais</h2><div class="grid"><div><label for="c-min">Salário mínimo vigente (R$)</label><input id="c-min" type="number" step="0.01" data-k="minimo" value="${S.cfg.minimo}"></div></div>
+ el.innerHTML=`<div class="card"><h2>Parâmetros gerais</h2><div class="grid"><div><label for="c-min">Salário mínimo vigente (R$)</label><input id="c-min" type="number" step="0.01" data-k="minimo" value="${S.cfg.minimo}"></div>
+ <div><label for="c-zap">Meu WhatsApp (DDD + número)</label><input id="c-zap" type="tel" data-k="whats" value="${esc(S.cfg.whats||'')}" placeholder="11999999999"></div></div>
  <p class="note">Valor padrão de salário para novos colaboradores CLT. Salário mínimo nacional de 2026: R$ 1.621,00. Confira o valor vigente.</p></div>
  <div class="card"><h2>Feriados</h2>
  <p class="note">Nacionais de ${y}, marcados automaticamente: ${Object.entries(nac).sort().map(([d,n])=>pad(+d.slice(8))+'/'+d.slice(5,7)+' '+esc(n)).join(' · ')}.</p>
@@ -544,7 +662,7 @@ function rCfg(){
  <div id="hl">${S.cfg.feriados.map((h,i)=>`<div class="row" style="margin:6px 0"><div><input type="date" data-h="${i}" data-hk="d" value="${h.d}"></div><div><input data-h="${i}" data-hk="n" value="${esc(h.n)}" placeholder="Nome do feriado"></div><button class="b d" data-hdel="${i}">Remover</button></div>`).join('')||'<p class="note">Nenhum cadastrado.</p>'}</div>
  <button class="b" id="addH">+ Adicionar feriado</button></div>
  ${CLOUD?`<div class="card"><h2>Conta</h2><p class="note">Conectado como ${esc(USER?.email||'')}. Os dados ficam salvos na nuvem e aparecem em qualquer aparelho em que você entrar.</p></div>`:
- `<div class="card"><h2>Backup</h2><p class="warn">Modo local: os dados ficam só neste navegador. Exporte um backup de vez em quando.</p>
+ `<div class="card"><h2>Backup</h2><p class="warn">Modo local: os dados ficam só neste navegador. Exporte um backup de vez em quando. Os comprovantes anexados não entram no backup.</p>
  <div class="row"><button class="b p" id="exp">Exportar backup</button><div><label for="imp">Importar backup</label><input type="file" id="imp" accept=".json"></div></div><div id="impOk"></div></div>`}
  <div class="card"><h2>Regras aplicadas</h2><ul class="note">
  <li>Valor da hora CLT = salário ÷ 220 (44h semanais, já inclui o descanso semanal).</li>
@@ -562,7 +680,7 @@ function rCfg(){
  const ex=$('#exp');if(ex)ex.onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='controle-horas-backup-'+todayS()+'.json';a.click()};
  const im=$('#imp');if(im)im.onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{let d;try{d=JSON.parse(r.result);if(!d.emps)throw 0}catch(x){toast('Arquivo inválido');return}
   $('#impOk').innerHTML='<p class="warn">Substituir todos os dados atuais pelo backup?</p><button class="b p" id="impY">Substituir</button>';
-  $('#impY').onclick=()=>{S=d;S.cfg=Object.assign({minimo:1621,feriados:[]},S.cfg||{});S.emps.forEach(fixEmp);save();toast('Backup importado');show('emp')}};r.readAsText(f)};
+  $('#impY').onclick=()=>{S=d;S.cfg=Object.assign({minimo:1621,feriados:[],whats:''},S.cfg||{});S.emps.forEach(fixEmp);save();toast('Backup importado');show('emp')}};r.readAsText(f)};
 }
 
 /* ===== login do administrador (nuvem) ===== */
