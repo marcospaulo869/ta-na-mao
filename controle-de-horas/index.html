@@ -543,8 +543,8 @@ function rFolha(){
  if(CLOUD)loadMonth(ym).then(()=>{if(FOLHA&&FOLHA.ym===ym&&FOLHA.e===e)FOLHA.sync()});
 }
 function paintFoot(R,e){const T=R.T,clt=e.tipo==='clt';
- $('#foot').innerHTML=`<div class="wk">${R.weeks.map(w=>`<div>Semana ${pad(w.ini)}–${pad(w.fim)}<b>${w.dias} dia(s) · ${hm(w.min)}</b>${brl(w.val)}${w.ext?` · <span class="ext">${hm(w.ext)} extra</span>`:''}</div>`).join('')}</div>
- <div class="mo"><span>Mês: <b>${T.diasTrab} dias · ${hm(T.total)}</b></span><span class="dk">Valor das horas: <b>${brl(T.valHoras)}</b></span>${clt?`<span class="dk">Descontos: <b>${brl(T.dAtr+T.dFalta+T.dDsr+T.dAdm)}</b></span>`:''}${T.vales?`<span>Total bruto: <b>${brl(T.pagar)}</b></span><span>Vales: <b>− ${brl(T.vales)}</b></span><span class="tot">A pagar após vales: <b>${brl(T.liquido)}</b></span>`:`<span class="tot">Total a pagar no mês${clt?' (bruto)':''}: <b>${brl(T.pagar)}</b></span>`}</div>`}
+ $('#foot').innerHTML=`<div class="wk">${R.weeks.map(w=>`<div>Semana ${pad(w.ini)}–${pad(w.fim)}<b>${w.dias} dia(s) · ${hm(w.min)}</b>${brl(w.val)}${w.ext?` · <span class="ext">${hm(w.ext)} extra</span>`:''}${w.ve?`<br><span class="ext">Extras: ${brl(w.ve)}</span>`:''}</div>`).join('')}</div>
+ <div class="mo"><span>Mês: <b>${T.diasTrab} dias · ${hm(T.total)}</b></span>${T.ext?`<span>Extras do mês: <b class="ext">${hm(T.ext)} · ${brl(T.vExt)}</b></span>`:''}<span class="dk">Valor das horas: <b>${brl(T.valHoras)}</b></span>${clt?`<span class="dk">Descontos: <b>${brl(T.dAtr+T.dFalta+T.dDsr+T.dAdm)}</b></span>`:''}${T.vales?`<span>Total bruto: <b>${brl(T.pagar)}</b></span><span>Vales: <b>− ${brl(T.vales)}</b></span><span class="tot">A pagar após vales: <b>${brl(T.liquido)}</b></span>`:`<span class="tot">Total a pagar no mês${clt?' (bruto)':''}: <b>${brl(T.pagar)}</b></span>`}</div>`}
 setInterval(()=>{if(CLOUD&&USER&&CUR==='folha'&&!document.hidden&&FOLHA)loadMonth(FOLHA.ym).then(()=>FOLHA&&FOLHA.sync())},15000);
 
 /* ===== fechamento semanal e pagamentos ===== */
