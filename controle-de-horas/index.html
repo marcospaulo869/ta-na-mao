@@ -191,7 +191,7 @@ function load(){try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(CLOUD?{sel:S.sel,ym:S.ym,cfg:{},emps:[],rec:{}}:S))}catch(e){}}
 const emp=()=>S.emps.find(e=>e.id===S.sel);
 const DEF={nome:'Novo colaborador',funcao:'',tipo:'clt',salario:1621,base:220,metaSem:8,metaSab:4,capSemana:44,adicExtra:50,adicFer:100,
- valorHora:10,jornada:8,pagaExtra:false,adm:'',dias:[1,2,3,4,5,6],autoFalta:true,verValores:true,deslig:'',motivo:'sem_justa',feriasGozadas:0,fgtsSaldo:'',mediaExtras:0};
+ valorHora:10,jornada:8,pagaExtra:false,adm:'',dias:[1,2,3,4,5,6],autoFalta:true,verValores:true,vales:[],deslig:'',motivo:'sem_justa',feriasGozadas:0,fgtsSaldo:'',mediaExtras:0};
 function fixEmp(e){for(const k in DEF)if(e[k]===undefined)e[k]=Array.isArray(DEF[k])?DEF[k].slice():DEF[k];return e}
 function newEmp(){return fixEmp({id:uuid(),salario:S.cfg.minimo,deslig:''})}
 
@@ -298,6 +298,8 @@ function calcMonth(e,ym,recs,today){
   T.pagar=T.valHoras;
   wl.forEach(w=>{if(w.dias>=3)alerts.push('Semana de '+pad(w.ini)+' a '+pad(w.fim)+': '+w.dias+' dias trabalhados. Três ou mais dias por semana para o mesmo contratante podem caracterizar vínculo (doméstico: LC 150/2015; demais: CLT art. 3º).')});
  }
+ T.vales=(e.vales||[]).filter(v=>v.d&&v.d.startsWith(ym)).reduce((a,v)=>a+(+v.v||0),0);
+ T.liquido=T.pagar-T.vales;
  return {days,T,hora,alerts,weeks:wl};
 }
 
@@ -406,6 +408,23 @@ function rEmp(){
  rAccess(e);
 }
 
+function parseLista(txt,defY){const rows=[],bad=[],z={a:'',b:'',c:'',d:''};
+ txt.split(/\n/).forEach(raw=>{const l=raw.trim();if(!l)return;
+  const m=l.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s*(.*)$/);if(!m){bad.push(l);return}
+  let y=m[3]?+m[3]:defY;if(y<100)y+=2000;const mo=+m[2],d=+m[1];
+  if(mo<1||mo>12||d<1||d>dim(y,mo)){bad.push(l);return}
+  const rest=m[4].trim(),ds=y+'-'+pad(mo)+'-'+pad(d);let r;
+  if(/atestado|justific/i.test(rest))r={...z,t:'just'};
+  else if(/falta/i.test(rest))r={...z,t:'falta'};
+  else if(/folga/i.test(rest))r={...z,t:'folga'};
+  else{const tk=rest.split(/[\s;,]+/).filter(Boolean);if(!tk.length||tk.length>4){bad.push(l);return}
+   const v=tk.map(x=>x==='-'?'':x);if(v.some(x=>x&&!/^([01]?\d|2[0-3]):[0-5]\d$/.test(x))){bad.push(l);return}
+   const f=x=>x?pad(+x.split(':')[0])+':'+x.split(':')[1]:'';r={a:f(v[0]),b:f(v[1]),c:f(v[2]),d:f(v[3]),t:''}}
+  rows.push({ds,r})});return {rows,bad}}
+function importLista(e,txt){const {rows,bad}=parseLista(txt,+S.ym.slice(0,4));const meses=new Set();
+ rows.forEach(({ds,r})=>{const ym=ds.slice(0,7),d=+ds.slice(8);S.rec[e.id]=S.rec[e.id]||{};(S.rec[e.id][ym]=S.rec[e.id][ym]||{})[d]=r;meses.add(ym);persistEntry(e,ym,d)});
+ return {n:rows.length,meses:[...meses].sort(),bad}}
+
 let FOLHA=null;
 function rFolha(){
  const el=$('#t-folha'),e=emp();
@@ -416,6 +435,11 @@ function rFolha(){
  <div><label for="fM">Mês</label><input type="month" id="fM" value="${ym}"></div></div>
  <p class="note">${esc(e.funcao||'')}${e.funcao?' · ':''}${clt?'CLT · salário '+brl(e.salario):'Diarista · '+brl(e.valorHora)+'/hora'} · dias liberados: ${ORD.filter(d=>e.dias.includes(d)).map(d=>DN[d]).join(', ')||'nenhum'}</p></div>
  <div class="sum" id="sum"></div><div id="alr"></div>
+ <div class="card noprint"><h2>Vales e adiantamentos de ${ymLabel(ym)}</h2><div id="vl"></div><button class="b" id="addV">+ Lançar vale</button></div>
+ <details class="card noprint" id="impBox"><summary><b>Importar horários (colar lista)</b></summary>
+ <p class="note">Uma linha por dia: <code>dd/mm/aaaa entrada-manhã saída-manhã entrada-tarde saída-tarde</code>. Use <code>-</code> para um campo vazio. Também aceita as palavras <code>falta</code>, <code>atestado</code> e <code>folga</code>. Dias que já têm horário são substituídos.</p>
+ <textarea id="impLista" rows="8" style="width:100%;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:7px;padding:8px" placeholder="08/06/2026 08:00 12:00 14:00 18:00&#10;09/06/2026 falta"></textarea>
+ <div class="row" style="margin-top:8px"><button class="b p" id="impGo">Importar</button></div><div id="impRes"></div></details>
  <div class="tw"><table><thead><tr><th class="l">Dia</th>${clt?'<th>Situação</th>':''}<th>Entrada manhã</th><th>Saída manhã</th><th>Entrada tarde</th><th>Saída tarde</th><th>Total</th><th>Normais</th><th>Extras</th><th>Valor do dia</th><th class="l">Alertas</th></tr></thead><tbody id="tb"></tbody></table></div>
  <p class="note">${clt?'Situação "Automático": o sistema usa a escala e o calendário. Dia liberado que já passou sem horário vira falta; use Folga ou Falta justificada para abonar.':'Diarista: paga só as horas registradas.'} Feriados nacionais são marcados sozinhos; feriados municipais você cadastra em Ajustes.</p>`;
  $('#fE').onchange=ev=>{S.sel=ev.target.value;save();rFolha()};
@@ -442,8 +466,8 @@ function rFolha(){
   const T=R.T;
   $('#sum').innerHTML=clt?`<div><span>Horas normais</span><b>${hm(T.norm)}</b></div><div><span>Horas extras</span><b class="ext">${hm(T.ext)}</b></div>${T.fer?`<div><span>Domingos e feriados</span><b>${hm(T.fer)}</b></div>`:''}
    <div><span>Faltas</span><b>${T.nFaltas}</b></div><div><span>Valor da hora</span><b>${brl(R.hora)}</b></div><div><span>Salário base</span><b>${brl(e.salario)}</b></div>
-   <div><span>Descontos (faltas, DSR, atrasos)</span><b>${brl(T.dAtr+T.dFalta+T.dDsr+T.dAdm)}</b></div><div><span>Extras e adicionais</span><b>${brl(T.vExt+T.vFer)}</b></div>`:
-   `<div><span>Dias trabalhados</span><b>${T.diasTrab}</b></div><div><span>Horas no mês</span><b>${hm(T.total)}</b></div><div><span>Valor da hora</span><b>${brl(R.hora)}</b></div><div><span>Horas extras</span><b class="ext">${hm(T.ext)}</b></div>`;
+   <div><span>Descontos (faltas, DSR, atrasos)</span><b>${brl(T.dAtr+T.dFalta+T.dDsr+T.dAdm)}</b></div><div><span>Extras e adicionais</span><b>${brl(T.vExt+T.vFer)}</b></div>${T.vales?`<div><span>Vales</span><b>${brl(T.vales)}</b></div>`:''}`:
+   `<div><span>Dias trabalhados</span><b>${T.diasTrab}</b></div><div><span>Horas no mês</span><b>${hm(T.total)}</b></div><div><span>Valor da hora</span><b>${brl(R.hora)}</b></div><div><span>Horas extras</span><b class="ext">${hm(T.ext)}</b></div>${T.vales?`<div><span>Vales</span><b>${brl(T.vales)}</b></div>`:''}`;
   $('#alr').innerHTML=R.alerts.map(a=>`<div class="warn">${esc(a)}</div>`).join('')+
    (clt&&T.nDsr?`<div class="warn">Falta injustificada em ${T.nDsr} semana(s): perde o descanso semanal remunerado (Lei 605/49), desconto de 1/30 do salário por semana.</div>`:'')+
    (T.dAdm?`<div class="info">Admissão neste mês: salário proporcional, desconto de ${brl(T.dAdm)} pelos dias antes da admissão.</div>`:'');
@@ -451,6 +475,15 @@ function rFolha(){
  $('#tb').addEventListener('input',ev=>{const f=ev.target.dataset.f;if(!f)return;const d=+ev.target.closest('tr').dataset.d;
   const r=mr[d]=mr[d]||{};r[f]=ev.target.value;persistEntry(e,ym,d);paint()});
  $('#tb').addEventListener('change',ev=>{if(ev.target.tagName==='SELECT')ev.target.dispatchEvent(new Event('input',{bubbles:true}))});
+ $('#impGo').onclick=()=>{const r=importLista(e,$('#impLista').value);
+  $('#impRes').innerHTML=`<p class="${r.n?'info':'warn'}">${r.n} dia(s) importado(s)${r.meses.length?' em '+r.meses.map(ymLabel).join(', '):''}.${r.n?' Troque o mês acima para conferir.':''}</p>${r.bad.length?`<p class="warn">${r.bad.length} linha(s) não entendida(s):<br>${r.bad.map(esc).join('<br>')}</p>`:''}`;
+  if(r.n){$('#impLista').value='';(LOADED[ym]=true);FOLHA.sync()}};
+ const rVales=()=>{const list=e.vales=e.vales||[];
+  $('#vl').innerHTML=list.map((v,i)=>v.d&&v.d.startsWith(ym)?`<div class="row" style="margin:0 0 6px"><div><label>Data</label><input type="date" data-vi="${i}" data-vk="d" value="${v.d}"></div><div><label>Valor (R$)</label><input type="number" step="0.01" data-vi="${i}" data-vk="v" value="${v.v}"></div><div><label>Observação</label><input data-vi="${i}" data-vk="n" value="${esc(v.n||'')}"></div><button class="b d" data-vdel="${i}">Remover</button></div>`:'').join('')||'<p class="note">Nenhum vale neste mês. Os vales são descontados do total a pagar.</p>';
+  $('#vl').querySelectorAll('[data-vi]').forEach(i=>i.addEventListener(i.type==='date'?'change':'input',()=>{const v=list[+i.dataset.vi];v[i.dataset.vk]=i.type==='number'?(i.value===''?0:+i.value):i.value;persistEmp(e);paint()}));
+  $('#vl').querySelectorAll('[data-vdel]').forEach(b=>b.onclick=()=>{list.splice(+b.dataset.vdel,1);persistEmp(e);rVales();paint()})};
+ $('#addV').onclick=()=>{(e.vales=e.vales||[]).push({d:ym===todayS().slice(0,7)?todayS():ym+'-01',v:0,n:''});persistEmp(e);rVales();paint()};
+ rVales();
  FOLHA={e,ym,paint,sync(){const m=(S.rec[e.id]||{})[ym]||{};
   document.querySelectorAll('#tb tr[data-d]').forEach(tr=>{const r=m[tr.dataset.d]||{};tr.querySelectorAll('[data-f]').forEach(i=>{if(i!==document.activeElement)i.value=r[i.dataset.f]||''})});paint()}};
  paint();
@@ -458,7 +491,7 @@ function rFolha(){
 }
 function paintFoot(R,e){const T=R.T,clt=e.tipo==='clt';
  $('#foot').innerHTML=`<div class="wk">${R.weeks.map(w=>`<div>Semana ${pad(w.ini)}–${pad(w.fim)}<b>${w.dias} dia(s) · ${hm(w.min)}</b>${brl(w.val)}${w.ext?` · <span class="ext">${hm(w.ext)} extra</span>`:''}</div>`).join('')}</div>
- <div class="mo"><span>Mês: <b>${T.diasTrab} dias · ${hm(T.total)}</b></span><span class="dk">Valor das horas: <b>${brl(T.valHoras)}</b></span>${clt?`<span class="dk">Descontos: <b>${brl(T.dAtr+T.dFalta+T.dDsr+T.dAdm)}</b></span>`:''}<span class="tot">Total a pagar no mês${clt?' (bruto)':''}: <b>${brl(T.pagar)}</b></span></div>`}
+ <div class="mo"><span>Mês: <b>${T.diasTrab} dias · ${hm(T.total)}</b></span><span class="dk">Valor das horas: <b>${brl(T.valHoras)}</b></span>${clt?`<span class="dk">Descontos: <b>${brl(T.dAtr+T.dFalta+T.dDsr+T.dAdm)}</b></span>`:''}${T.vales?`<span>Total bruto: <b>${brl(T.pagar)}</b></span><span>Vales: <b>− ${brl(T.vales)}</b></span><span class="tot">A pagar após vales: <b>${brl(T.liquido)}</b></span>`:`<span class="tot">Total a pagar no mês${clt?' (bruto)':''}: <b>${brl(T.pagar)}</b></span>`}</div>`}
 setInterval(()=>{if(CLOUD&&USER&&CUR==='folha'&&!document.hidden&&FOLHA)loadMonth(FOLHA.ym).then(()=>FOLHA&&FOLHA.sync())},15000);
 
 function rResc(){
