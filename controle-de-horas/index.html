@@ -61,6 +61,9 @@ td small.st{display:block;font-size:11.5px;font-weight:600;color:var(--mut)}
 tr.off td{background:var(--bg);color:var(--mut)}
 tr.hol small.st{color:var(--hol)}
 tr.falta small.st{color:var(--err)}
+tr.wkrow td{background:var(--pri2);text-align:left;padding:8px 12px;border-bottom:2px solid var(--pri);white-space:normal}
+tr.wkrow .wk2{font-size:15px;margin-top:2px}
+tr.wkrow .wk2 b{color:var(--pri);font-size:17px}
 tr.today td:first-child{box-shadow:inset 3px 0 0 var(--pri)}
 .ext{color:var(--ext);font-weight:700}
 .al{font-size:12px;color:var(--warn);white-space:normal;text-align:left;min-width:150px}
@@ -114,6 +117,8 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
  td[data-l]::before{content:attr(data-l);display:block;font-size:11px;color:var(--mut);font-weight:600}
  td.l,td.sel,td.al{grid-column:1/-1}
  td.l{font-weight:700}
+ tbody tr.wkrow{display:block;padding:0;border:0;background:none;margin-bottom:10px}
+ tbody tr.wkrow td{display:block;border:1px solid var(--pri);border-radius:10px;padding:10px 12px}
  td.al:empty,td.sel:empty{display:none}
  td input,td select{width:100%;min-width:0}
  table.dsem,table.r{display:table;width:100%}
@@ -489,7 +494,8 @@ function rFolha(){
   rows+=`<tr data-d="${d}" class="${ds===td?'today':''}"><td class="l">${pad(d)} ${DN[wd]}<small class="st"></small></td>`+
   (clt?`<td class="sel" data-l="Situação"><select data-f="t" aria-label="Situação do dia ${d}">${opts.map(o=>`<option value="${o[0]}" ${(r.t||'')===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></td>`:'')+
   [['a','Entrada manhã'],['b','Saída manhã'],['c','Entrada tarde'],['d','Saída tarde']].map(([f,l])=>`<td data-l="${l}"><input type="time" data-f="${f}" aria-label="${l} dia ${d}" value="${r[f]||''}"></td>`).join('')+
-  `<td class="c-tot" data-l="Total"></td><td class="c-n" data-l="Normais"></td><td class="c-e ext" data-l="Extras"></td><td class="c-v" data-l="Valor do dia"></td><td class="al c-al"></td></tr>`}
+  `<td class="c-tot" data-l="Total"></td><td class="c-n" data-l="Normais"></td><td class="c-e ext" data-l="Extras"></td><td class="c-v" data-l="Valor do dia"></td><td class="al c-al"></td></tr>`;
+  if(wd===6||(d===dim(Y,M)&&wd>=1&&wd<=5))rows+=`<tr class="wkrow" data-wk="${mondayOf(ds)}"><td colspan="${clt?11:10}"></td></tr>`}
  $('#tb').innerHTML=rows;
  const paint=()=>{const R=calcMonth(e,ym);
   R.days.forEach(x=>{const tr=document.querySelector(`#tb tr[data-d="${x.d}"]`);if(!tr)return;
@@ -502,6 +508,8 @@ function rFolha(){
    tr.querySelector('.c-e').textContent=x.fer?hm(x.fer)+' (100%)':(x.ext?hm(x.ext):'');
    tr.querySelector('.c-v').textContent=x.vlr!=null?brl(x.vlr):(x.falta?'− '+brl(x.desc):'');
    tr.querySelector('.c-al').textContent=x.al.join(' · ')});
+  document.querySelectorAll('#tb tr.wkrow').forEach(tr=>{const W=R.weeks.find(w=>w.wk===tr.dataset.wk);
+   tr.firstElementChild.innerHTML=W?`<div><b>Semana ${pad(W.ini)} a ${pad(W.fim)}</b> · ${W.dias} dia(s) trabalhado(s) · ${hm(W.min)}${W.ext?` <span class="ext">(${hm(W.ext)} de extras)</span>`:''}</div><div class="wk2">Valor acumulado da semana: <b>${brl(W.val)}</b></div>`:''});
   const T=R.T;
   $('#sum').innerHTML=clt?`<div><span>Horas normais</span><b>${hm(T.norm)}</b></div><div><span>Horas extras</span><b class="ext">${hm(T.ext)}</b></div>${T.fer?`<div><span>Domingos e feriados</span><b>${hm(T.fer)}</b></div>`:''}
    <div><span>Faltas</span><b>${T.nFaltas}</b></div><div><span>Valor da hora</span><b>${brl(R.hora)}</b></div><div><span>Salário base</span><b>${brl(e.salario)}</b></div>
