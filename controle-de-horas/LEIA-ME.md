@@ -53,3 +53,13 @@ Nunca coloque a chave `service_role` no site.
 - A biblioteca do Supabase está em `supabase.min.js` (cópia local, sem depender de CDN).
 - Ponto pelo celular: o colaborador toca em "Registrar"; o servidor grava a hora, lê o IP e confere o GPS
   contra os locais cadastrados. Registro fora do local fica **pendente** até o administrador aprovar (aba Ponto).
+
+## Cadastro completo e privacidade
+
+- Ficha com foto (selfie), CPF (com validação), RG, nascimento, PIS, CTPS, contato, endereço (busca por CEP),
+  Pix e banco, e documentos anexados (pasta privada `documentos`).
+- O colaborador vê o próprio perfil, tira a selfie e atualiza telefone, contato de emergência e endereço.
+  Ele **não** vê CPF inteiro, RG, Pix, banco nem documentos, e **não** altera Pix, CPF ou valores.
+- Aviso de privacidade (LGPD) em linguagem simples: no login, no primeiro acesso do colaborador (com aceite registrado
+  com data e hora), na tela dele e em Ajustes. O texto é um **modelo** e deve ser revisado por advogado ou contador.
+- Dados da empresa (nome, CNPJ, responsável, e-mail) em Ajustes alimentam o aviso.

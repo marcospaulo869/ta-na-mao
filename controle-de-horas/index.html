@@ -138,6 +138,15 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
 .pgh .v{font-weight:700;text-align:right}.pgh .ac{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
 .pgh .ac button{padding:4px 10px;min-height:0}
 .dsem{width:100%;min-width:0;font-size:13.5px}.dsem td{padding:4px 6px;text-align:left}.dsem td:nth-child(n+3){text-align:right}
+.avatar{width:84px;height:84px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:2px solid var(--line)}
+.avatar.ph{display:grid;place-items:center;background:var(--pri2);color:var(--pri);font-weight:700;font-size:30px}
+.perfil-foto{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.perfil-foto .b{margin:2px 6px 2px 0}
+.priv{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto;padding:16px max(16px,env(safe-area-inset-left)) 40px}
+.privtxt{max-width:780px;margin:0 auto;font-size:15px;line-height:1.55}
+.privtxt h2{margin:8px 0 4px}.privtxt h3{margin:18px 0 4px;font-size:16px}.privtxt ul{padding-left:20px;margin:6px 0}
+.privbar{max-width:780px;margin:0 auto 10px;display:flex;gap:8px;position:sticky;top:0;background:var(--bg);padding:6px 0}
+@media print{.privbar{display:none}.priv{position:static;padding:0}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <script src="config.js"></script>
@@ -186,8 +195,67 @@ const ymAdd=(ym,n)=>{const [y,m]=ym.split('-').map(Number),o=addMonths({y,m,d:1}
 const ymLabel=ym=>{const [y,m]=ym.split('-').map(Number);return ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][m-1]+' de '+y};
 const DN=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'],ORD=[1,2,3,4,5,6,0];
 const uuid=()=>crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16)});
+const dig=v=>String(v||'').replace(/\D/g,'');
+const MASK={cpf:v=>{v=dig(v).slice(0,11);return v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')},
+ tel:v=>{v=dig(v).slice(0,11);return v.length>10?v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3'):v.length>6?v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3'):v.length>2?v.replace(/(\d{2})(\d*)/,'($1) $2'):v},
+ cep:v=>{v=dig(v).slice(0,8);return v.length>5?v.slice(0,5)+'-'+v.slice(5):v},
+ cnpj:v=>{v=dig(v).slice(0,14);return v.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2')}};
+function cpfValido(v){v=dig(v);if(v.length!==11||/^(\d)\1+$/.test(v))return false;
+ for(const n of [9,10]){let t=0;for(let i=0;i<n;i++)t+=+v[i]*(n+1-i);if((t*10)%11%10!==+v[n])return false}return true}
+function compressSquare(file,size=256){return new Promise((res,rej)=>{const img=new Image(),u=URL.createObjectURL(file);
+ img.onload=()=>{const m=Math.min(img.width,img.height),c=document.createElement('canvas');c.width=c.height=size;
+  c.getContext('2d').drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,size,size);URL.revokeObjectURL(u);
+  let q=.75,d=c.toDataURL('image/jpeg',q);while(d.length>90000&&q>.4){q-=.1;d=c.toDataURL('image/jpeg',q)}res(d)};
+ img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('Imagem inválida'))};img.src=u})}
+const avatarHtml=e=>e.foto?`<img class="avatar" alt="Foto de ${esc(e.nome)}" src="${esc(e.foto)}">`:`<div class="avatar ph" aria-hidden="true">${esc((e.nome||'?').trim().charAt(0).toUpperCase())}</div>`;
+async function buscaCep(cep){const c=dig(cep);if(c.length!==8)return null;
+ try{const r=await fetch('https://viacep.com.br/ws/'+c+'/json/');const j=await r.json();if(j.erro)return null;return {rua:j.logradouro||'',bairro:j.bairro||'',cidade:j.localidade||'',uf:j.uf||''}}catch(x){return null}}
+const fmtAceite=a=>a?a.slice(8,10)+'/'+a.slice(5,7)+'/'+a.slice(0,4)+' '+a.slice(11,16):'';
 let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.remove('hide');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.add('hide'),2600)}
 async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast('Link copiado')}catch(e){if(inp){inp.select();toast('Selecionado: copie com Ctrl+C')}}}
+
+/* ===== aviso de privacidade (LGPD) ===== */
+const POL_VERSAO='2026-10';
+function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
+ return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
+ <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
+ <h3>1. Quem é responsável pelos seus dados</h3>
+ <p>A empresa para a qual você trabalha: <b>${f(em.nome,'nome da empresa')}</b>${em.cnpj?', CNPJ '+esc(em.cnpj):''}. Ela decide por que e como os seus dados são usados. O sistema Controle de Horas é só a ferramenta que a empresa usa para fazer isso.</p>
+ <p>Contato para assuntos de privacidade: ${f(em.encarregado,'responsável')} · ${f(em.email,'e-mail')}${em.telefone?' · '+esc(em.telefone):''}</p>
+ <h3>2. Quais dados são usados</h3><ul>
+ <li><b>Identificação:</b> nome, função, foto (selfie), CPF, RG, data de nascimento, estado civil.</li>
+ <li><b>Contato e endereço:</b> telefone, e-mail, contato de emergência, endereço.</li>
+ <li><b>Trabalho:</b> data de início, regime (carteira assinada ou diarista), valor da hora ou salário, PIS e carteira de trabalho (quando houver), dias de trabalho.</li>
+ <li><b>Ponto:</b> data e hora de cada registro, o IP da internet usada e a localização aproximada (GPS), <b>somente no momento em que você toca em "Registrar"</b>.</li>
+ <li><b>Pagamento:</b> valores, vales, chave Pix, banco e comprovantes.</li>
+ <li><b>Documentos:</b> arquivos que a empresa anexar ao seu cadastro (por exemplo, RG, comprovante de residência, atestados).</li></ul>
+ <h3>3. Para que usamos e em que base legal</h3><ul>
+ <li><b>Calcular e pagar o trabalho</b> (horas, extras, faltas, vales, rescisão): execução do contrato e cumprimento de obrigação legal trabalhista e fiscal.</li>
+ <li><b>Controlar a jornada e confirmar o local do registro</b> (IP e GPS): cumprimento de obrigação legal e legítimo interesse da empresa em ter um controle de ponto confiável, evitando erros e fraudes. A localização <b>não é usada para acompanhar você fora do momento do registro</b>.</li>
+ <li><b>Identificar você no cadastro</b> (foto e documentos): execução do contrato e obrigação legal. A foto <b>não é usada para reconhecimento facial</b>.</li>
+ <li><b>Contato e segurança:</b> falar com você e com a pessoa indicada em caso de emergência.</li></ul>
+ <h3>4. Quem pode ver os seus dados</h3><ul>
+ <li>A empresa (a pessoa administradora do sistema) vê o seu cadastro completo.</li>
+ <li><b>Você</b> vê, no seu celular, o seu perfil, os seus registros de ponto e o resumo do mês. O CPF aparece parcialmente escondido. Você não vê dados de outros colaboradores.</li>
+ <li>Contador e órgãos públicos (como Receita, Previdência e Justiça do Trabalho) recebem dados apenas quando a lei exige ou a empresa precisa para cumprir obrigações.</li>
+ <li><b>Serviços de tecnologia usados pelo sistema:</b> o banco de dados e os arquivos ficam no Supabase, em servidor no Brasil (São Paulo), e o site é entregue pela Netlify. Eles apenas guardam os dados, sem usar para outros fins. Ao digitar o CEP, o sistema consulta o serviço público ViaCEP, que recebe somente o CEP.</li>
+ <li>Os dados <b>não são vendidos</b> nem usados para publicidade.</li></ul>
+ <h3>5. Por quanto tempo guardamos</h3>
+ <p>Pelo tempo que durar o seu trabalho e depois dele, pelo prazo que a legislação trabalhista, previdenciária e fiscal exigir para guardar registros de jornada, pagamentos e documentos (em regra, cerca de cinco anos após o fim do contrato; alguns documentos, por mais tempo). Depois disso, os dados são excluídos ou anonimizados.</p>
+ <h3>6. Como protegemos</h3><ul>
+ <li>Conexão protegida (HTTPS) e acesso do administrador por e-mail e senha.</li>
+ <li>Seu acesso é por um link pessoal. <b>Não compartilhe o seu link</b>; se alguém tiver acesso a ele, peça um novo ao responsável.</li>
+ <li>Cada registro de ponto é gravado pelo servidor e não pode ser editado por você. Correções feitas pelo administrador ficam marcadas.</li>
+ <li>Fotos, documentos e comprovantes ficam em pastas privadas. Nenhum sistema é totalmente imune a falhas, e em caso de incidente que possa causar risco a você, a empresa informará.</li></ul>
+ <h3>7. Os seus direitos</h3>
+ <p>Você pode pedir à empresa, a qualquer momento: confirmar se usa os seus dados; acessar os dados; corrigir dados incompletos ou errados (o telefone, o endereço, os contatos e a foto você mesmo atualiza no seu perfil); pedir anonimização, bloqueio ou eliminação de dados desnecessários; receber uma cópia; saber com quem os dados foram compartilhados; e reclamar à Autoridade Nacional de Proteção de Dados (ANPD). Alguns dados precisam ser mantidos por obrigação legal, e a empresa explicará quando for o caso.</p>
+ <h3>8. Mudanças neste aviso</h3>
+ <p>Se este aviso mudar de forma importante, o sistema mostrará o novo texto e pedirá que você leia de novo.</p></div>`}
+function politicaResumo(){return `<ul style="padding-left:18px;margin:6px 0"><li>Usamos os seus dados para <b>calcular e pagar o seu trabalho</b> e controlar a jornada.</li><li>No ponto, guardamos <b>hora, IP e localização</b> só no momento em que você toca em Registrar.</li><li>A foto serve para <b>identificar você no cadastro</b>, sem reconhecimento facial.</li><li>Seus dados <b>não são vendidos</b>. Só a empresa e os serviços de tecnologia que guardam os dados têm acesso.</li><li>Você pode <b>corrigir, pedir cópia ou exclusão</b> de dados, conforme a lei.</li></ul>`}
+function abrirPolitica(em){const d=document.createElement('div');d.className='priv';d.id='priv';
+ d.innerHTML=`<div class="privbar"><button class="b p" id="privX">Fechar</button><button class="b" onclick="window.print()">Imprimir</button></div>${politicaHtml(em)}`;
+ document.body.appendChild(d);document.body.style.overflow='hidden';
+ const x=()=>{d.remove();document.body.style.overflow=''};$('#privX').onclick=x;d.addEventListener('keydown',ev=>{if(ev.key==='Escape')x()})}
 
 /* ===== comprovantes (imagens e PDF) ===== */
 const FDB={db:null,open(){return new Promise((res,rej)=>{if(this.db)return res(this.db);const r=indexedDB.open('horas-files',1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>{this.db=r.result;res(this.db)};r.onerror=()=>rej(r.error)})},
@@ -198,14 +266,14 @@ function compressImg(file){return new Promise(res=>{if(!file.type.startsWith('im
  img.onload=()=>{const k=Math.min(1,1600/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
   c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>{URL.revokeObjectURL(u);res(b||file)},'image/jpeg',.8)};
  img.onerror=()=>{URL.revokeObjectURL(u);res(file)};img.src=u})}
-async function storeFile(file){const blob=await compressImg(file),id=uuid();
- if(CLOUD){const {error}=await sb.storage.from('comprovantes').upload(USER.id+'/'+id,blob,{contentType:blob.type});if(error)throw error;return {id,name:file.name,type:blob.type,cloud:true}}
- await FDB.put(id,blob);return {id,name:file.name,type:blob.type,cloud:false}}
+async function storeFile(file,bucket='comprovantes'){const blob=await compressImg(file),id=uuid();
+ if(CLOUD){const {error}=await sb.storage.from(bucket).upload(USER.id+'/'+id,blob,{contentType:blob.type});if(error)throw error;return {id,name:file.name,type:blob.type,cloud:true,bucket}}
+ await FDB.put(id,blob);return {id,name:file.name,type:blob.type,cloud:false,bucket}}
 async function openFile(f){let url;
- if(f.cloud){const {data,error}=await sb.storage.from('comprovantes').createSignedUrl(USER.id+'/'+f.id,300);if(error)return toast('Não abriu: '+error.message);url=data.signedUrl}
+ if(f.cloud){const {data,error}=await sb.storage.from(f.bucket||'comprovantes').createSignedUrl(USER.id+'/'+f.id,300);if(error)return toast('Não abriu: '+error.message);url=data.signedUrl}
  else{const b=await FDB.get(f.id);if(!b)return toast('Arquivo não encontrado neste navegador');url=URL.createObjectURL(b)}
  const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove()}
-async function removeFile(f){try{if(f.cloud)await sb.storage.from('comprovantes').remove([USER.id+'/'+f.id]);else await FDB.del(f.id)}catch(x){}}
+async function removeFile(f){try{if(f.cloud)await sb.storage.from(f.bucket||'comprovantes').remove([USER.id+'/'+f.id]);else await FDB.del(f.id)}catch(x){}}
 
 /* ===== feriados nacionais (Lei 662/49, 6.802/80, 10.607/02, 14.759/23) ===== */
 function pascoa(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return {y,m:mo,d:da}}
@@ -239,7 +307,7 @@ function load(){
 function save(){try{if(CLOUD)localStorage.setItem(KEYC,JSON.stringify({sel:S.sel,ym:S.ym}));else localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 const emp=()=>S.emps.find(e=>e.id===S.sel);
 const DEF={nome:'Novo colaborador',funcao:'',tipo:'clt',salario:1621,base:220,metaSem:8,metaSab:4,capSemana:44,adicExtra:50,adicFer:100,
- valorHora:10,jornada:8,pagaExtra:false,adm:'',dias:[1,2,3,4,5,6],autoFalta:true,verValores:true,vales:[],pagamentos:[],deslig:'',motivo:'sem_justa',feriasGozadas:0,fgtsSaldo:'',mediaExtras:0};
+ valorHora:10,jornada:8,pagaExtra:false,adm:'',dias:[1,2,3,4,5,6],autoFalta:true,verValores:true,vales:[],pagamentos:[],foto:'',cpf:'',rg:'',nascimento:'',estadoCivil:'',pis:'',ctps:'',telefone:'',emailPessoal:'',emergNome:'',emergTel:'',cep:'',rua:'',numero:'',complemento:'',bairro:'',cidade:'',uf:'',pix:'',banco:'',docs:[],aceite:'',deslig:'',motivo:'sem_justa',feriasGozadas:0,fgtsSaldo:'',mediaExtras:0};
 function fixEmp(e){for(const k in DEF)if(e[k]===undefined)e[k]=Array.isArray(DEF[k])?DEF[k].slice():DEF[k];return e}
 function newEmp(){return fixEmp({id:uuid(),salario:S.cfg.minimo,deslig:''})}
 
@@ -260,7 +328,7 @@ function persistCfg(){if(!CLOUD){save();return}
 async function delEmp(e){if(CLOUD){const {error}=await sb.from('employees').delete().eq('id',e.id);if(error)return toast('Não excluiu: '+error.message)}
  S.emps=S.emps.filter(x=>x!==e);delete S.rec[e.id];S.sel=S.emps[0]?.id||null;save();rEmp()}
 const PONTO_PAD={verif:'block',metodo:'both',externo:true,aprender_ip:true,locais:[]};
-function fixCfg(){S.cfg.ponto=Object.assign({},PONTO_PAD,S.cfg.ponto||{});if(!Array.isArray(S.cfg.ponto.locais))S.cfg.ponto.locais=[];if(!Array.isArray(S.cfg.feriados))S.cfg.feriados=[]}
+function fixCfg(){S.cfg.empresa=S.cfg.empresa||{};S.cfg.ponto=Object.assign({},PONTO_PAD,S.cfg.ponto||{});if(!Array.isArray(S.cfg.ponto.locais))S.cfg.ponto.locais=[];if(!Array.isArray(S.cfg.feriados))S.cfg.feriados=[]}
 async function cloudLoad(){
  const [a,b]=await Promise.all([sb.from('employees').select('id,token,data,created_at').order('created_at'),sb.from('company_settings').select('data').maybeSingle()]);
  if(a.error){toast('Erro ao carregar: '+a.error.message);return}
@@ -341,7 +409,7 @@ function calcMonth(e,ym,recs,today){
   }else{
    if(hol)x.st='Feriado: '+hol;
    else if(!x.sched||wd===0)x.st=wd===0?'Descanso semanal':'Fora da escala';
-   else if(clt&&ds<today&&e.autoFalta!==false){x.st='Falta (sem registro)';x.auto=true;falta=true}
+   else if(clt&&adm&&ds<today&&e.autoFalta!==false){x.st='Falta (sem registro)';x.auto=true;falta=true}
   }
   if(falta){x.falta=true;x.desc=sal/30;T.dFalta+=sal/30;T.nFaltas++;W.falta=true}
   if(w>0){T.total+=w;T.diasTrab++;W.dias++;W.min+=w;W.val+=x.vlr||0}
@@ -409,7 +477,8 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>show(b.datase
 // liga campos [data-k] ao objeto; não redesenha a tela enquanto digita
 function bind(root,obj,after){root.querySelectorAll('[data-k]').forEach(el=>{
  const k=el.dataset.k,ev=el.tagName==='SELECT'||el.type==='checkbox'||el.type==='date'?'change':'input';
- el.addEventListener(ev,()=>{let v=el.type==='checkbox'?el.checked:el.value;
+ el.addEventListener(ev,()=>{if(el.dataset.mask&&MASK[el.dataset.mask]){const m=MASK[el.dataset.mask](el.value);if(m!==el.value)el.value=m}
+  let v=el.type==='checkbox'?el.checked:el.value;
   if(el.type==='number')v=v===''?'':+v;obj[k]=v;after&&after(k,el)})})}
 const empSelect=id=>`<select id="${id}">${S.emps.map(x=>`<option value="${x.id}" ${x.id===S.sel?'selected':''}>${esc(x.nome)}</option>`).join('')}</select>`;
 const empLink=e=>location.origin+location.pathname+'#/c/'+(CLOUD?e.token:e.id);
@@ -417,6 +486,7 @@ const empLink=e=>location.origin+location.pathname+'#/c/'+(CLOUD?e.token:e.id);
 function rAccess(e){const a=$('#acc');if(!a||S.sel!==e.id)return;
  a.innerHTML=`<h2>Acesso do colaborador</h2>
   ${CLOUD&&!e.token?'<p class="note">Salvando o cadastro para gerar o link…</p>':`<div class="link"><input id="lnk" readonly value="${esc(empLink(e))}"><button class="b p" id="cpL">Copiar link</button><a class="b" style="text-decoration:none;color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-weight:600" href="${esc(empLink(e))}" target="_blank" rel="noopener">Abrir</a>${CLOUD?'<button class="b d" id="newL">Gerar novo link</button>':''}</div>`}
+  <p class="note">Aviso de privacidade: ${e.aceite?'<b>lido pelo colaborador em '+fmtAceite(e.aceite)+'</b>':'ainda não lido pelo colaborador (ele precisa aceitar no primeiro acesso)'}.</p>
   <p class="note">${CLOUD?'Envie o link pelo WhatsApp. O colaborador abre no celular, instala na tela inicial e registra os horários do dia. Ele só vê os próprios dados e não altera o cadastro. "Gerar novo link" desativa o link antigo.':'<b>Modo local:</b> o link abre a tela do colaborador só neste navegador, para você testar. O acesso pelo celular do colaborador funciona depois de ligar a nuvem (veja Ajustes).'}</p>`;
  const cp=$('#cpL');if(cp)cp.onclick=()=>copy($('#lnk').value,$('#lnk'));
  const nl=$('#newL');if(nl)nl.onclick=async()=>{if(nl.dataset.ok!=='1'){nl.dataset.ok='1';nl.textContent='Confirmar? O link antigo para de funcionar';return}
@@ -454,6 +524,40 @@ function rEmp(){
   <div class="chips" id="exts">${(e.externos||[]).slice().sort().map(d=>`<label class="on">${d.slice(8)}/${d.slice(5,7)}/${d.slice(0,4)} <button class="b" style="padding:0 8px;min-height:0" data-xdel="${d}" aria-label="Remover">×</button></label>`).join('')||'<span class="note">Nenhum.</span>'}</div>
   <div class="row" style="margin-top:6px"><div><label for="xnew">Liberar um dia</label><input type="date" id="xnew"></div><button class="b" id="xadd">+ Liberar dia</button></div></div>`:''}
   <p class="note">${c?'Valor da hora = salário ÷ base de horas (padrão 220). Domingos e feriados trabalhados recebem o adicional de domingo/feriado.':'Horas corridas: horas trabalhadas × valor da hora. Diarista não tem rescisão.'}</p></div>
+
+  <div class="card"><h2>Foto e dados pessoais</h2>
+  <div class="perfil-foto"><div id="avBox">${avatarHtml(e)}</div><div>
+   <button class="b" id="fotoBtn">${e.foto?'Trocar foto':'Tirar selfie ou escolher foto'}</button>${e.foto?'<button class="b d" id="fotoDel">Remover</button>':''}
+   <input type="file" id="fotoIn" accept="image/*" capture="user" hidden>
+   <p class="note" style="margin:6px 0 0">A foto serve só para identificar o colaborador no cadastro.</p></div></div>
+  <div class="grid">
+   <div><label for="f-cpf">CPF</label><input id="f-cpf" data-k="cpf" data-mask="cpf" inputmode="numeric" autocomplete="off" value="${esc(e.cpf)}"><small id="cpfMsg" class="note"></small></div>
+   <div><label for="f-rg">RG</label><input id="f-rg" data-k="rg" autocomplete="off" value="${esc(e.rg)}"></div>
+   <div><label for="f-nasc">Data de nascimento</label><input id="f-nasc" type="date" data-k="nascimento" value="${e.nascimento}"></div>
+   <div><label for="f-ec">Estado civil</label><select id="f-ec" data-k="estadoCivil">${['','Solteiro(a)','Casado(a)','União estável','Divorciado(a)','Viúvo(a)'].map(o=>`<option ${e.estadoCivil===o?'selected':''}>${o}</option>`).join('')}</select></div>
+   <div><label for="f-pis">PIS / NIS</label><input id="f-pis" data-k="pis" inputmode="numeric" autocomplete="off" value="${esc(e.pis)}"></div>
+   <div><label for="f-ctps">Carteira de trabalho (CTPS)</label><input id="f-ctps" data-k="ctps" autocomplete="off" value="${esc(e.ctps)}"></div></div></div>
+  <div class="card"><h2>Contato e endereço</h2><div class="grid">
+   <div><label for="f-tel">Telefone / WhatsApp</label><input id="f-tel" type="tel" data-k="telefone" data-mask="tel" value="${esc(e.telefone)}"></div>
+   <div><label for="f-mail">E-mail</label><input id="f-mail" type="email" data-k="emailPessoal" value="${esc(e.emailPessoal)}"></div>
+   <div><label for="f-en">Contato de emergência (nome)</label><input id="f-en" data-k="emergNome" value="${esc(e.emergNome)}"></div>
+   <div><label for="f-et">Contato de emergência (telefone)</label><input id="f-et" type="tel" data-k="emergTel" data-mask="tel" value="${esc(e.emergTel)}"></div>
+   <div><label for="f-cep">CEP</label><input id="f-cep" data-k="cep" data-mask="cep" inputmode="numeric" value="${esc(e.cep)}"></div>
+   <div><label for="f-rua">Rua</label><input id="f-rua" data-k="rua" value="${esc(e.rua)}"></div>
+   <div><label for="f-num">Número</label><input id="f-num" data-k="numero" value="${esc(e.numero)}"></div>
+   <div><label for="f-comp">Complemento</label><input id="f-comp" data-k="complemento" value="${esc(e.complemento)}"></div>
+   <div><label for="f-bai">Bairro</label><input id="f-bai" data-k="bairro" value="${esc(e.bairro)}"></div>
+   <div><label for="f-cid">Cidade</label><input id="f-cid" data-k="cidade" value="${esc(e.cidade)}"></div>
+   <div><label for="f-uf">UF</label><input id="f-uf" data-k="uf" maxlength="2" value="${esc(e.uf)}"></div></div>
+   <p class="note">Ao digitar o CEP, a rua, o bairro e a cidade são preenchidos sozinhos (o sistema envia só o CEP para a consulta).</p></div>
+  <div class="card"><h2>Pagamento</h2><div class="grid">
+   <div><label for="f-pix">Chave Pix</label><input id="f-pix" data-k="pix" autocomplete="off" value="${esc(e.pix)}"></div>
+   <div><label for="f-banco">Banco</label><input id="f-banco" data-k="banco" value="${esc(e.banco)}"></div></div>
+   <p class="note">Só você vê estes dados. O colaborador não vê nem altera a chave Pix. Na aba Pagar ela aparece pronta para copiar.</p></div>
+  <div class="card"><h2>Documentos</h2><div id="docs">${(e.docs||[]).map(d=>`<div class="pgh"><div><b>${esc(d.label)}</b></div><div>${esc(d.file&&d.file.name||'')}</div><div class="ac"><button class="b" data-dv="${d.id}">Abrir</button><button class="b d" data-dd="${d.id}">Excluir</button></div></div>`).join('')||'<p class="note">Nenhum documento anexado.</p>'}</div>
+   <div class="row" style="margin-top:10px"><div><label for="docTipo">Tipo</label><select id="docTipo">${['RG','CPF','Comprovante de residência','Carteira de trabalho','Atestado médico','Contrato','Outro'].map(o=>`<option>${o}</option>`).join('')}</select></div>
+   <div><label for="docFile">Arquivo (foto ou PDF)</label><input id="docFile" type="file" accept="image/*,application/pdf"></div><button class="b p" id="docAdd">Anexar</button></div><div id="docMsg"></div>
+   <p class="note">${CLOUD?'Os documentos ficam em uma pasta privada na nuvem, que só a sua conta acessa.':'<b>Modo local:</b> os documentos ficam só neste navegador.'}</p></div>
   <div class="card" id="acc"></div>`}
  else h+='<div class="card">Cadastre o primeiro colaborador para começar.</div>';
  el.innerHTML=h;
@@ -465,8 +569,22 @@ function rEmp(){
   if(k==='nome'){$('#fichaT').textContent='Ficha de '+e.nome;const o=sel.querySelector(`option[value="${e.id}"]`);if(o)o.textContent=e.nome}
   if(k==='salario'||k==='base'){const v=$('#f-vh');if(v)v.value=brl(e.salario/(e.base||220))}
   if(k==='pagaExtra'){const a=$('#f-ae');if(a)a.disabled=!e.pagaExtra}
+  if(k==='cpf')cpfChk();
+  if(k==='uf'){e.uf=e.uf.toUpperCase();inp.value=e.uf}
+  if(k==='cep'&&dig(e.cep).length===8)buscaCep(e.cep).then(r=>{if(!r)return;Object.assign(e,r);[['rua','#f-rua'],['bairro','#f-bai'],['cidade','#f-cid'],['uf','#f-uf']].forEach(([f,id])=>{const x=$(id);if(x)x.value=e[f]});persistEmp(e)});
   persistEmp(e);
   if(k==='tipo')rEmp()});
+
+ const cpfChk=()=>{const m=$('#cpfMsg');if(!m)return;const d=dig(e.cpf);m.textContent=d.length===11?(cpfValido(e.cpf)?'CPF válido':'CPF inválido: confira os números'):'';m.style.color=d.length===11&&!cpfValido(e.cpf)?'var(--err)':''};cpfChk();
+ $('#fotoBtn').onclick=()=>$('#fotoIn').click();
+ $('#fotoIn').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;try{e.foto=await compressSquare(f);persistEmp(e);rEmp();toast('Foto salva')}catch(x){toast('Não consegui ler a imagem')}};
+ const fd=$('#fotoDel');if(fd)fd.onclick=()=>{e.foto='';persistEmp(e);rEmp()};
+ $('#docAdd').onclick=async()=>{const fl=$('#docFile').files[0],msg=$('#docMsg');if(!fl){msg.innerHTML='<p class="warn">Escolha um arquivo.</p>';return}
+  if(fl.size>12*1024*1024){msg.innerHTML='<p class="warn">Arquivo muito grande (máximo 12 MB).</p>';return}
+  msg.innerHTML='<p class="note">Enviando…</p>';try{const file=await storeFile(fl,'documentos');(e.docs=e.docs||[]).push({id:uuid(),label:$('#docTipo').value,file,em:todayS()});persistEmp(e);toast('Documento anexado');rEmp()}catch(x){msg.innerHTML='<p class="warn">Não consegui anexar: '+esc(x.message||x)+'</p>'}};
+ el.querySelectorAll('[data-dv]').forEach(b=>b.onclick=()=>{const d=e.docs.find(x=>x.id===b.dataset.dv);if(d)openFile(d.file)});
+ el.querySelectorAll('[data-dd]').forEach(b=>b.onclick=async()=>{if(b.dataset.ok!=='1'){b.dataset.ok='1';b.textContent='Confirmar exclusão?';setTimeout(()=>{b.dataset.ok='';b.textContent='Excluir'},4000);return}
+  const d=e.docs.find(x=>x.id===b.dataset.dd);if(d)await removeFile(d.file);e.docs=e.docs.filter(x=>x!==d);persistEmp(e);rEmp()});
  el.querySelectorAll('[data-dia]').forEach(cb=>cb.onchange=()=>{const d=+cb.dataset.dia;
   e.dias=cb.checked?[...new Set([...e.dias,d])]:e.dias.filter(x=>x!==d);cb.parentElement.classList.toggle('on',cb.checked);persistEmp(e)});
  rAccess(e);
@@ -617,6 +735,7 @@ function rPag(fresh){
   <div><span>Dias trabalhados</span><b>${W.dias}</b></div><div><span>Horas na semana</span><b>${hm(W.min)}</b></div><div><span>Horas extras</span><b class="ext">${hm(W.ext)}</b></div>
   <div><span>Valor das horas</span><b>${brl(W.val)}</b></div>${W.ve?`<div><span>Das horas extras</span><b class="ext">${brl(W.ve)}</b></div>`:''}${W.vales?`<div><span>Vales</span><b>− ${brl(W.vales)}</b></div>`:''}${W.pago?`<div><span>Já pago</span><b>− ${brl(W.pago)}</b></div>`:''}
   <div class="hi"><span>A PAGAR</span><b>${brl(W.pagar)}</b></div></div></div>
+ ${e.pix?`<p class="note"><b>Pix:</b> ${esc(e.pix)}${e.banco?' · '+esc(e.banco):''} <button class="b" id="pixCp" style="padding:2px 10px;min-height:0">Copiar chave</button></p>`:'<p class="note">Cadastre a chave Pix na ficha do colaborador para copiar aqui.</p>'}
  <div class="tw"><table class="dsem"><tbody>${W.days.map(x=>`<tr><td>${DN[x.wd]} ${fmtBR(x.ds)}</td><td>${x.w?[x.r.a&&x.r.b?x.r.a+'–'+x.r.b:'',x.r.c&&x.r.d?x.r.c+'–'+x.r.d:''].filter(Boolean).join(' · '):esc(x.st||'')}</td><td>${x.w?hm(x.w):''}</td><td>${x.vlr!=null?brl(x.vlr):''}</td></tr>`).join('')}</tbody></table></div>
  ${W.acima?`<div class="warn">${hm(W.acima)} acima da jornada estão sendo pagas pelo valor normal: a opção <b>"Pagar hora extra"</b> está desmarcada na ficha (aba Equipe).</div>`:''}
  <p class="note">${e.tipo==='clt'?'Valor das horas = horas trabalhadas × valor da hora. Para CLT o pagamento oficial é mensal; o fechamento semanal serve como controle ou adiantamento. ':''}Vales lançados na Folha dentro da semana são descontados.</p>
@@ -638,6 +757,7 @@ function rPag(fresh){
  $('#wPrev').onclick=()=>{PAG.mon=addD(mon,-7);rPag()};$('#wNext').onclick=()=>{PAG.mon=addD(mon,7);rPag()};$('#wHoje').onclick=()=>{PAG.mon=semanaAlvo();rPag()};
  const txt=resumoTexto(e,W);
  $('#wCopy').onclick=()=>copy(txt);
+ const pc=$('#pixCp');if(pc)pc.onclick=()=>copy(e.pix);
  $('#wZap').onclick=()=>{let n=(S.cfg.whats||'').replace(/\D/g,'');if(n&&n.length<=11)n='55'+n;window.open('https://wa.me/'+n+'?text='+encodeURIComponent(txt),'_blank')};
  $('#pgSave').onclick=async()=>{const v=+$('#pg-v').value,d=$('#pg-d').value,msg=$('#pgMsg');
   if(!d||!(v>0)){msg.innerHTML='<p class="warn">Informe a data e um valor maior que zero.</p>';return}
@@ -754,6 +874,14 @@ function rCfg(){
  el.innerHTML=`<div class="card"><h2>Parâmetros gerais</h2><div class="grid"><div><label for="c-min">Salário mínimo vigente (R$)</label><input id="c-min" type="number" step="0.01" data-k="minimo" value="${S.cfg.minimo}"></div>
  <div><label for="c-zap">Meu WhatsApp (DDD + número)</label><input id="c-zap" type="tel" data-k="whats" value="${esc(S.cfg.whats||'')}" placeholder="11999999999"></div></div>
  <p class="note">Valor padrão de salário para novos colaboradores CLT. Salário mínimo nacional de 2026: R$ 1.621,00. Confira o valor vigente.</p></div>
+ <div class="card" id="empCard"><h2>Dados da empresa (para o aviso de privacidade)</h2><div class="grid">
+  <div><label for="em-n">Nome da empresa</label><input id="em-n" data-k="nome" value="${esc(S.cfg.empresa.nome||'')}"></div>
+  <div><label for="em-c">CNPJ</label><input id="em-c" data-k="cnpj" data-mask="cnpj" inputmode="numeric" value="${esc(S.cfg.empresa.cnpj||'')}"></div>
+  <div><label for="em-r">Responsável pelos dados</label><input id="em-r" data-k="encarregado" value="${esc(S.cfg.empresa.encarregado||'')}"></div>
+  <div><label for="em-e">E-mail para assuntos de privacidade</label><input id="em-e" type="email" data-k="email" value="${esc(S.cfg.empresa.email||'')}"></div>
+  <div><label for="em-t">Telefone</label><input id="em-t" type="tel" data-k="telefone" data-mask="tel" value="${esc(S.cfg.empresa.telefone||'')}"></div></div>
+  <div class="row" style="margin-top:10px"><button class="b" id="verPriv">Ver o aviso de privacidade</button></div>
+  <p class="note">Estes dados aparecem no aviso que o colaborador lê no primeiro acesso. O texto é um modelo: peça a um advogado ou ao contador para revisar antes de usar com outras empresas.</p></div>
  <div class="card"><h2>Feriados</h2>
  <p class="note">Nacionais de ${y}, marcados automaticamente: ${Object.entries(nac).sort().map(([d,n])=>pad(+d.slice(8))+'/'+d.slice(5,7)+' '+esc(n)).join(' · ')}.</p>
  <label>Feriados estaduais e municipais da sua cidade</label>
@@ -775,6 +903,8 @@ function rCfg(){
  <li>Diarista: horas corridas × valor da hora, sem rescisão. Alerta com 3 ou mais dias por semana.</li></ul>
  <p class="note">Ferramenta de apoio. Não substitui contador ou advogado trabalhista.</p></div>`;
  bind(el.querySelector('.card'),S.cfg,()=>persistCfg());
+ bind($('#empCard'),S.cfg.empresa,()=>persistCfg());
+ $('#verPriv').onclick=()=>abrirPolitica(S.cfg.empresa);
  el.querySelectorAll('[data-h]').forEach(i=>i.addEventListener(i.type==='date'?'change':'input',()=>{S.cfg.feriados[+i.dataset.h][i.dataset.hk]=i.value;persistCfg()}));
  el.querySelectorAll('[data-hdel]').forEach(b=>b.onclick=()=>{S.cfg.feriados.splice(+b.dataset.hdel,1);persistCfg();rCfg()});
  $('#addH').onclick=()=>{S.cfg.feriados.push({d:S.ym+'-01',n:''});persistCfg();rCfg()};
@@ -794,7 +924,8 @@ function rAuth(msg){
  <div><label for="au-e">E-mail</label><input id="au-e" type="email" autocomplete="email"></div>
  <div><label for="au-p">Senha</label><input id="au-p" type="password" autocomplete="current-password" minlength="6"></div>
  <button class="b p" id="au-in">Entrar</button><button class="b" id="au-up">Criar conta</button><button class="b" id="au-fg" style="border:0;background:none;color:var(--mut)">Esqueci a senha</button>
- <div id="au-m" class="note">${esc(msg||'')}</div></div></div>`;
+ <div id="au-m" class="note">${esc(msg||'')}</div><button class="b" id="au-pv" style="border:0;background:none;color:var(--mut)">Aviso de privacidade</button></div></div>`;
+ $('#au-pv').onclick=()=>abrirPolitica({});
  const E=()=>$('#au-e').value.trim(),P=()=>$('#au-p').value,M=t=>$('#au-m').textContent=t;
  $('#au-in').onclick=async()=>{M('Entrando…');const {error}=await sb.auth.signInWithPassword({email:E(),password:P()});if(error)M(error.message==='Invalid login credentials'?'E-mail ou senha incorretos.':error.message);else location.reload()};
  $('#au-up').onclick=async()=>{if(P().length<6)return M('A senha precisa de pelo menos 6 caracteres.');M('Criando conta…');
@@ -832,9 +963,9 @@ async function empFetch(){
   if(data.settings&&data.settings.feriados)S.cfg.feriados=data.settings.feriados;
   EMP.recs={};(data.entries||[]).forEach(r=>{EMP.recs[+r.day.slice(8)]={a:(r.a||'').slice(0,5),b:(r.b||'').slice(0,5),c:(r.c||'').slice(0,5),d:(r.d||'').slice(0,5),t:r.t||''}});
   const t=data.today_entry||{};EMP.todayRec={a:(t.a||'').slice(0,5),b:(t.b||'').slice(0,5),c:(t.c||'').slice(0,5),d:(t.d||'').slice(0,5)};
-  EMP.punches=data.punches||[];EMP.proximo=data.proximo;EMP.ponto=data.ponto||{};return true}
+  EMP.punches=data.punches||[];EMP.proximo=data.proximo;EMP.ponto=data.ponto||{};EMP.empresa=(data.settings&&data.settings.empresa)||{};return true}
  const e=S.emps.find(x=>x.id===EMP.tok);if(!e)return false;
- EMP.e=e;EMP.today=todayS();EMP.recs=(S.rec[e.id]||{})[EMP.ym]||{};
+ EMP.e=e;EMP.empresa=S.cfg.empresa||{};EMP.today=todayS();EMP.recs=(S.rec[e.id]||{})[EMP.ym]||{};
  const tm=EMP.today.slice(0,7),td=+EMP.today.slice(8);EMP.todayRec=Object.assign({},((S.rec[e.id]||{})[tm]||{})[td]);return true}
 async function empPunch(){
  const r=EMP.todayRec;
@@ -855,8 +986,17 @@ async function empBoot(tok){
  try{const mf={name:'Meu Ponto · '+e.nome,short_name:'Meu Ponto',start_url:location.href,scope:location.origin+location.pathname,display:'standalone',background_color:'#0b6e4f',theme_color:'#0b6e4f',lang:'pt-BR',
   icons:[{src:new URL('icon-192.png',location.href).href,sizes:'192x192',type:'image/png'},{src:new URL('icon-512.png',location.href).href,sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
   $('#mf').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/manifest+json'}))}catch(x){}
- rEmpView();
+ if(!e.aceite)rAviso();else rEmpView();
 }
+function rAviso(){$('#main').innerHTML=`<div class="card"><h2>Aviso de privacidade</h2><p class="note">Antes de começar, leia o resumo de como os seus dados são usados.</p>${politicaResumo()}
+ <div class="row"><button class="b" id="vp">Ler o aviso completo</button></div><button class="b p" id="aceito" style="width:100%;font-size:17px;padding:14px">Li e entendi</button><div id="avMsg"></div></div>`;
+ $('#vp').onclick=()=>abrirPolitica(EMP.empresa);
+ $('#aceito').onclick=async()=>{const b=$('#aceito');b.disabled=true;
+  if(CLOUD){const {data,error}=await sb.rpc('emp_aceite',{p_token:EMP.tok});if(error||!data||!data.ok){b.disabled=false;$('#avMsg').innerHTML='<p class="warn">Não salvou. Verifique a internet e tente de novo.</p>';return}}
+  else{EMP.e.aceite=new Date().toISOString().slice(0,16);save()}
+  await empFetch();if(!EMP.e.aceite)EMP.e.aceite=new Date().toISOString().slice(0,16);rEmpView()}}
+async function perfilSalvar(obj){if(CLOUD){const {data,error}=await sb.rpc('emp_perfil',{p_token:EMP.tok,p_data:obj});if(error||!data||!data.ok)return {ok:false,erro:(data&&data.erro)||'Não salvou. Verifique a internet.'}}
+ else save();Object.assign(EMP.e,obj);return {ok:true}}
 function empLeave(){try{localStorage.removeItem(TOKKEY)}catch(x){}location.href=location.pathname}
 function rEmpView(){
  const e=EMP.e,clt=e.tipo==='clt',vv=e.verValores!==false,td=EMP.today,wd=new Date(td+'T12:00:00Z').getUTCDay(),hol=holName(td);
@@ -880,13 +1020,17 @@ function rEmpView(){
  <div>${R.days.filter(x=>x.w||x.falta||x.st&&!x.pre&&x.st!=='Fora da escala'&&x.st!=='Descanso semanal').map(x=>{const rr=x.r;
   const tx=[rr.a&&rr.b?rr.a+'–'+rr.b:'',rr.c&&rr.d?rr.c+'–'+rr.d:''].filter(Boolean).join(' · ');
   return `<div class="emp-day"><div><b>${pad(x.d)} ${DN[x.wd]}</b><small>${esc(tx||x.st)}${tx&&x.st?' · '+esc(x.st):''}</small></div><div class="r">${x.w?hm(x.w):''}${x.ext?`<small class="ext">${hm(x.ext)} extra</small>`:''}${vv&&x.vlr!=null?`<small>${brl(x.vlr)}</small>`:''}</div></div>`}).join('')||'<p class="note">Nenhum registro neste mês.</p>'}</div></div>
+ <div class="card"><h2>Meu perfil</h2><div class="perfil-foto"><div>${avatarHtml(e)}</div><div><button class="b" id="eFotoBtn">${e.foto?'Trocar minha foto':'Tirar minha selfie'}</button><input type="file" id="eFotoIn" accept="image/*" capture="user" hidden><p class="note" style="margin:6px 0 0">A foto fica só no seu cadastro.</p></div></div>
+ <div class="grid">${[['telefone','Telefone / WhatsApp','tel','tel'],['emergNome','Contato de emergência (nome)',null,'text'],['emergTel','Contato de emergência (telefone)','tel','tel'],['cep','CEP','cep','text'],['rua','Rua',null,'text'],['numero','Número',null,'text'],['complemento','Complemento',null,'text'],['bairro','Bairro',null,'text'],['cidade','Cidade',null,'text'],['uf','UF',null,'text']].map(([k,l,m,t])=>`<div><label for="pf-${k}">${l}</label><input id="pf-${k}" type="${t}" data-pk="${k}" ${m?`data-mask="${m}"`:''} ${k==='uf'?'maxlength="2"':''} value="${esc(e[k]||'')}"></div>`).join('')}</div>
+ <div class="row" style="margin-top:10px"><button class="b p" id="pfSave">Salvar meu perfil</button></div><div id="pfMsg"></div></div>
  <div class="card"><h2>Meus dados</h2><table class="r"><tbody>
- <tr><td>Nome</td><td>${esc(e.nome)}</td></tr>${e.funcao?`<tr><td>Função</td><td>${esc(e.funcao)}</td></tr>`:''}
+ <tr><td>Nome</td><td>${esc(e.nome)}</td></tr>${(e.cpfMask||e.cpf)?`<tr><td>CPF</td><td>${esc(e.cpfMask||('***.***.***-'+dig(e.cpf).slice(-2)))}</td></tr>`:''}${e.funcao?`<tr><td>Função</td><td>${esc(e.funcao)}</td></tr>`:''}
  <tr><td>Regime</td><td>${clt?'Carteira assinada (CLT)':'Diarista (horas corridas)'}</td></tr>
  ${vv?(clt?`<tr><td>Salário</td><td>${brl(e.salario)}</td></tr><tr><td>Valor da hora</td><td>${brl(R.hora)}</td></tr>`:`<tr><td>Valor da hora</td><td>${brl(e.valorHora)}</td></tr>`):''}
  <tr><td>Dias liberados</td><td>${ORD.filter(d=>e.dias.includes(d)).map(d=>DN[d]).join(', ')}</td></tr>
  ${clt?`<tr><td>Jornada</td><td>${e.metaSem}h seg–sex${e.dias.includes(6)?' · '+e.metaSab+'h sáb':''}</td></tr>`:''}</tbody></table>
- <p class="note">Algum dado errado? Fale com o responsável. Só ele pode alterar o cadastro e corrigir dias anteriores.</p></div>`;
+ <p class="note">Algum dado errado? Fale com o responsável. Só ele pode alterar o cadastro e corrigir dias anteriores.</p>
+ <div class="row"><button class="b" id="ePriv">Aviso de privacidade</button></div></div>`;
  $('#mPrev').onclick=async()=>{EMP.ym=ymAdd(EMP.ym,-1);await empFetch();rEmpView()};
  $('#mNext').onclick=async()=>{EMP.ym=ymAdd(EMP.ym,1);await empFetch();rEmpView()};
  const doPunch=async(ext)=>{const btn=$(ext?'#bExt':'#bPunch'),mot=ext?$('#pMot').value.trim():null;
@@ -898,6 +1042,14 @@ function rEmpView(){
   else if(!data.ok)EMP.msg=data.erro;
   else EMP.msg=(data.status==='ok'?`Registrado às ${data.hora}.`:`Registrado às ${data.hora}. Fica aguardando a aprovação do responsável (${(PLACE[data.place]||'').toLowerCase()}).`)+(g?'':' Sem localização: permita o acesso ao local no navegador.');
   await empFetch();rEmpView()};
+ $('#ePriv').onclick=()=>abrirPolitica(EMP.empresa);
+ $('#eFotoBtn').onclick=()=>$('#eFotoIn').click();
+ $('#eFotoIn').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;try{const d=await compressSquare(f);const o={foto:d};document.querySelectorAll('[data-pk]').forEach(i=>o[i.dataset.pk]=i.value.trim());const r=await perfilSalvar(o);if(r.ok){toast('Foto e dados salvos');rEmpView()}else toast(r.erro)}catch(x){toast('Não consegui ler a imagem')}};
+ document.querySelectorAll('[data-pk]').forEach(i=>i.addEventListener('input',async()=>{if(i.dataset.mask){const m=MASK[i.dataset.mask](i.value);if(m!==i.value)i.value=m}
+  if(i.dataset.pk==='uf')i.value=i.value.toUpperCase();
+  if(i.dataset.pk==='cep'&&dig(i.value).length===8){const r=await buscaCep(i.value);if(r)for(const k in r){const x=$('#pf-'+k);if(x)x.value=r[k]}}}));
+ $('#pfSave').onclick=async()=>{const o={};document.querySelectorAll('[data-pk]').forEach(i=>o[i.dataset.pk]=i.value.trim());const b=$('#pfSave');b.disabled=true;const r=await perfilSalvar(o);b.disabled=false;
+  $('#pfMsg').innerHTML=r.ok?'<p class="info">Perfil salvo.</p>':`<p class="warn">${esc(r.erro)}</p>`};
  if(nuvem){const bp=$('#bPunch');if(bp)bp.onclick=()=>doPunch(false);const be=$('#bExt');if(be)be.onclick=()=>doPunch(true)}
  const st=t=>{EMP.msg=t;const p=$('#pst');if(p)p.textContent=t};
  const commit=async()=>{st('Salvando…');if(await empPunch()){st('Salvo às '+nowHM());await empFetch();const keep=document.activeElement?.id;rEmpView();if(keep&&$('#'+keep))$('#'+keep).focus()}else st('Não salvou. Tente de novo.')};

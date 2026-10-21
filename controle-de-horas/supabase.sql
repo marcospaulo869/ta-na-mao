@@ -177,11 +177,18 @@ declare
   hoje date := (now() at time zone 'America/Sao_Paulo')::date;
   dados jsonb;
   cfg jsonb;
+  cpf_n text;
   n int;
 begin
   select * into e from employees where token = p_token;
   if not found then return null; end if;
-  dados := e.data - 'fgtsSaldo' - 'mediaExtras' - 'deslig' - 'motivo' - 'feriasGozadas' - 'pagamentos';
+  -- o colaborador só recebe o que precisa (sem CPF inteiro, RG, Pix, banco, documentos, rescisão...)
+  dados := coalesce((select jsonb_object_agg(t.k, t.v) from jsonb_each(e.data) as t(k, v)
+    where t.k = any (array['nome','funcao','tipo','salario','base','metaSem','metaSab','capSemana','adicExtra','adicFer',
+      'valorHora','jornada','pagaExtra','adm','dias','autoFalta','verValores','vales','externos','foto','telefone',
+      'emailPessoal','emergNome','emergTel','cep','rua','numero','complemento','bairro','cidade','uf','aceite'])), '{}'::jsonb);
+  cpf_n := regexp_replace(coalesce(e.data->>'cpf', ''), '\D', '', 'g');
+  if length(cpf_n) = 11 then dados := dados || jsonb_build_object('cpfMask', '***.***.***-' || right(cpf_n, 2)); end if;
   if coalesce(e.data->>'verValores', 'true') = 'false' then
     dados := dados - 'salario' - 'valorHora' - 'vales';
   end if;
@@ -205,8 +212,45 @@ begin
       'verif', coalesce(cfg->'ponto'->>'verif', 'block'),
       'externo', coalesce((cfg->'ponto'->>'externo')::boolean, true),
       'foto', coalesce((cfg->'ponto'->>'foto')::boolean, false)),
-    'settings', jsonb_build_object('feriados', cfg->'feriados')
+    'settings', jsonb_build_object('feriados', cfg->'feriados', 'empresa', cfg->'empresa')
   );
+end $$;
+
+-- O colaborador atualiza só o próprio perfil (foto, telefone, contato de emergência, endereço).
+-- Nunca altera Pix, CPF, salário ou qualquer dado de pagamento.
+create or replace function emp_perfil(p_token uuid, p_data jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  e employees; k text; v jsonb; txt text;
+  permitido text[] := array['foto','telefone','emailPessoal','emergNome','emergTel','cep','rua','numero','complemento','bairro','cidade','uf'];
+begin
+  select * into e from employees where token = p_token;
+  if not found then return jsonb_build_object('ok', false, 'erro', 'Link inválido.'); end if;
+  for k, v in select * from jsonb_each(coalesce(p_data, '{}'::jsonb)) loop
+    if not (k = any (permitido)) or jsonb_typeof(v) <> 'string' then continue; end if;
+    txt := v #>> '{}';
+    if k = 'foto' then
+      if txt <> '' and (txt not like 'data:image/jpeg;base64,%' or length(txt) > 150000) then
+        return jsonb_build_object('ok', false, 'erro', 'Foto inválida ou muito grande.');
+      end if;
+    elsif length(txt) > 200 then
+      return jsonb_build_object('ok', false, 'erro', 'Texto muito longo em ' || k || '.');
+    end if;
+    update employees set data = jsonb_set(data, array[k], v, true) where id = e.id;
+  end loop;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Registra que o colaborador leu o aviso de privacidade (com data e hora).
+create or replace function emp_aceite(p_token uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare e employees;
+begin
+  select * into e from employees where token = p_token;
+  if not found then return jsonb_build_object('ok', false, 'erro', 'Link inválido.'); end if;
+  update employees set data = jsonb_set(data, '{aceite}',
+    to_jsonb(to_char(now() at time zone 'America/Sao_Paulo', 'YYYY-MM-DD"T"HH24:MI')), true) where id = e.id;
+  return jsonb_build_object('ok', true);
 end $$;
 
 -- O colaborador toca no botão; o servidor grava a hora e confere o local.
@@ -307,11 +351,15 @@ end $$;
 
 revoke all on function emp_get(uuid, date, date) from public;
 revoke all on function emp_punch(uuid, float8, float8, float8, timestamptz, boolean, text) from public;
+revoke all on function emp_perfil(uuid, jsonb) from public;
+revoke all on function emp_aceite(uuid) from public;
 revoke all on function cfg_salvar(jsonb) from public;
 revoke all on function ips_limpar() from public;
 revoke all on function meu_ip() from public;
 grant execute on function emp_get(uuid, date, date) to anon, authenticated;
 grant execute on function emp_punch(uuid, float8, float8, float8, timestamptz, boolean, text) to anon, authenticated;
+grant execute on function emp_perfil(uuid, jsonb) to anon, authenticated;
+grant execute on function emp_aceite(uuid) to anon, authenticated;
 grant execute on function cfg_salvar(jsonb) to authenticated;
 grant execute on function ips_limpar() to authenticated;
 grant execute on function meu_ip() to authenticated;
@@ -325,3 +373,12 @@ drop policy if exists comprovantes_owner on storage.objects;
 create policy comprovantes_owner on storage.objects for all to authenticated
   using (bucket_id = 'comprovantes' and (storage.foldername(name))[1] = auth.uid()::text)
   with check (bucket_id = 'comprovantes' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Documentos dos colaboradores (RG, comprovante de residência, atestados...): pasta privada.
+insert into storage.buckets (id, name, public) values ('documentos', 'documentos', false)
+on conflict (id) do nothing;
+
+drop policy if exists documentos_owner on storage.objects;
+create policy documentos_owner on storage.objects for all to authenticated
+  using (bucket_id = 'documentos' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'documentos' and (storage.foldername(name))[1] = auth.uid()::text);
