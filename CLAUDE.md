@@ -50,6 +50,11 @@ Se os dados do sistema estão no navegador (modo local), eles não se perdem ao 
 Sempre dizer ao usuário para rodar o `supabase.sql` inteiro de novo: Supabase > SQL Editor > New query > colar > Run.
 O script é reexecutável. Testar mudanças no SQL num Postgres local antes de entregar.
 
+### Pendências combinadas (21/10/2026)
+
+1. **Proteger o outro projeto do Supabase** (orçamento online): roteiro em `seguranca/proteger-outro-banco.sql`. Fazer um passo de cada vez com o usuário: (0) rodar as consultas só de leitura, (1) perguntar como o site de autoatendimento usa o banco, (2) ligar a proteção, (3) testar o site e, se quebrar, desfazer.
+2. **Atualização automática do site:** o Netlify cobra 15 créditos por envio de pasta (plano gratuito com poucos créditos). Plano: usar **Cloudflare Pages** ligado ao GitHub (gratuito, sem esse limite): repositório `ta-na-mao`, branch de produção `claude/blissful-einstein-hb4333`, sem comando de build, pasta de saída `controle-de-horas`. O arquivo `controle-de-horas/_headers` já existe. Depois da troca, o passo a passo de atualização passa a ser só esperar cerca de 1 minuto e apertar Ctrl + Shift + R (o `supabase.sql` continua manual).
+
 ### Fluxo de trabalho
 
 - Desenvolver na branch `claude/blissful-einstein-hb4333`; commit e push a cada entrega.
