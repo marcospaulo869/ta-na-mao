@@ -45,3 +45,11 @@ Nunca coloque a chave `service_role` no site.
   O histórico fica por colaborador. No modo nuvem o comprovante vai para uma pasta privada (rode de novo o
   `supabase.sql`, que cria a pasta `comprovantes`).
 - O envio **automático** do WhatsApp às 18h exige servidor e um serviço de WhatsApp pago; fica para a fase da nuvem.
+
+## Nuvem ligada (Supabase)
+
+- `config.js` já aponta para o projeto `controle_horas` (URL e chave pública/publishable; essa chave pode ficar no site).
+- Rode o `supabase.sql` inteiro no **SQL Editor** do Supabase (pode rodar de novo a cada atualização, ele não apaga dados).
+- A biblioteca do Supabase está em `supabase.min.js` (cópia local, sem depender de CDN).
+- Ponto pelo celular: o colaborador toca em "Registrar"; o servidor grava a hora, lê o IP e confere o GPS
+  contra os locais cadastrados. Registro fora do local fica **pendente** até o administrador aprovar (aba Ponto).

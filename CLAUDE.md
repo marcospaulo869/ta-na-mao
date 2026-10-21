@@ -41,7 +41,13 @@ Se os dados do sistema estão no navegador (modo local), eles não se perdem ao 
   - Existe também o projeto `controlehorasmf` (https://controlehorasmf.netlify.app), que ficou na versão antiga e com dados separados. Não usar, a menos que o usuário peça. Painel: https://app.netlify.com/projects/controlehorasmf/deploys
   - Pendente: o usuário avaliou ligar o Netlify ao GitHub para atualizar sozinho (deploy contínuo); aguardando decisão.
 - Prévia no Claude (versão reduzida, só no navegador do dono): https://claude.ai/artifact/PtQZZ9BecJ9wf6kr5XuNiF
+- Supabase (nuvem): projeto `controle_horas`, URL https://egbkmsauwwtvonngemcn.supabase.co, painel https://supabase.com/dashboard (conta do usuário, entrada pelo GitHub). O outro projeto do mesmo painel (`kyam382@gmail.com's Project`) é de outro sistema (orçamentos, tabelas com RLS desligado): não mexer.
 - Repositório: https://github.com/marcospaulo869/ta-na-mao (login do GitHub é pelo Google, e-mail do usuário)
+
+### Ao atualizar o banco (supabase.sql)
+
+Sempre dizer ao usuário para rodar o `supabase.sql` inteiro de novo: Supabase > SQL Editor > New query > colar > Run.
+O script é reexecutável. Testar mudanças no SQL num Postgres local antes de entregar.
 
 ### Fluxo de trabalho
 

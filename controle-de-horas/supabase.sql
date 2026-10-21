@@ -1,7 +1,10 @@
--- Controle de Horas: estrutura do banco no Supabase.
+-- Controle de Horas: estrutura do banco no Supabase (versão 2).
 -- Como usar: Supabase > SQL Editor > New query > cole tudo > Run.
+-- Pode rodar de novo quando houver atualização: o script não apaga dados.
 
 create extension if not exists pgcrypto;
+
+-- ---------------------------------------------------------------- tabelas
 
 -- Colaboradores. Cada empresa (conta de administrador) só vê os seus.
 create table if not exists employees (
@@ -12,17 +15,38 @@ create table if not exists employees (
   created_at timestamptz not null default now()
 );
 
--- Horários de cada dia.
+-- Horários de cada dia (o que vale para a folha).
 create table if not exists entries (
   emp_id uuid not null references employees(id) on delete cascade,
   day date not null,
   a text, b text, c text, d text,                         -- entrada/saída manhã, entrada/saída tarde
   t text not null default '',                             -- situação: '', folga, just, falta
+  editado boolean not null default false,                 -- corrigido pelo administrador
   updated_at timestamptz not null default now(),
   primary key (emp_id, day)
 );
+alter table entries add column if not exists editado boolean not null default false;
 
--- Parâmetros da empresa (salário mínimo, feriados municipais).
+-- Registros de ponto feitos pelo colaborador (cada toque no botão é um evento que ninguém altera).
+create table if not exists punches (
+  id uuid primary key default gen_random_uuid(),
+  emp_id uuid not null references employees(id) on delete cascade,
+  day date not null,                                      -- dia em Brasília
+  field text not null check (field in ('a','b','c','d')),
+  ts timestamptz not null default now(),                  -- hora gravada pelo servidor
+  status text not null default 'ok' check (status in ('ok','pending','approved','rejected')),
+  place text not null default 'sem_verificacao',          -- no_local | fora | sem_gps | externo | externo_autorizado | sem_verificacao
+  motivo text,                                            -- justificativa de trabalho externo
+  ip text,
+  lat double precision, lon double precision, acc double precision,
+  dist_m integer, local_nome text,
+  device_ts timestamptz, skew_sec integer,                -- relógio do celular e diferença para o servidor
+  decided_at timestamptz
+);
+create index if not exists punches_emp_day on punches (emp_id, day);
+create index if not exists punches_pending on punches (status) where status = 'pending';
+
+-- Parâmetros da empresa (salário mínimo, feriados municipais, regras de ponto, locais).
 create table if not exists company_settings (
   owner uuid primary key default auth.uid() references auth.users(id) on delete cascade,
   data jsonb not null default '{}'::jsonb
@@ -30,7 +54,10 @@ create table if not exists company_settings (
 
 alter table employees enable row level security;
 alter table entries enable row level security;
+alter table punches enable row level security;
 alter table company_settings enable row level security;
+
+-- --------------------------------------------------- acesso do administrador
 
 drop policy if exists emp_owner on employees;
 create policy emp_owner on employees for all
@@ -41,12 +68,107 @@ create policy ent_owner on entries for all
   using (exists (select 1 from employees e where e.id = emp_id and e.owner = auth.uid()))
   with check (exists (select 1 from employees e where e.id = emp_id and e.owner = auth.uid()));
 
+drop policy if exists pun_owner on punches;
+create policy pun_owner on punches for all
+  using (exists (select 1 from employees e where e.id = emp_id and e.owner = auth.uid()))
+  with check (exists (select 1 from employees e where e.id = emp_id and e.owner = auth.uid()));
+
 drop policy if exists cfg_owner on company_settings;
 create policy cfg_owner on company_settings for all
   using (owner = auth.uid()) with check (owner = auth.uid());
 
--- O colaborador não tem login: acessa pelo link (token).
--- Ele só consegue ler os próprios dados e gravar os horários de HOJE.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on employees, entries, punches, company_settings to authenticated;
+
+-- ------------------------------------------------------------- utilidades
+
+-- IP de quem fez a requisição (o servidor lê; o colaborador não consegue alterar).
+create or replace function client_ip() returns text language sql stable as $$
+  select nullif(trim(coalesce(
+    nullif(nullif(current_setting('request.headers', true), '')::jsonb ->> 'cf-connecting-ip', ''),
+    split_part(coalesce(nullif(current_setting('request.headers', true), '')::jsonb ->> 'x-forwarded-for', ''), ',', 1)
+  )), '')
+$$;
+
+create or replace function meu_ip() returns text language sql stable as $$ select client_ip() $$;
+
+create or replace function haversine_m(lat1 float8, lon1 float8, lat2 float8, lon2 float8)
+returns float8 language sql immutable as $$
+  select 2 * 6371000 * asin(sqrt(
+    power(sin(radians(lat2 - lat1) / 2), 2) +
+    cos(radians(lat1)) * cos(radians(lat2)) * power(sin(radians(lon2 - lon1) / 2), 2)))
+$$;
+
+-- Salva as configurações do administrador sem apagar o que o servidor aprendeu (IPs recentes).
+create or replace function cfg_salvar(p_data jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'não autenticado'; end if;
+  insert into company_settings (owner, data) values (auth.uid(), p_data - 'ip_recentes')
+  on conflict (owner) do update
+    set data = (company_settings.data - 'ip_recentes') || (p_data - 'ip_recentes')
+               || case when company_settings.data ? 'ip_recentes'
+                       then jsonb_build_object('ip_recentes', company_settings.data -> 'ip_recentes')
+                       else '{}'::jsonb end;
+end $$;
+
+create or replace function ips_limpar() returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'não autenticado'; end if;
+  update company_settings set data = data - 'ip_recentes' where owner = auth.uid();
+end $$;
+
+-- Guarda o IP como "IP recente da empresa" (vale por 30 dias, no máximo 10 IPs).
+create or replace function ip_aprender(p_owner uuid, p_ip text) returns void
+language plpgsql security definer set search_path = public as $$
+declare arr jsonb; agora timestamptz := now();
+begin
+  if p_ip is null then return; end if;
+  select coalesce(jsonb_agg(x order by x->>'ts' desc), '[]'::jsonb) into arr from (
+    select x from company_settings cs, jsonb_array_elements(coalesce(cs.data->'ip_recentes', '[]'::jsonb)) x
+    where cs.owner = p_owner and (x->>'ts')::timestamptz > agora - interval '30 days' and x->>'ip' <> p_ip
+    order by x->>'ts' desc limit 9) q;
+  arr := jsonb_build_array(jsonb_build_object('ip', p_ip, 'ts', agora)) || arr;
+  insert into company_settings (owner, data) values (p_owner, jsonb_build_object('ip_recentes', arr))
+  on conflict (owner) do update set data = jsonb_set(company_settings.data, '{ip_recentes}', arr, true);
+end $$;
+revoke all on function ip_aprender(uuid, text) from public;
+
+-- Quando um registro é aceito (ok ou aprovado), o horário vai para o dia do colaborador.
+create or replace function punches_sync() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare hhmm text; own uuid; cfg jsonb;
+begin
+  -- aprovar um registro pendente que o GPS confirma perto da empresa ensina o IP novo
+  if tg_op = 'UPDATE' and new.status = 'approved' and old.status = 'pending'
+     and new.ip is not null and new.dist_m is not null and new.dist_m <= 150 then
+    select e.owner, cs.data into own, cfg from employees e left join company_settings cs on cs.owner = e.owner where e.id = new.emp_id;
+    if coalesce((cfg->'ponto'->>'aprender_ip')::boolean, true) and coalesce(cfg->'ponto'->>'metodo', 'both') in ('any', 'both') then
+      perform ip_aprender(own, new.ip);
+    end if;
+  end if;
+  if new.status in ('ok', 'approved') then
+    hhmm := to_char(new.ts at time zone 'America/Sao_Paulo', 'HH24:MI');
+    insert into entries (emp_id, day, a, b, c, d) values (
+      new.emp_id, new.day,
+      case when new.field = 'a' then hhmm end, case when new.field = 'b' then hhmm end,
+      case when new.field = 'c' then hhmm end, case when new.field = 'd' then hhmm end)
+    on conflict (emp_id, day) do update set
+      a = case when new.field = 'a' then hhmm else entries.a end,
+      b = case when new.field = 'b' then hhmm else entries.b end,
+      c = case when new.field = 'c' then hhmm else entries.c end,
+      d = case when new.field = 'd' then hhmm else entries.d end,
+      updated_at = now();
+  end if;
+  return null;
+end $$;
+
+drop trigger if exists punches_sync_t on punches;
+create trigger punches_sync_t after insert or update of status on punches
+  for each row execute function punches_sync();
+
+-- -------------------------------------------------- acesso do colaborador
 
 create or replace function emp_get(p_token uuid, p_from date, p_to date)
 returns jsonb language plpgsql security definer set search_path = public as $$
@@ -54,55 +176,148 @@ declare
   e employees;
   hoje date := (now() at time zone 'America/Sao_Paulo')::date;
   dados jsonb;
+  cfg jsonb;
+  n int;
 begin
   select * into e from employees where token = p_token;
   if not found then return null; end if;
   dados := e.data - 'fgtsSaldo' - 'mediaExtras' - 'deslig' - 'motivo' - 'feriasGozadas' - 'pagamentos';
   if coalesce(e.data->>'verValores', 'true') = 'false' then
-    dados := dados - 'salario' - 'valorHora';
+    dados := dados - 'salario' - 'valorHora' - 'vales';
   end if;
+  select data into cfg from company_settings where owner = e.owner;
+  select count(*) into n from punches where emp_id = e.id and day = hoje and status <> 'rejected';
   return jsonb_build_object(
     'id', e.id,
     'data', dados,
     'today', hoje,
+    'now', to_char(now() at time zone 'America/Sao_Paulo', 'HH24:MI'),
     'today_entry', (select to_jsonb(x) from entries x where x.emp_id = e.id and x.day = hoje),
     'entries', coalesce((select jsonb_agg(to_jsonb(x) order by x.day) from entries x
                           where x.emp_id = e.id and x.day between p_from and p_to
                           and p_to - p_from <= 31), '[]'::jsonb),
-    'settings', (select jsonb_build_object('feriados', s.data->'feriados') from company_settings s where s.owner = e.owner)
+    'punches', coalesce((select jsonb_agg(jsonb_build_object('id', p.id, 'field', p.field,
+                          'hora', to_char(p.ts at time zone 'America/Sao_Paulo', 'HH24:MI'),
+                          'status', p.status, 'place', p.place) order by p.ts)
+                          from punches p where p.emp_id = e.id and p.day = hoje), '[]'::jsonb),
+    'proximo', case n when 0 then 'a' when 1 then 'b' when 2 then 'c' when 3 then 'd' else null end,
+    'ponto', jsonb_build_object(
+      'verif', coalesce(cfg->'ponto'->>'verif', 'block'),
+      'externo', coalesce((cfg->'ponto'->>'externo')::boolean, true),
+      'foto', coalesce((cfg->'ponto'->>'foto')::boolean, false)),
+    'settings', jsonb_build_object('feriados', cfg->'feriados')
   );
 end $$;
 
-create or replace function emp_punch(p_token uuid, p_a text, p_b text, p_c text, p_d text)
+-- O colaborador toca no botão; o servidor grava a hora e confere o local.
+create or replace function emp_punch(
+  p_token uuid, p_lat float8, p_lon float8, p_acc float8,
+  p_device_ts timestamptz, p_externo boolean, p_motivo text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   e employees;
+  agora timestamptz := now();
   hoje date := (now() at time zone 'America/Sao_Paulo')::date;
-  v text;
+  s jsonb; pr jsonb; verif text; metodo text; externo_ok boolean; aprender boolean;
+  l jsonb; ips jsonb; raio int; d float8; best_d float8; best_n text;
+  ip text; ipok boolean := false; gpsok boolean := false; tem_local boolean := false;
+  n int; fld text; place text; st text; ok boolean; need_gps boolean; skew int;
+  dia_externo boolean;
 begin
   select * into e from employees where token = p_token;
   if not found then return jsonb_build_object('ok', false, 'erro', 'Link inválido. Peça um novo ao responsável.'); end if;
-  foreach v in array array[coalesce(p_a,''), coalesce(p_b,''), coalesce(p_c,''), coalesce(p_d,'')] loop
-    if v <> '' and v !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' then
-      return jsonb_build_object('ok', false, 'erro', 'Horário inválido.');
-    end if;
-  end loop;
+
   if not (coalesce(e.data->'dias', '[1,2,3,4,5,6]'::jsonb) @> to_jsonb(extract(dow from hoje)::int)) then
     return jsonb_build_object('ok', false, 'erro', 'Hoje não é um dia liberado na sua escala.');
   end if;
-  insert into entries (emp_id, day, a, b, c, d)
-  values (e.id, hoje, nullif(p_a,''), nullif(p_b,''), nullif(p_c,''), nullif(p_d,''))
-  on conflict (emp_id, day) do update
-    set a = excluded.a, b = excluded.b, c = excluded.c, d = excluded.d, updated_at = now();
-  return jsonb_build_object('ok', true);
+
+  select count(*) into n from punches where emp_id = e.id and day = hoje and status <> 'rejected';
+  if n >= 4 then return jsonb_build_object('ok', false, 'erro', 'Você já registrou os 4 horários de hoje.'); end if;
+  if exists (select 1 from punches where emp_id = e.id and ts > agora - interval '20 seconds') then
+    return jsonb_build_object('ok', false, 'erro', 'Aguarde alguns segundos antes de registrar de novo.');
+  end if;
+  fld := (array['a','b','c','d'])[n + 1];
+
+  select data into s from company_settings where owner = e.owner;
+  s := coalesce(s, '{}'::jsonb);
+  pr := coalesce(s->'ponto', '{}'::jsonb);
+  verif := coalesce(pr->>'verif', 'block');
+  metodo := coalesce(pr->>'metodo', 'both');
+  externo_ok := coalesce((pr->>'externo')::boolean, true);
+  aprender := coalesce((pr->>'aprender_ip')::boolean, true);
+  if coalesce((e.data->>'semVerificacao')::boolean, false) then verif := 'off'; end if;
+  dia_externo := coalesce(e.data->'externos', '[]'::jsonb) ? hoje::text;
+
+  ip := client_ip();
+
+  -- confere os locais cadastrados
+  for l in select * from jsonb_array_elements(coalesce(pr->'locais', '[]'::jsonb)) loop
+    tem_local := true;
+    raio := coalesce((l->>'raio')::int, 100);
+    ips := coalesce(l->'ips', '[]'::jsonb);
+    if ip is not null and ips ? ip then ipok := true; end if;
+    if p_lat is not null and p_lon is not null and l->>'lat' is not null and l->>'lon' is not null then
+      d := haversine_m(p_lat, p_lon, (l->>'lat')::float8, (l->>'lon')::float8);
+      if best_d is null or d < best_d then best_d := d; best_n := l->>'nome'; end if;
+      if d <= raio and coalesce(p_acc, 0) <= 200 then gpsok := true; end if;
+    end if;
+  end loop;
+  if not ipok and ip is not null and exists (
+      select 1 from jsonb_array_elements(coalesce(s->'ip_recentes', '[]'::jsonb)) x
+      where x->>'ip' = ip and (x->>'ts')::timestamptz > agora - interval '30 days') then
+    ipok := true;
+  end if;
+
+  need_gps := metodo in ('gps', 'both');
+  ok := case metodo when 'ip' then ipok when 'gps' then gpsok when 'any' then (ipok or gpsok) else (ipok and gpsok) end;
+  if not tem_local then
+    place := 'sem_verificacao'; ok := true;
+  elsif ok then place := 'no_local';
+  elsif need_gps and p_lat is null then place := 'sem_gps';
+  else place := 'fora';
+  end if;
+
+  -- decide o status do registro
+  if p_externo then
+    if dia_externo then st := 'ok'; place := 'externo_autorizado';
+    elsif externo_ok and length(trim(coalesce(p_motivo, ''))) >= 3 then st := 'pending'; place := 'externo';
+    elsif externo_ok then return jsonb_build_object('ok', false, 'erro', 'Escreva o motivo do trabalho fora da empresa.');
+    else return jsonb_build_object('ok', false, 'erro', 'Registro fora da empresa não está liberado.');
+    end if;
+  elsif verif = 'off' or place in ('no_local', 'sem_verificacao') then st := 'ok';
+  elsif dia_externo then st := 'ok'; place := 'externo_autorizado';
+  elsif verif = 'alert' then st := 'ok';
+  else st := 'pending';
+  end if;
+
+  -- o servidor aprende o IP da empresa quando o GPS confirma o local
+  if place = 'no_local' and gpsok and not ipok and ip is not null and aprender and metodo in ('any', 'both') then
+    perform ip_aprender(e.owner, ip);
+  end if;
+
+  if p_device_ts is not null then skew := round(extract(epoch from (p_device_ts - agora)))::int; end if;
+
+  insert into punches (emp_id, day, field, ts, status, place, motivo, ip, lat, lon, acc, dist_m, local_nome, device_ts, skew_sec)
+  values (e.id, hoje, fld, agora, st, place, nullif(trim(coalesce(p_motivo, '')), ''), ip, p_lat, p_lon, p_acc,
+          round(best_d)::int, best_n, p_device_ts, skew);
+
+  return jsonb_build_object('ok', true, 'status', st, 'place', place, 'field', fld,
+    'hora', to_char(agora at time zone 'America/Sao_Paulo', 'HH24:MI'), 'dist', round(best_d)::int);
 end $$;
 
 revoke all on function emp_get(uuid, date, date) from public;
-revoke all on function emp_punch(uuid, text, text, text, text) from public;
+revoke all on function emp_punch(uuid, float8, float8, float8, timestamptz, boolean, text) from public;
+revoke all on function cfg_salvar(jsonb) from public;
+revoke all on function ips_limpar() from public;
+revoke all on function meu_ip() from public;
 grant execute on function emp_get(uuid, date, date) to anon, authenticated;
-grant execute on function emp_punch(uuid, text, text, text, text) to anon, authenticated;
+grant execute on function emp_punch(uuid, float8, float8, float8, timestamptz, boolean, text) to anon, authenticated;
+grant execute on function cfg_salvar(jsonb) to authenticated;
+grant execute on function ips_limpar() to authenticated;
+grant execute on function meu_ip() to authenticated;
 
--- Comprovantes de pagamento (fotos e PDFs): pasta privada, cada administrador só acessa a própria.
+-- -------------------------------------------- comprovantes de pagamento
+-- Pasta privada: cada administrador só acessa a própria.
 insert into storage.buckets (id, name, public) values ('comprovantes', 'comprovantes', false)
 on conflict (id) do nothing;
 

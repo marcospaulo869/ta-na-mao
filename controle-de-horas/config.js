@@ -1,6 +1,5 @@
-// Ligar a nuvem: cole aqui a URL e a chave "anon public" do seu projeto Supabase
-// (Supabase > Project Settings > API). Deixe vazio para usar o modo local.
+// Ligação com a nuvem (Supabase). Deixe os dois campos vazios para usar o modo local.
 window.APP_CONFIG = {
-  supabaseUrl: '',
-  supabaseKey: ''
+  supabaseUrl: 'https://egbkmsauwwtvonngemcn.supabase.co',
+  supabaseKey: 'sb_publishable_6GX8_jhEez0CBZTXUC5_qg_Cd-N4yge'
 };

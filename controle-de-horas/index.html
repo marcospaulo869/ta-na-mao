@@ -104,7 +104,7 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
  input,select,button.b{font-size:16px;min-height:44px}
  main{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
  nav{position:fixed;top:auto;bottom:0;left:0;right:0;padding:0 0 env(safe-area-inset-bottom);justify-content:space-around;background:var(--card);border-top:1px solid var(--line);border-bottom:0;z-index:7}
- nav button{flex:1;padding:12px 2px;font-size:12.5px;border-bottom:0;border-top:3px solid transparent}
+ nav button{flex:1;padding:12px 1px;font-size:11.5px;border-bottom:0;border-top:3px solid transparent}
  nav button.on{border-top-color:var(--pri)}
  #foot{bottom:var(--navh,56px);padding:6px 12px}
  #foot .dk{display:none}
@@ -141,7 +141,7 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="supabase.min.js"></script>
 </head>
 <body>
 <header id="hdr"><div><h1>Controle de Horas</h1><small id="sub">Carteira assinada (CLT) e diaristas</small></div><div class="hx" id="hx"></div></header>
@@ -149,6 +149,7 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
 <button data-t="emp" class="on">Equipe</button>
 <button data-t="folha">Folha</button>
 <button data-t="pag">Pagar</button>
+<button data-t="pon">Ponto</button>
 <button data-t="resc">Rescisão</button>
 <button data-t="cfg">Ajustes</button>
 </nav>
@@ -157,6 +158,7 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
 <section id="t-emp"></section>
 <section id="t-folha" class="hide"></section>
 <section id="t-pag" class="hide"></section>
+<section id="t-pon" class="hide"></section>
 <section id="t-resc" class="hide"></section>
 <section id="t-cfg" class="hide"></section>
 </main>
@@ -224,12 +226,17 @@ if(sb)sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')setTimeout(rNew
 /* ===== estado ===== */
 const KEY='controle-horas-v1',TOKKEY='horas-emp-token';
 let S;
-function load(){try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
- if(!S||!S.emps)S={cfg:{},emps:[],rec:{},sel:null,ym:todayS().slice(0,7)};
+const KEYC='controle-horas-cloud-ui';let LOCALDATA=null;
+function load(){
+ if(CLOUD){let ui={};try{ui=JSON.parse(localStorage.getItem(KEYC))||{}}catch(e){}
+  try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&x.emps&&x.emps.length&&localStorage.getItem('controle-horas-migrado')!=='1')LOCALDATA=x}catch(e){}
+  S={cfg:{},emps:[],rec:{},sel:ui.sel||null,ym:ui.ym||todayS().slice(0,7)}}
+ else{try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+  if(!S||!S.emps)S={cfg:{},emps:[],rec:{},sel:null,ym:todayS().slice(0,7)}}
  S.cfg=Object.assign({minimo:1621,feriados:[],whats:''},S.cfg||{});S.rec=S.rec||{};
  if(!S.ym)S.ym=todayS().slice(0,7);
- S.emps.forEach(fixEmp)}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(CLOUD?{sel:S.sel,ym:S.ym,cfg:{},emps:[],rec:{}}:S))}catch(e){}}
+ S.emps.forEach(fixEmp);fixCfg()}
+function save(){try{if(CLOUD)localStorage.setItem(KEYC,JSON.stringify({sel:S.sel,ym:S.ym}));else localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 const emp=()=>S.emps.find(e=>e.id===S.sel);
 const DEF={nome:'Novo colaborador',funcao:'',tipo:'clt',salario:1621,base:220,metaSem:8,metaSab:4,capSemana:44,adicExtra:50,adicFer:100,
  valorHora:10,jornada:8,pagaExtra:false,adm:'',dias:[1,2,3,4,5,6],autoFalta:true,verValores:true,vales:[],pagamentos:[],deslig:'',motivo:'sem_justa',feriasGozadas:0,fgtsSaldo:'',mediaExtras:0};
@@ -241,27 +248,38 @@ function empData(e){const {id,token,...data}=e;return data}
 function persistEmp(e){if(!CLOUD){save();return}
  later('e'+e.id,async()=>{const {data,error}=await sb.from('employees').upsert({id:e.id,data:empData(e)}).select('token').single();
   if(error)return toast('Não salvou: '+error.message);if(data&&data.token!==e.token){e.token=data.token;rAccess(e)}})}
-function persistEntry(e,ym,d){if(!CLOUD){save();return}
+function persistEntry(e,ym,d,field){if(!CLOUD){save();return}
  later('n'+e.id+ym+d,async()=>{const r=((S.rec[e.id]||{})[ym]||{})[d]||{};
-  const {error}=await sb.from('entries').upsert({emp_id:e.id,day:ym+'-'+pad(d),a:r.a||null,b:r.b||null,c:r.c||null,d:r.d||null,t:r.t||''},{onConflict:'emp_id,day'});
+  const row={emp_id:e.id,day:ym+'-'+pad(d),editado:true};
+  if(!field||'abcd'.includes(field))for(const f of (field?[field]:['a','b','c','d']))row[f]=r[f]||null;
+  if(!field||field==='t')row.t=r.t||'';
+  const {error}=await sb.from('entries').upsert(row,{onConflict:'emp_id,day'});
   if(error)toast('Não salvou: '+error.message)})}
 function persistCfg(){if(!CLOUD){save();return}
- later('cfg',async()=>{const {error}=await sb.from('company_settings').upsert({owner:USER.id,data:S.cfg});if(error)toast('Não salvou: '+error.message)})}
+ later('cfg',async()=>{const {ip_recentes,...resto}=S.cfg;const {error}=await sb.rpc('cfg_salvar',{p_data:resto});if(error)toast('Não salvou: '+error.message)})}
 async function delEmp(e){if(CLOUD){const {error}=await sb.from('employees').delete().eq('id',e.id);if(error)return toast('Não excluiu: '+error.message)}
  S.emps=S.emps.filter(x=>x!==e);delete S.rec[e.id];S.sel=S.emps[0]?.id||null;save();rEmp()}
+const PONTO_PAD={verif:'block',metodo:'both',externo:true,aprender_ip:true,locais:[]};
+function fixCfg(){S.cfg.ponto=Object.assign({},PONTO_PAD,S.cfg.ponto||{});if(!Array.isArray(S.cfg.ponto.locais))S.cfg.ponto.locais=[];if(!Array.isArray(S.cfg.feriados))S.cfg.feriados=[]}
 async function cloudLoad(){
  const [a,b]=await Promise.all([sb.from('employees').select('id,token,data,created_at').order('created_at'),sb.from('company_settings').select('data').maybeSingle()]);
  if(a.error){toast('Erro ao carregar: '+a.error.message);return}
  S.emps=a.data.map(r=>fixEmp({...r.data,id:r.id,token:r.token}));
  if(b.data&&b.data.data)S.cfg=Object.assign({minimo:1621,feriados:[],whats:''},b.data.data);
- if(!S.emps.find(e=>e.id===S.sel))S.sel=S.emps[0]?.id||null}
+ fixCfg();
+ if(!S.emps.find(e=>e.id===S.sel))S.sel=S.emps[0]?.id||null;
+ await loadPend()}
+const PEND={list:[],recentes:[]};
+async function loadPend(){if(!CLOUD||!USER)return;
+ const [a,b]=await Promise.all([sb.from('punches').select('*').eq('status','pending').order('ts'),sb.from('punches').select('*').neq('status','pending').order('ts',{ascending:false}).limit(30)]);
+ if(!a.error)PEND.list=a.data;if(!b.error)PEND.recentes=b.data}
 const LOADED={};
 async function loadMonth(ym){if(!CLOUD||!S.emps.length)return;const [y,m]=ym.split('-').map(Number);
- const {data,error}=await sb.from('entries').select('emp_id,day,a,b,c,d,t').in('emp_id',S.emps.map(e=>e.id)).gte('day',ym+'-01').lte('day',ym+'-'+pad(dim(y,m)));
+ const {data,error}=await sb.from('entries').select('emp_id,day,a,b,c,d,t,editado').in('emp_id',S.emps.map(e=>e.id)).gte('day',ym+'-01').lte('day',ym+'-'+pad(dim(y,m)));
  if(error)return;const busy=k=>QUEUE[k]&&true;
  S.emps.forEach(e=>{(S.rec[e.id]=S.rec[e.id]||{});const old=S.rec[e.id][ym]||{},nw={};
   for(const d in old)if(busy('n'+e.id+ym+d))nw[d]=old[d];S.rec[e.id][ym]=nw});
- data.forEach(r=>{const d=+r.day.slice(8),k='n'+r.emp_id+ym+d;if(busy(k))return;S.rec[r.emp_id][ym][d]={a:(r.a||'').slice(0,5),b:(r.b||'').slice(0,5),c:(r.c||'').slice(0,5),d:(r.d||'').slice(0,5),t:r.t||''}});
+ data.forEach(r=>{const d=+r.day.slice(8),k='n'+r.emp_id+ym+d;if(busy(k))return;S.rec[r.emp_id][ym][d]={a:(r.a||'').slice(0,5),b:(r.b||'').slice(0,5),c:(r.c||'').slice(0,5),d:(r.d||'').slice(0,5),t:r.t||'',ed:!!r.editado}});
  LOADED[ym]=true}
 
 /* ===== cálculo da folha ===== */
@@ -381,11 +399,11 @@ function calcRescisao(e){
 /* ===== telas do administrador ===== */
 function setNavH(){const n=$('#tabs');document.documentElement.style.setProperty('--navh',(innerWidth<=720&&!n.classList.contains('hide')?n.offsetHeight:0)+'px')}
 addEventListener('resize',setNavH);
-const tabs=['emp','folha','pag','resc','cfg'];let CUR='emp';
+const tabs=['emp','folha','pag','pon','resc','cfg'];let CUR='emp';
 function show(t){CUR=t;tabs.forEach(k=>$('#t-'+k).classList.toggle('hide',k!==t));
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
  $('#foot').classList.toggle('hide',t!=='folha');setNavH();document.body.classList.toggle('hasfoot',t==='folha');
- ({emp:rEmp,folha:rFolha,pag:rPag,resc:rResc,cfg:rCfg})[t]();rBanner()}
+ ({emp:rEmp,folha:rFolha,pag:rPag,pon:rPonto,resc:rResc,cfg:rCfg})[t]();rBanner()}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>show(b.dataset.t));
 
 // liga campos [data-k] ao objeto; não redesenha a tela enquanto digita
@@ -431,6 +449,10 @@ function rEmp(){
   ${c?`<label class="ck"><input type="checkbox" id="f-af2" data-k="autoFalta" ${e.autoFalta!==false?'checked':''}>Dia liberado que já passou sem registro conta como falta</label>`:
   `<label class="ck"><input type="checkbox" id="f-pe" data-k="pagaExtra" ${e.pagaExtra?'checked':''}>Pagar hora extra acima da jornada de referência (desmarcado: todas as horas valem o valor normal)</label>`}
   <label class="ck"><input type="checkbox" id="f-vv" data-k="verValores" ${e.verValores!==false?'checked':''}>Colaborador pode ver os valores em R$ no celular</label>
+  ${CLOUD?`<label class="ck"><input type="checkbox" id="f-sv" data-k="semVerificacao" ${e.semVerificacao?'checked':''}>Isento de verificação de local (ex.: trabalha sempre fora da empresa)</label>
+  <div style="margin-top:10px"><label>Dias de trabalho externo liberados (sem precisar de aprovação)</label>
+  <div class="chips" id="exts">${(e.externos||[]).slice().sort().map(d=>`<label class="on">${d.slice(8)}/${d.slice(5,7)}/${d.slice(0,4)} <button class="b" style="padding:0 8px;min-height:0" data-xdel="${d}" aria-label="Remover">×</button></label>`).join('')||'<span class="note">Nenhum.</span>'}</div>
+  <div class="row" style="margin-top:6px"><div><label for="xnew">Liberar um dia</label><input type="date" id="xnew"></div><button class="b" id="xadd">+ Liberar dia</button></div></div>`:''}
   <p class="note">${c?'Valor da hora = salário ÷ base de horas (padrão 220). Domingos e feriados trabalhados recebem o adicional de domingo/feriado.':'Horas corridas: horas trabalhadas × valor da hora. Diarista não tem rescisão.'}</p></div>
   <div class="card" id="acc"></div>`}
  else h+='<div class="card">Cadastre o primeiro colaborador para começar.</div>';
@@ -448,6 +470,8 @@ function rEmp(){
  el.querySelectorAll('[data-dia]').forEach(cb=>cb.onchange=()=>{const d=+cb.dataset.dia;
   e.dias=cb.checked?[...new Set([...e.dias,d])]:e.dias.filter(x=>x!==d);cb.parentElement.classList.toggle('on',cb.checked);persistEmp(e)});
  rAccess(e);
+ const xa=$('#xadd');if(xa){xa.onclick=()=>{const v=$('#xnew').value;if(!v)return;e.externos=[...new Set([...(e.externos||[]),v])];persistEmp(e);rEmp()};
+  el.querySelectorAll('[data-xdel]').forEach(b=>b.onclick=()=>{e.externos=(e.externos||[]).filter(x=>x!==b.dataset.xdel);persistEmp(e);rEmp()})}
 }
 
 function parseLista(txt,defY){const rows=[],bad=[],z={a:'',b:'',c:'',d:''};
@@ -507,7 +531,7 @@ function rFolha(){
    tr.classList.toggle('off',!!x.pre||(!x.w&&(!x.sched||x.wd===0)&&!x.hol));
    tr.classList.toggle('hol',!!x.hol);tr.classList.toggle('falta',!!x.falta);
    tr.querySelectorAll('input').forEach(i=>i.disabled=!!x.pre);
-   tr.querySelector('.st').textContent=x.st;
+   tr.querySelector('.st').textContent=x.st+(x.r&&x.r.ed&&CLOUD?(x.st?' · ':'')+'✎ corrigido':'');
    tr.querySelector('.c-tot').textContent=x.w?hm(x.w):'';
    tr.querySelector('.c-n').textContent=x.fer?'':(x.norm?hm(x.norm):'');
    tr.querySelector('.c-e').textContent=x.fer?hm(x.fer)+' (100%)':(x.ext?hm(x.ext):'');
@@ -526,7 +550,7 @@ function rFolha(){
    (T.dAdm?`<div class="info">Admissão neste mês: salário proporcional, desconto de ${brl(T.dAdm)} pelos dias antes da admissão.</div>`:'');
   paintFoot(R,e)};
  $('#tb').addEventListener('input',ev=>{const f=ev.target.dataset.f;if(!f)return;const d=+ev.target.closest('tr').dataset.d;
-  const r=mr[d]=mr[d]||{};r[f]=ev.target.value;persistEntry(e,ym,d);paint()});
+  const r=mr[d]=mr[d]||{};r[f]=ev.target.value;r.ed=true;persistEntry(e,ym,d,f);paint()});
  $('#tb').addEventListener('change',ev=>{if(ev.target.tagName==='SELECT')ev.target.dispatchEvent(new Event('input',{bubbles:true}))});
  $('#impGo').onclick=()=>{const r=importLista(e,$('#impLista').value);
   $('#impRes').innerHTML=`<p class="${r.n?'info':'warn'}">${r.n} dia(s) importado(s)${r.meses.length?' em '+r.meses.map(ymLabel).join(', '):''}.${r.n?' Troque o mês acima para conferir.':''}</p>${r.bad.length?`<p class="warn">${r.bad.length} linha(s) não entendida(s):<br>${r.bad.map(esc).join('<br>')}</p>`:''}`;
@@ -568,12 +592,13 @@ function resumoTexto(e,W){const L=[`*Resumo da semana: ${e.nome}*`,`${fmtBR(W.mo
  if(W.vales)L.push(`Vales: - ${brl(W.vales)}`);if(W.pago)L.push(`Já pago: - ${brl(W.pago)}`);
  L.push(`*A pagar: ${brl(W.pagar)}*`);return L.join('\n')}
 function rBanner(){const b=$('#banner');if(!b)return;b.innerHTML='';
+ if(CLOUD&&PEND.list.length&&CUR!=='pon'){b.insertAdjacentHTML('beforeend',`<div class="warn noprint" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>${PEND.list.length} registro(s) de ponto aguardando a sua aprovação.</b> Foram feitos fora do local ou sem localização.</div><button class="b p" id="bnPon">Ver pendências</button></div>`);$('#bnPon').onclick=()=>show('pon')}
  if(CUR==='pag'||!S.emps.length)return;
  const mon=semanaAlvo(),pend=[];
  S.emps.forEach(e=>{const W=calcSemana(e,mon);if(W.dias>0&&W.pago<=0)pend.push({e,W})});
  if(!pend.length)return;
  const n=new Date(),sex=n.getDay()===5&&n.getHours()>=18;
- b.innerHTML=`<div class="warn noprint" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>${sex?'Sexta-feira: hora de fechar a semana.':'Semana sem pagamento registrado.'}</b> ${fmtBR(mon)} a ${fmtBR(addD(mon,6))}: ${pend.map(p=>esc(p.e.nome)+' ('+brl(p.W.pagar)+')').join(', ')}</div><button class="b p" id="bnGo">Abrir fechamento</button></div>`;
+ b.insertAdjacentHTML('beforeend',`<div class="warn noprint" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>${sex?'Sexta-feira: hora de fechar a semana.':'Semana sem pagamento registrado.'}</b> ${fmtBR(mon)} a ${fmtBR(addD(mon,6))}: ${pend.map(p=>esc(p.e.nome)+' ('+brl(p.W.pagar)+')').join(', ')}</div><button class="b p" id="bnGo">Abrir fechamento</button></div>`);
  $('#bnGo').onclick=()=>{S.sel=pend[0].e.id;PAG.mon=mon;show('pag')}}
 const PAG={mon:null};
 function rPag(fresh){
@@ -626,6 +651,54 @@ function rPag(fresh){
   const p=e.pagamentos.find(x=>x.id===b.dataset.pd);if(p&&p.file)await removeFile(p.file);e.pagamentos=e.pagamentos.filter(x=>x!==p);persistEmp(e);rPag(true)});
 }
 
+/* ===== ponto pelo celular (administração) ===== */
+const PLACE={no_local:'No local',fora:'Fora do local',sem_gps:'Sem localização',externo:'Trabalho externo',externo_autorizado:'Externo autorizado',sem_verificacao:'Sem verificação'};
+const CAMPO={a:'Entrada da manhã',b:'Saída da manhã',c:'Entrada da tarde',d:'Saída da tarde'};
+const STAT={ok:'Registrado',pending:'Aguardando',approved:'Aprovado',rejected:'Recusado'};
+const empNome=id=>(S.emps.find(e=>e.id===id)||{}).nome||'Colaborador';
+const horaSP=ts=>new Date(ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'});
+const dataBR=d=>d.slice(8,10)+'/'+d.slice(5,7);
+function pegarGps(timeout=12000){return new Promise(res=>{if(!navigator.geolocation)return res(null);
+ navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy}),()=>res(null),{enableHighAccuracy:true,timeout,maximumAge:0})})}
+function punchRow(p,acoes){return `<div class="pgh"><div><b>${dataBR(p.day)} ${horaSP(p.ts)}</b></div>
+ <div>${esc(empNome(p.emp_id))} · ${CAMPO[p.field]||''}<small>${PLACE[p.place]||esc(p.place)}${p.dist_m!=null?' · a '+p.dist_m+' m'+(p.local_nome?' de '+esc(p.local_nome):''):''}${p.ip?' · IP '+esc(p.ip):''}${p.skew_sec&&Math.abs(p.skew_sec)>120?' · relógio do celular diferente ('+Math.round(p.skew_sec/60)+' min)':''}</small>${p.motivo?`<small>Motivo: ${esc(p.motivo)}</small>`:''}${p.lat!=null?`<small><a href="https://www.google.com/maps?q=${p.lat},${p.lon}" target="_blank" rel="noopener">Ver no mapa</a></small>`:''}</div>
+ <div class="v">${acoes?'':STAT[p.status]||p.status}</div>${acoes?`<div class="ac"><button class="b p" data-ap="${p.id}">Aprovar</button><button class="b d" data-rj="${p.id}">Recusar</button></div>`:''}</div>`}
+function rPonto(){
+ const el=$('#t-pon');
+ if(!CLOUD){el.innerHTML='<div class="card"><h2>Ponto pelo celular</h2><p class="note">Disponível quando a nuvem estiver ligada: o colaborador registra o ponto no próprio celular, com a hora gravada pelo servidor e a verificação de local (IP e GPS).</p></div>';return}
+ const pr=S.cfg.ponto;
+ el.innerHTML=`<div class="card"><h2>Pendentes de aprovação</h2>${PEND.list.length?PEND.list.map(p=>punchRow(p,true)).join(''):'<p class="note">Nenhum registro pendente.</p>'}
+ <p class="note">Registro pendente não conta nas horas até você aprovar. Ao aprovar, o horário vai para a Folha.</p></div>
+ <div class="card noprint"><h2>Regras de ponto</h2><div class="grid">
+  <div><label for="pr-v">Verificação de local</label><select id="pr-v" data-k="verif"><option value="off">Desligada</option><option value="alert">Só marcar (alerta)</option><option value="block">Bloquear até aprovar</option></select></div>
+  <div><label for="pr-m">Como verificar</label><select id="pr-m" data-k="metodo"><option value="ip">Só pelo IP da internet</option><option value="gps">Só pelo GPS</option><option value="any">IP ou GPS (um dos dois)</option><option value="both">IP e GPS (os dois)</option></select></div></div>
+  <label class="ck"><input type="checkbox" id="pr-e" data-k="externo" ${pr.externo?'checked':''}>Permitir registro fora da empresa, com justificativa (fica pendente)</label>
+  <label class="ck"><input type="checkbox" id="pr-a" data-k="aprender_ip" ${pr.aprender_ip?'checked':''}>Aprender sozinho o IP da empresa quando o GPS confirma o local</label>
+  <p class="note">Sem nenhum local cadastrado, o sistema não verifica. O IP é lido pelo servidor e o colaborador não consegue alterar. O GPS vem do celular e pode ser falsificado com aplicativos de localização falsa, por isso usar os dois juntos é mais seguro.</p></div>
+ <div class="card noprint"><h2>Locais da empresa</h2>
+  ${pr.locais.map((l,i)=>`<div class="row" style="margin:0 0 8px"><div><label>Nome</label><input data-li="${i}" data-lk="nome" value="${esc(l.nome)}"></div><div style="max-width:110px"><label>Raio (m)</label><input type="number" data-li="${i}" data-lk="raio" value="${l.raio||100}"></div><div><label>IPs da internet (separados por vírgula)</label><input data-li="${i}" data-lk="ips" value="${esc((l.ips||[]).join(', '))}"></div><button class="b d" data-ldel="${i}">Remover</button>
+   <p class="note" style="flex-basis:100%;margin:0">${l.lat!=null?'Localização: '+(+l.lat).toFixed(5)+', '+(+l.lon).toFixed(5):'Sem localização GPS cadastrada.'}</p></div>`).join('')||'<p class="note">Nenhum local cadastrado.</p>'}
+  <button class="b p" id="addLoc">Cadastrar o local onde estou agora</button>
+  <p class="note">Use esse botão estando na empresa, no celular ou no computador, com a internet da empresa. Ele guarda o GPS e o IP.</p>
+  ${(S.cfg.ip_recentes||[]).length?`<p class="note"><b>IPs aprendidos (últimos 30 dias):</b> ${S.cfg.ip_recentes.map(x=>esc(x.ip)).join(', ')} <button class="b" id="clrIp" style="padding:2px 8px;min-height:0">Limpar</button></p>`:''}</div>
+ <div class="card"><h2>Últimos registros</h2>${PEND.recentes.length?PEND.recentes.map(p=>punchRow(p,false)).join(''):'<p class="note">Nenhum registro ainda.</p>'}</div>`;
+ $('#pr-v').value=pr.verif;$('#pr-m').value=pr.metodo;
+ bind(el,pr,()=>persistCfg());
+ el.querySelectorAll('[data-lk]').forEach(i=>i.addEventListener('input',()=>{const l=pr.locais[+i.dataset.li],k=i.dataset.lk;
+  l[k]=k==='raio'?(+i.value||100):k==='ips'?i.value.split(/[,\s]+/).filter(Boolean):i.value;persistCfg()}));
+ el.querySelectorAll('[data-ldel]').forEach(b=>b.onclick=()=>{pr.locais.splice(+b.dataset.ldel,1);persistCfg();rPonto()});
+ $('#addLoc').onclick=async()=>{const b=$('#addLoc');b.disabled=true;b.textContent='Obtendo a localização…';
+  const g=await pegarGps(),{data:ip}=await sb.rpc('meu_ip');
+  if(!g)toast('Sem GPS: permita o acesso ao local no navegador. Cadastrei só o IP.');
+  pr.locais.push({id:uuid(),nome:'Unidade '+(pr.locais.length+1),lat:g?g.lat:null,lon:g?g.lon:null,raio:100,ips:ip?[ip]:[]});persistCfg();rPonto()};
+ const ci=$('#clrIp');if(ci)ci.onclick=async()=>{await sb.rpc('ips_limpar');S.cfg.ip_recentes=[];rPonto()};
+ el.querySelectorAll('[data-ap],[data-rj]').forEach(b=>b.onclick=async()=>{const ok=!!b.dataset.ap,id=b.dataset.ap||b.dataset.rj;b.disabled=true;
+  const {error}=await sb.from('punches').update({status:ok?'approved':'rejected',decided_at:new Date().toISOString()}).eq('id',id);
+  if(error){toast('Erro: '+error.message);b.disabled=false;return}
+  await loadPend();Object.keys(LOADED).forEach(k=>delete LOADED[k]);toast(ok?'Aprovado':'Recusado');rPonto();rBanner()});
+}
+setInterval(()=>{if(CLOUD&&USER&&!document.hidden)loadPend().then(()=>{rBanner();if(CUR==='pon'&&!document.querySelector('#t-pon :focus'))rPonto()})},30000);
+
 function rResc(){
  const el=$('#t-resc'),e=emp();
  if(!e){el.innerHTML='<div class="card">Cadastre um colaborador.</div>';return}
@@ -666,6 +739,16 @@ function rResc(){
  paint();
 }
 
+const ehUuid=x=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x);
+async function enviarParaNuvem(d){
+ const map={},emps=(d.emps||[]).map(e0=>{const e={...e0};map[e0.id]=ehUuid(e0.id)?e0.id:uuid();e.id=map[e0.id];return fixEmp(e)});
+ let q=await sb.from('employees').upsert(emps.map(e=>({id:e.id,data:empData(e)})));if(q.error)throw q.error;
+ const ent=[];for(const e0 of d.emps||[]){const rec=(d.rec||{})[e0.id]||{};for(const ym in rec)for(const dia in rec[ym]){const x=rec[ym][dia];
+  if(!(x.a||x.b||x.c||x.d||x.t))continue;ent.push({emp_id:map[e0.id],day:ym+'-'+pad(+dia),a:x.a||null,b:x.b||null,c:x.c||null,d:x.d||null,t:x.t||''})}}
+ for(let i=0;i<ent.length;i+=200){const q2=await sb.from('entries').upsert(ent.slice(i,i+200),{onConflict:'emp_id,day'});if(q2.error)throw q2.error}
+ if(d.cfg){const c=d.cfg;S.cfg.minimo=c.minimo||S.cfg.minimo;S.cfg.whats=c.whats||S.cfg.whats;if((c.feriados||[]).length)S.cfg.feriados=c.feriados;persistCfg()}
+ await cloudLoad();Object.keys(LOADED).forEach(k=>delete LOADED[k]);
+ return {emps:emps.length,dias:ent.length}}
 function rCfg(){
  const el=$('#t-cfg'),y=+S.ym.slice(0,4),nac=feriadosAno(y);
  el.innerHTML=`<div class="card"><h2>Parâmetros gerais</h2><div class="grid"><div><label for="c-min">Salário mínimo vigente (R$)</label><input id="c-min" type="number" step="0.01" data-k="minimo" value="${S.cfg.minimo}"></div>
@@ -676,7 +759,10 @@ function rCfg(){
  <label>Feriados estaduais e municipais da sua cidade</label>
  <div id="hl">${S.cfg.feriados.map((h,i)=>`<div class="row" style="margin:6px 0"><div><input type="date" data-h="${i}" data-hk="d" value="${h.d}"></div><div><input data-h="${i}" data-hk="n" value="${esc(h.n)}" placeholder="Nome do feriado"></div><button class="b d" data-hdel="${i}">Remover</button></div>`).join('')||'<p class="note">Nenhum cadastrado.</p>'}</div>
  <button class="b" id="addH">+ Adicionar feriado</button></div>
- ${CLOUD?`<div class="card"><h2>Conta</h2><p class="note">Conectado como ${esc(USER?.email||'')}. Os dados ficam salvos na nuvem e aparecem em qualquer aparelho em que você entrar.</p></div>`:
+ ${CLOUD?`<div class="card"><h2>Conta</h2><p class="note">Conectado como ${esc(USER?.email||'')}. Os dados ficam salvos na nuvem e aparecem em qualquer aparelho em que você entrar.</p></div>
+ ${LOCALDATA?`<div class="card"><h2>Dados do modo local encontrados</h2><p class="info">Este navegador tem ${LOCALDATA.emps.length} colaborador(es) do modo anterior. Envie para a nuvem uma única vez.</p>
+ <button class="b p" id="mig">Enviar para a nuvem</button><div id="migRes"></div><p class="note">Os dados antigos continuam guardados neste navegador, como cópia.</p></div>`:''}
+ <div class="card"><h2>Trazer um backup</h2><p class="note">Se você exportou um backup do modo local, escolha o arquivo aqui.</p><input type="file" id="impCloud" accept=".json"><div id="impCloudRes"></div></div>`:
  `<div class="card"><h2>Backup</h2><p class="warn">Modo local: os dados ficam só neste navegador. Exporte um backup de vez em quando. Os comprovantes anexados não entram no backup.</p>
  <div class="row"><button class="b p" id="exp">Exportar backup</button><div><label for="imp">Importar backup</label><input type="file" id="imp" accept=".json"></div></div><div id="impOk"></div></div>`}
  <div class="card"><h2>Regras aplicadas</h2><ul class="note">
@@ -692,6 +778,9 @@ function rCfg(){
  el.querySelectorAll('[data-h]').forEach(i=>i.addEventListener(i.type==='date'?'change':'input',()=>{S.cfg.feriados[+i.dataset.h][i.dataset.hk]=i.value;persistCfg()}));
  el.querySelectorAll('[data-hdel]').forEach(b=>b.onclick=()=>{S.cfg.feriados.splice(+b.dataset.hdel,1);persistCfg();rCfg()});
  $('#addH').onclick=()=>{S.cfg.feriados.push({d:S.ym+'-01',n:''});persistCfg();rCfg()};
+ const run=async(d,out)=>{out.innerHTML='<p class="note">Enviando…</p>';try{const r=await enviarParaNuvem(d);out.innerHTML=`<p class="info">${r.emps} colaborador(es) e ${r.dias} dia(s) enviados para a nuvem.</p>`;if(d===LOCALDATA){try{localStorage.setItem('controle-horas-migrado','1')}catch(x){}LOCALDATA=null}}catch(x){out.innerHTML='<p class="warn">Erro: '+esc(x.message||x)+'</p>'}};
+ const mg=$('#mig');if(mg)mg.onclick=()=>run(LOCALDATA,$('#migRes'));
+ const ic=$('#impCloud');if(ic)ic.onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{let d;try{d=JSON.parse(r.result);if(!d.emps)throw 0}catch(x){toast('Arquivo inválido');return}run(d,$('#impCloudRes'))};r.readAsText(f)};
  const ex=$('#exp');if(ex)ex.onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='controle-horas-backup-'+todayS()+'.json';a.click()};
  const im=$('#imp');if(im)im.onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{let d;try{d=JSON.parse(r.result);if(!d.emps)throw 0}catch(x){toast('Arquivo inválido');return}
   $('#impOk').innerHTML='<p class="warn">Substituir todos os dados atuais pelo backup?</p><button class="b p" id="impY">Substituir</button>';
@@ -742,7 +831,8 @@ async function empFetch(){
   EMP.e=fixEmp({...data.data,id:data.id});EMP.today=data.today;
   if(data.settings&&data.settings.feriados)S.cfg.feriados=data.settings.feriados;
   EMP.recs={};(data.entries||[]).forEach(r=>{EMP.recs[+r.day.slice(8)]={a:(r.a||'').slice(0,5),b:(r.b||'').slice(0,5),c:(r.c||'').slice(0,5),d:(r.d||'').slice(0,5),t:r.t||''}});
-  const t=data.today_entry||{};EMP.todayRec={a:(t.a||'').slice(0,5),b:(t.b||'').slice(0,5),c:(t.c||'').slice(0,5),d:(t.d||'').slice(0,5)};return true}
+  const t=data.today_entry||{};EMP.todayRec={a:(t.a||'').slice(0,5),b:(t.b||'').slice(0,5),c:(t.c||'').slice(0,5),d:(t.d||'').slice(0,5)};
+  EMP.punches=data.punches||[];EMP.proximo=data.proximo;EMP.ponto=data.ponto||{};return true}
  const e=S.emps.find(x=>x.id===EMP.tok);if(!e)return false;
  EMP.e=e;EMP.today=todayS();EMP.recs=(S.rec[e.id]||{})[EMP.ym]||{};
  const tm=EMP.today.slice(0,7),td=+EMP.today.slice(8);EMP.todayRec=Object.assign({},((S.rec[e.id]||{})[tm]||{})[td]);return true}
@@ -773,7 +863,15 @@ function rEmpView(){
  const liberado=e.dias.includes(wd),r=EMP.todayRec;
  const R=calcMonth(e,EMP.ym,EMP.recs,td),T=R.T;
  const F=[['a','Entrada manhã'],['b','Saída manhã'],['c','Entrada tarde'],['d','Saída tarde']];
- $('#main').innerHTML=`<div class="card emp-today"><h2>Hoje, ${DN[wd]} ${td.slice(8)}/${td.slice(5,7)}</h2>
+ const nuvem=CLOUD&&Array.isArray(EMP.punches);
+ const cardHoje=nuvem?`<div class="card emp-today"><h2>Hoje, ${DN[wd]} ${td.slice(8)}/${td.slice(5,7)}</h2>
+ ${hol?`<p class="info">Feriado: ${esc(hol)}</p>`:''}
+ ${!liberado?'<p class="note">Hoje não é um dia liberado na sua escala.</p>':EMP.proximo?`<button class="b p" id="bPunch" style="width:100%;font-size:18px;padding:16px 10px">Registrar: ${CAMPO[EMP.proximo]}</button>
+ <p class="note">A hora é gravada pelo sistema no momento do toque. Ao registrar, o sistema guarda a sua localização e a rede usada, somente nesse momento.</p>
+ ${EMP.ponto&&EMP.ponto.externo?`<details style="margin-top:8px"><summary>Estou fora da empresa (trabalho externo)</summary><textarea id="pMot" rows="2" placeholder="Motivo e local. Ex.: montagem na obra do cliente X" style="width:100%;margin:8px 0;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:7px;padding:8px"></textarea><button class="b" id="bExt">Registrar fora da empresa</button><p class="note">Fica aguardando a aprovação do responsável.</p></details>`:''}`:'<p class="info">Você já registrou os 4 horários de hoje.</p>'}
+ <div id="pMsg" class="note">${esc(EMP.msg||'')}</div>
+ ${(EMP.punches||[]).map(q=>`<div class="emp-day"><div><b>${CAMPO[q.field]||''}</b><small>${PLACE[q.place]||''}</small></div><div class="r"><b>${q.hora}</b><small>${q.status==='pending'?'Aguardando aprovação':q.status==='rejected'?'Recusado':'Registrado'}</small></div></div>`).join('')}</div>`:'';
+ $('#main').innerHTML=`${cardHoje}<div class="card emp-today ${nuvem?'hide':''}"><h2>Hoje, ${DN[wd]} ${td.slice(8)}/${td.slice(5,7)}</h2>
  ${hol?`<p class="info">Feriado: ${esc(hol)}</p>`:''}
  ${liberado?`<div class="times">${F.map(([f,l])=>`<div><label for="p-${f}">${l}</label><div class="in"><input id="p-${f}" type="time" data-p="${f}" value="${r[f]||''}"><button class="b p" data-now="${f}">Agora</button></div></div>`).join('')}</div>
  <p class="note" id="pst">${EMP.msg||'Toque em "Agora" ao chegar e ao sair. O horário é salvo na hora.'}</p>`:'<p class="note">Hoje não é um dia liberado na sua escala.</p>'}</div>
@@ -791,14 +889,24 @@ function rEmpView(){
  <p class="note">Algum dado errado? Fale com o responsável. Só ele pode alterar o cadastro e corrigir dias anteriores.</p></div>`;
  $('#mPrev').onclick=async()=>{EMP.ym=ymAdd(EMP.ym,-1);await empFetch();rEmpView()};
  $('#mNext').onclick=async()=>{EMP.ym=ymAdd(EMP.ym,1);await empFetch();rEmpView()};
+ const doPunch=async(ext)=>{const btn=$(ext?'#bExt':'#bPunch'),mot=ext?$('#pMot').value.trim():null;
+  if(ext&&mot.length<3){EMP.msg='Escreva o motivo do trabalho fora da empresa.';$('#pMsg').textContent=EMP.msg;return}
+  btn.disabled=true;$('#pMsg').textContent='Pegando a sua localização…';
+  const g=await pegarGps();$('#pMsg').textContent='Registrando…';
+  const {data,error}=await sb.rpc('emp_punch',{p_token:EMP.tok,p_lat:g?g.lat:null,p_lon:g?g.lon:null,p_acc:g?g.acc:null,p_device_ts:new Date().toISOString(),p_externo:!!ext,p_motivo:mot});
+  if(error||!data)EMP.msg='Não salvou. Verifique a internet e tente de novo.';
+  else if(!data.ok)EMP.msg=data.erro;
+  else EMP.msg=(data.status==='ok'?`Registrado às ${data.hora}.`:`Registrado às ${data.hora}. Fica aguardando a aprovação do responsável (${(PLACE[data.place]||'').toLowerCase()}).`)+(g?'':' Sem localização: permita o acesso ao local no navegador.');
+  await empFetch();rEmpView()};
+ if(nuvem){const bp=$('#bPunch');if(bp)bp.onclick=()=>doPunch(false);const be=$('#bExt');if(be)be.onclick=()=>doPunch(true)}
  const st=t=>{EMP.msg=t;const p=$('#pst');if(p)p.textContent=t};
  const commit=async()=>{st('Salvando…');if(await empPunch()){st('Salvo às '+nowHM());await empFetch();const keep=document.activeElement?.id;rEmpView();if(keep&&$('#'+keep))$('#'+keep).focus()}else st('Não salvou. Tente de novo.')};
- document.querySelectorAll('[data-p]').forEach(i=>i.addEventListener('change',()=>{EMP.todayRec[i.dataset.p]=i.value;commit()}));
- document.querySelectorAll('[data-now]').forEach(b=>b.onclick=()=>{const f=b.dataset.now;EMP.todayRec[f]=nowHM();$('#p-'+f).value=EMP.todayRec[f];commit()});
+ if(!nuvem){document.querySelectorAll('[data-p]').forEach(i=>i.addEventListener('change',()=>{EMP.todayRec[i.dataset.p]=i.value;commit()}));
+ document.querySelectorAll('[data-now]').forEach(b=>b.onclick=()=>{const f=b.dataset.now;EMP.todayRec[f]=nowHM();$('#p-'+f).value=EMP.todayRec[f];commit()})}
 }
 
 /* ===== início ===== */
-try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js')}catch(e){}
+try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
 load();
 (function route(){
  const m=location.hash.match(/^#\/c\/([\w-]+)/);let tok=m?m[1]:null;
