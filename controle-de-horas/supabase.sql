@@ -382,3 +382,15 @@ drop policy if exists documentos_owner on storage.objects;
 create policy documentos_owner on storage.objects for all to authenticated
   using (bucket_id = 'documentos' and (storage.foldername(name))[1] = auth.uid()::text)
   with check (bucket_id = 'documentos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ------------------------------------------------ endurecimento (avisos do Supabase Advisor)
+alter function haversine_m(float8, float8, float8, float8) set search_path = public;
+alter function client_ip() set search_path = public;
+alter function meu_ip() set search_path = public;
+-- funções internas: ninguém precisa chamar pela internet
+revoke all on function punches_sync() from public, anon, authenticated;
+do $$ begin
+  if to_regprocedure('public.rls_auto_enable()') is not null then
+    revoke all on function public.rls_auto_enable() from public, anon, authenticated;
+  end if;
+end $$;
