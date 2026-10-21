@@ -15,32 +15,30 @@ Sempre termine a resposta com estas duas partes, nesta ordem:
 Também diga em uma frase o que mudou e o que o usuário deve testar depois de atualizar.
 Se algo não foi testado (por exemplo, a parte da nuvem), diga isso claramente.
 
-### Passo a passo padrão para atualizar o site (Netlify)
+### Como o site é atualizado (Cloudflare Pages, automático)
 
-1. Baixe a versão nova: abra o link do ZIP (abaixo). O download começa sozinho.
-2. Na pasta Downloads, clique com o botão direito no ZIP, escolha **Extrair tudo** e depois **Extrair**.
-3. Entre na pasta extraída e localize a pasta **controle-de-horas**. Suba um nível, para ver a pasta como ícone.
-4. Abra o painel do Netlify, no projeto do sistema, na página **Deploys** (link abaixo).
-5. Role até o fim da página, até a área tracejada "Drag and drop your project folder here", e arraste a pasta **controle-de-horas** para lá. Não arraste o ZIP.
-6. Espere o deploy ficar **Published**.
-7. Abra o site e aperte **Ctrl + Shift + R** para carregar a versão nova.
-8. No celular, feche o app instalado e abra de novo (ou recarregue a página no Chrome).
+O site está no **Cloudflare Pages**, ligado ao repositório do GitHub: toda vez que o Claude envia (push) código para a branch `claude/blissful-einstein-hb4333`, o Cloudflare publica a pasta `controle-de-horas` sozinho, em cerca de 1 a 2 minutos. **O usuário não baixa ZIP nem arrasta pasta.**
 
-Aviso importante: arrastar a pasta na página `app.netlify.com/drop` cria um projeto NOVO, com endereço e dados vazios.
-Para manter o mesmo endereço e os dados, use sempre a página **Deploys** do projeto existente.
+Passo a passo que o usuário faz depois de uma atualização:
 
-Se os dados do sistema estão no navegador (modo local), eles não se perdem ao atualizar o mesmo site.
+1. Esperar cerca de 2 minutos depois do aviso do Claude.
+2. Abrir o site (link abaixo) e apertar **Ctrl + Shift + R**.
+3. Em **Ajustes → Sobre**, conferir o número da versão (o Claude diz qual deve aparecer).
+4. No celular, fechar o app instalado e abrir de novo.
+
+Se a versão não mudar depois de uns 5 minutos, abrir o painel do Cloudflare (link abaixo), projeto `controle-horas-mf`, aba **Implantações**, e ver se a última está com **Sucesso**.
+
+Quando a atualização mexer no banco, avisar para rodar o `supabase.sql` inteiro (veja a seção abaixo): Supabase > SQL Editor > New query > colar > Run. Esse passo continua manual.
+
+Atenção: nunca mais usar as áreas de "arrastar pasta" do Netlify. O Netlify (créditos limitados) fica só como cópia antiga.
 
 ### Links de acesso (manter atualizado)
 
-- ZIP da versão mais recente (branch `claude/blissful-einstein-hb4333`):
+- **Site em uso (Cloudflare Pages, desde 21/10/2026):** https://controle-horas-mf.pages.dev
+- Painel do Cloudflare: https://dash.cloudflare.com (projeto `controle-horas-mf`, em Calcular > Trabalhadores e Páginas)
+- ZIP da versão mais recente (só para pegar o `supabase.sql`; branch `claude/blissful-einstein-hb4333`):
   https://github.com/marcospaulo869/ta-na-mao/archive/refs/heads/claude/blissful-einstein-hb4333.zip
-- Painel do Netlify: https://app.netlify.com/
-- Site em uso (a partir de 20/10/2026 23:45, versão com cadastro completo): https://beamish-bavarois-228a5e.netlify.app
-  - Painel de deploys: https://app.netlify.com/projects/beamish-bavarois-228a5e/deploys
-  - Como os dados agora ficam na nuvem (Supabase), qualquer site Netlify com esta mesma pasta mostra os mesmos dados após o login.
-  - Sites antigos (podem ser apagados quando o usuário quiser): `admirable-llama-f2b59f` (https://admirable-llama-f2b59f.netlify.app), `controlehorasmf`, `sparkly-creponne-67ec9b`.
-  - Atenção: o link do colaborador é gerado com o endereço do site em que o administrador está; se o endereço mudar, gerar o link de novo.
+- Netlify (antigo, pode ser apagado): `beamish-bavarois-228a5e`, `admirable-llama-f2b59f`, `controlehorasmf`, `sparkly-creponne-67ec9b`. O link do colaborador é gerado com o endereço do site em que o administrador está: gerar sempre a partir do site novo.
 - Prévia no Claude (versão reduzida, só no navegador do dono): https://claude.ai/artifact/PtQZZ9BecJ9wf6kr5XuNiF
 - Supabase (nuvem): projeto `controle_horas`, URL https://egbkmsauwwtvonngemcn.supabase.co, painel https://supabase.com/dashboard (conta do usuário, entrada pelo GitHub). O outro projeto do mesmo painel (`kyam382@gmail.com's Project`) é de outro sistema (orçamentos, tabelas com RLS desligado): não mexer.
 - Repositório: https://github.com/marcospaulo869/ta-na-mao (login do GitHub é pelo Google, e-mail do usuário)
@@ -53,7 +51,7 @@ O script é reexecutável. Testar mudanças no SQL num Postgres local antes de e
 ### Pendências combinadas (21/10/2026)
 
 1. **Proteger o outro projeto do Supabase** (orçamento online): roteiro em `seguranca/proteger-outro-banco.sql`. Fazer um passo de cada vez com o usuário: (0) rodar as consultas só de leitura, (1) perguntar como o site de autoatendimento usa o banco, (2) ligar a proteção, (3) testar o site e, se quebrar, desfazer.
-2. **Atualização automática do site:** o Netlify cobra 15 créditos por envio de pasta (plano gratuito com poucos créditos). Plano: usar **Cloudflare Pages** ligado ao GitHub (gratuito, sem esse limite): repositório `ta-na-mao`, branch de produção `claude/blissful-einstein-hb4333`, sem comando de build, pasta de saída `controle-de-horas`. O arquivo `controle-de-horas/_headers` já existe. Depois da troca, o passo a passo de atualização passa a ser só esperar cerca de 1 minuto e apertar Ctrl + Shift + R (o `supabase.sql` continua manual).
+2. ~~Atualização automática do site~~: **feita em 21/10/2026** (Cloudflare Pages). Pendente: apagar os sites antigos do Netlify quando o usuário quiser.
 
 ### Fluxo de trabalho
 

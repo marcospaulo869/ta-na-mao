@@ -216,6 +216,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10';
+const APP_VERSAO='21/10/2026 · 1';
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -533,7 +534,7 @@ function rEmp(){
   <div class="grid">
    <div><label for="f-cpf">CPF</label><input id="f-cpf" data-k="cpf" data-mask="cpf" inputmode="numeric" autocomplete="off" value="${esc(e.cpf)}"><small id="cpfMsg" class="note"></small></div>
    <div><label for="f-rg">RG</label><input id="f-rg" data-k="rg" autocomplete="off" value="${esc(e.rg)}"></div>
-   <div><label for="f-nasc">Data de nascimento</label><input id="f-nasc" type="date" data-k="nascimento" value="${e.nascimento}"></div>
+   <div><label for="f-nasc">Data de nascimento</label><input id="f-nasc" type="date" data-k="nascimento" value="${e.nascimento}"><small id="nascMsg" class="note"></small></div>
    <div><label for="f-ec">Estado civil</label><select id="f-ec" data-k="estadoCivil">${['','Solteiro(a)','Casado(a)','União estável','Divorciado(a)','Viúvo(a)'].map(o=>`<option ${e.estadoCivil===o?'selected':''}>${o}</option>`).join('')}</select></div>
    <div><label for="f-pis">PIS / NIS</label><input id="f-pis" data-k="pis" inputmode="numeric" autocomplete="off" value="${esc(e.pis)}"></div>
    <div><label for="f-ctps">Carteira de trabalho (CTPS)</label><input id="f-ctps" data-k="ctps" autocomplete="off" value="${esc(e.ctps)}"></div></div></div>
@@ -570,11 +571,13 @@ function rEmp(){
   if(k==='salario'||k==='base'){const v=$('#f-vh');if(v)v.value=brl(e.salario/(e.base||220))}
   if(k==='pagaExtra'){const a=$('#f-ae');if(a)a.disabled=!e.pagaExtra}
   if(k==='cpf')cpfChk();
+  if(k==='nascimento')nascChk();
   if(k==='uf'){e.uf=e.uf.toUpperCase();inp.value=e.uf}
   if(k==='cep'&&dig(e.cep).length===8)buscaCep(e.cep).then(r=>{if(!r)return;Object.assign(e,r);[['rua','#f-rua'],['bairro','#f-bai'],['cidade','#f-cid'],['uf','#f-uf']].forEach(([f,id])=>{const x=$(id);if(x)x.value=e[f]});persistEmp(e)});
   persistEmp(e);
   if(k==='tipo')rEmp()});
 
+ const nascChk=()=>{const m=$('#nascMsg');if(!m)return;const y=+(e.nascimento||'').slice(0,4),h=new Date().getFullYear();const ruim=e.nascimento&&(y<1930||y>h-14);m.textContent=ruim?'Confira o ano: essa data parece improvável.':'';m.style.color=ruim?'var(--err)':''};nascChk();
  const cpfChk=()=>{const m=$('#cpfMsg');if(!m)return;const d=dig(e.cpf);m.textContent=d.length===11?(cpfValido(e.cpf)?'CPF válido':'CPF inválido: confira os números'):'';m.style.color=d.length===11&&!cpfValido(e.cpf)?'var(--err)':''};cpfChk();
  $('#fotoBtn').onclick=()=>$('#fotoIn').click();
  $('#fotoIn').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;try{e.foto=await compressSquare(f);persistEmp(e);rEmp();toast('Foto salva')}catch(x){toast('Não consegui ler a imagem')}};
@@ -893,6 +896,7 @@ function rCfg(){
  <div class="card"><h2>Trazer um backup</h2><p class="note">Se você exportou um backup do modo local, escolha o arquivo aqui.</p><input type="file" id="impCloud" accept=".json"><div id="impCloudRes"></div></div>`:
  `<div class="card"><h2>Backup</h2><p class="warn">Modo local: os dados ficam só neste navegador. Exporte um backup de vez em quando. Os comprovantes anexados não entram no backup.</p>
  <div class="row"><button class="b p" id="exp">Exportar backup</button><div><label for="imp">Importar backup</label><input type="file" id="imp" accept=".json"></div></div><div id="impOk"></div></div>`}
+ <div class="card"><h2>Sobre</h2><p class="note">Versão do sistema: <b>${APP_VERSAO}</b>. Se você acabou de receber uma atualização, aperte Ctrl + Shift + R para carregar a versão nova.</p></div>
  <div class="card"><h2>Regras aplicadas</h2><ul class="note">
  <li>Valor da hora CLT = salário ÷ 220 (44h semanais, já inclui o descanso semanal).</li>
  <li>Jornada normal: 8h de segunda a sexta e 4h no sábado, até 44h por semana. O que passar é hora extra, com adicional mínimo de 50% (Constituição art. 7º, XVI).</li>
