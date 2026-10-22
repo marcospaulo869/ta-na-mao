@@ -218,7 +218,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10';
-const APP_VERSAO='22/10/2026 · 3';
+const APP_VERSAO='22/10/2026 · 4';
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -931,6 +931,7 @@ function rCfg(){
  <div class="card"><h2>Trazer um backup</h2><p class="note">Se você exportou um backup do modo local, escolha o arquivo aqui.</p><input type="file" id="impCloud" accept=".json"><div id="impCloudRes"></div></div>`:
  `<div class="card"><h2>Backup</h2><p class="warn">Modo local: os dados ficam só neste navegador. Exporte um backup de vez em quando. Os comprovantes anexados não entram no backup.</p>
  <div class="row"><button class="b p" id="exp">Exportar backup</button><div><label for="imp">Importar backup</label><input type="file" id="imp" accept=".json"></div></div><div id="impOk"></div></div>`}
+ ${CLOUD&&USER?'<div class="card"><h2>Entrada por digital</h2><div id="bioBox"><p class="note">Carregando…</p></div></div>':''}
  <div class="card"><h2>Sobre</h2><p class="note">Versão do sistema: <b>${APP_VERSAO}</b>. Se você acabou de receber uma atualização, aperte Ctrl + Shift + R para carregar a versão nova.</p></div>
  <div class="card"><h2>Regras aplicadas</h2><ul class="note">
  <li>Valor da hora CLT = salário ÷ 220 (44h semanais, já inclui o descanso semanal).</li>
@@ -943,7 +944,7 @@ function rCfg(){
  <p class="note">Ferramenta de apoio. Não substitui contador ou advogado trabalhista.</p></div>`;
  bind(el.querySelector('.card'),S.cfg,()=>persistCfg());
  bind($('#empCard'),S.cfg.empresa,()=>persistCfg());
- $('#verPriv').onclick=()=>abrirPolitica(S.cfg.empresa);
+ $('#verPriv').onclick=()=>abrirPolitica(S.cfg.empresa);bioCard();
  el.querySelectorAll('[data-h]').forEach(i=>i.addEventListener(i.type==='date'?'change':'input',()=>{S.cfg.feriados[+i.dataset.h][i.dataset.hk]=i.value;persistCfg()}));
  el.querySelectorAll('[data-hdel]').forEach(b=>b.onclick=()=>{S.cfg.feriados.splice(+b.dataset.hdel,1);persistCfg();rCfg()});
  $('#addH').onclick=()=>{S.cfg.feriados.push({d:S.ym+'-01',n:''});persistCfg();rCfg()};
@@ -956,11 +957,47 @@ function rCfg(){
   $('#impY').onclick=()=>{S=d;S.cfg=Object.assign({minimo:1621,feriados:[],whats:''},S.cfg||{});S.emps.forEach(fixEmp);save();toast('Backup importado');show('emp')}};r.readAsText(f)};
 }
 
+/* ===== bloqueio por digital (WebAuthn do próprio aparelho) ===== */
+const BIO_KEY='controle-horas-bio';
+const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const unb64u=t=>Uint8Array.from(atob(t.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+function bioGet(){try{const o=JSON.parse(localStorage.getItem(BIO_KEY)||'null');return o&&o.id&&o.uid?o:null}catch(e){return null}}
+function bioDel(){try{localStorage.removeItem(BIO_KEY)}catch(e){}}
+async function bioDisponivel(){try{return !!(window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())}catch(e){return false}}
+async function bioAtivar(){
+ const ch=crypto.getRandomValues(new Uint8Array(32));
+ const c=await navigator.credentials.create({publicKey:{challenge:ch,rp:{name:'Controle de Horas'},
+  user:{id:new TextEncoder().encode(USER.id).slice(0,64),name:USER.email,displayName:USER.email},
+  pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+  authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},timeout:60000}});
+ try{localStorage.setItem(BIO_KEY,JSON.stringify({id:b64u(c.rawId),uid:USER.id}))}catch(e){throw new Error('Não consegui guardar no aparelho.')}}
+async function bioPedir(o){
+ await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),
+  allowCredentials:[{type:'public-key',id:unb64u(o.id),transports:['internal']}],userVerification:'required',timeout:60000}})}
+function bioTela(o){return new Promise(ok=>{
+ const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto';
+ ov.innerHTML=`<div class="auth"><div class="card"><h2>App bloqueado</h2><p class="note">Use a digital (ou o desbloqueio do celular) para abrir.</p>
+ <button class="b p" id="bio-go">Desbloquear com a digital</button><button class="b" id="bio-pw" style="border:0;background:none;color:var(--mut)">Entrar com e-mail e senha</button><div id="bio-m" class="note"></div></div></div>`;
+ document.body.appendChild(ov);const q=i=>ov.querySelector(i);
+ const tenta=async()=>{q('#bio-m').textContent='';try{await bioPedir(o);ov.remove();ok(true)}catch(e){q('#bio-m').textContent='Não foi possível confirmar a digital. Toque no botão para tentar de novo.'}};
+ q('#bio-go').onclick=tenta;
+ q('#bio-pw').onclick=async()=>{bioDel();await sb.auth.signOut();location.reload()};
+ tenta()})}
+function bioCard(){
+ const box=$('#bioBox');if(!box||!CLOUD||!USER)return;
+ bioDisponivel().then(av=>{const o=bioGet(),on=o&&o.uid===USER.id;
+  if(!av&&!on){box.innerHTML='<p class="note">Este aparelho não tem digital ou bloqueio de tela disponível para o navegador.</p>';return}
+  box.innerHTML=on?'<p class="info">Bloqueio por digital <b>ligado</b> neste aparelho.</p><button class="b d" id="bioOff">Desligar</button>':
+   '<p class="note">Em vez de digitar e-mail e senha, o app pede a digital sempre que for aberto. Vale só para este aparelho.</p><button class="b p" id="bioOn">Ligar bloqueio por digital</button>';
+  const m=document.createElement('div');m.className='note';box.appendChild(m);
+  if(on)$('#bioOff').onclick=()=>{bioDel();bioCard();toast('Bloqueio por digital desligado')};
+  else $('#bioOn').onclick=async()=>{try{await bioAtivar();bioCard();toast('Bloqueio por digital ligado')}catch(e){m.textContent='Não foi possível ligar: '+(e&&e.name==='NotAllowedError'?'a digital não foi confirmada.':(e.message||e))}}})}
+
 /* ===== login do administrador (nuvem) ===== */
 function rAuth(msg){
  $('#tabs').classList.add('hide');$('#hx').innerHTML='';
  $('#main').innerHTML=`<div class="auth"><div class="card"><h2>Entrar</h2>
- <div><label for="au-e">E-mail</label><input id="au-e" type="email" autocomplete="email"></div>
+ <div><label for="au-e">E-mail</label><input id="au-e" type="email" autocomplete="username" inputmode="email"></div>
  <div><label for="au-p">Senha</label><input id="au-p" type="password" autocomplete="current-password" minlength="6"></div>
  <button class="b p" id="au-in">Entrar</button><button class="b" id="au-up">Criar conta</button><button class="b" id="au-fg" style="border:0;background:none;color:var(--mut)">Esqueci a senha</button>
  <div id="au-m" class="note">${esc(msg||'')}</div><button class="b" id="au-pv" style="border:0;background:none;color:var(--mut)">Aviso de privacidade</button></div></div>`;
@@ -982,9 +1019,10 @@ async function adminBoot(){
  if(CLOUD){
   const {data}=await sb.auth.getSession();USER=data.session?.user||null;
   if(/type=recovery/.test(location.hash)){rNewPass();return}
-  if(!USER){rAuth();return}
+  if(!USER){bioDel();rAuth();return}
+  const bio=bioGet();if(bio&&bio.uid===USER.id)await bioTela(bio);else if(bio)bioDel();
   $('#hx').innerHTML=`<span>${esc(USER.email)}</span><button id="out">Sair</button>`;
-  $('#out').onclick=async()=>{await sb.auth.signOut();location.reload()};
+  $('#out').onclick=async()=>{bioDel();await sb.auth.signOut();location.reload()};
   $('#main').querySelector('#t-emp').innerHTML='<div class="card">Carregando…</div>';
   await cloudLoad();
  }else{$('#sub').textContent='Modo local · dados só neste navegador'}
