@@ -218,7 +218,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10';
-const APP_VERSAO='22/10/2026 · 2';
+const APP_VERSAO='22/10/2026 · 3';
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -705,19 +705,22 @@ function rFolha(){
  FOLHA={e,ym,paint,sync(){const m=(S.rec[e.id]||{})[ym]||{};
   document.querySelectorAll('#tb tr[data-d]').forEach(tr=>{const r=m[tr.dataset.d]||{};tr.querySelectorAll('[data-f]').forEach(i=>{if(i!==document.activeElement)i.value=r[i.dataset.f]||''})});paint()}};
  paint();
- let lastY=null;const centro=()=>{if(lastY!==null&&Math.abs(scrollY-lastY)>2)return;lastY=centerWeek(ym)};
- centro();
+ /* centraliza e repete algumas vezes (a tela muda de altura enquanto carrega) até a pessoa mexer */
+ let mexeu=false;const para=()=>{mexeu=true;['touchstart','wheel','keydown','mousedown'].forEach(t=>removeEventListener(t,para,true))};
+ ['touchstart','wheel','keydown','mousedown'].forEach(t=>addEventListener(t,para,{capture:true,passive:true}));
+ const centro=()=>{if(!mexeu&&FOLHA&&FOLHA.ym===ym&&FOLHA.e===e&&CUR==='folha')centerWeek(ym)};
+ centro();[150,500,1200].forEach(ms=>setTimeout(centro,ms));setTimeout(para,2500);
  if(CLOUD)loadMonth(ym).then(()=>{if(FOLHA&&FOLHA.ym===ym&&FOLHA.e===e){FOLHA.sync();centro()}});
 }
-/* deixa a semana de hoje no meio da tela (só no mês atual); devolve o scrollY usado, ou null */
+/* deixa a semana de hoje no meio da tela (no celular, o dia de hoje); só no mês atual */
 function centerWeek(ym){const td=todayS();if(td.slice(0,7)!==ym)return null;
  const mon=mondayOf(td),trs=[...document.querySelectorAll('#tb tr')].filter(tr=>tr.dataset.d?mondayOf(ym+'-'+pad(+tr.dataset.d))===mon:tr.dataset.wk===mon);
  if(!trs.length)return null;
  const nav=document.querySelector('nav'),foot=document.getElementById('foot'),H=innerHeight,nr=nav.getBoundingClientRect();
  let top=nr.top<H/2?nr.bottom:0,bot=nr.top>=H/2?nr.top:H;
- if(foot&&foot.offsetParent){const fr=foot.getBoundingClientRect();if(fr.top>H/2)bot=Math.min(bot,fr.top)}
+ if(foot&&foot.getClientRects().length){const fr=foot.getBoundingClientRect();if(fr.top>H/2)bot=Math.min(bot,fr.top)}
  const rect=l=>l.getBoundingClientRect();let t=rect(trs[0]).top,b=rect(trs[trs.length-1]).bottom;
- if(b-t>(bot-top)*0.95){const row=document.querySelector(`#tb tr[data-d="${+td.slice(8)}"]`);if(row){t=rect(row).top;b=rect(row).bottom}}
+ if(innerWidth<=720||b-t>(bot-top)*0.95){const row=document.querySelector(`#tb tr[data-d="${+td.slice(8)}"]`);if(row){t=rect(row).top;b=rect(row).bottom}}
  scrollTo(0,Math.max(0,scrollY+(t+b)/2-(top+bot)/2));return scrollY}
 function paintFoot(R,e){const T=R.T,clt=e.tipo==='clt';
  $('#foot').innerHTML=`<div class="wk">${R.weeks.map(w=>`<div>Semana ${pad(w.ini)}–${pad(w.fim)}<b>${w.dias} dia(s) · ${hm(w.min)}</b>${brl(w.val)}${w.ext?` · <span class="ext">${hm(w.ext)} extra</span>`:''}${w.ve?`<br><span class="ext">Extras: ${brl(w.ve)}</span>`:''}</div>`).join('')}</div>

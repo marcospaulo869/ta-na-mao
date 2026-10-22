@@ -41,6 +41,7 @@ Atenção: nunca mais usar as áreas de "arrastar pasta" do Netlify. O Netlify (
 - Netlify (antigo, pode ser apagado): `beamish-bavarois-228a5e`, `admirable-llama-f2b59f`, `controlehorasmf`, `sparkly-creponne-67ec9b`. O link do colaborador é gerado com o endereço do site em que o administrador está: gerar sempre a partir do site novo.
 - Prévia no Claude (versão reduzida, só no navegador do dono): https://claude.ai/artifact/PtQZZ9BecJ9wf6kr5XuNiF
 - Supabase (nuvem): projeto `controle_horas`, URL https://egbkmsauwwtvonngemcn.supabase.co, painel https://supabase.com/dashboard (conta do usuário, entrada pelo GitHub). O outro projeto do mesmo painel (`kyam382@gmail.com's Project`) é de outro sistema (orçamentos, tabelas com RLS desligado): não mexer.
+- Atenção (22/10/2026): o app do celular do usuário ainda estava aberto no site antigo do Netlify (aparece "Powered by Netlify" na tela e não tem o botão Limpar). Ele precisa abrir e instalar o app a partir do site novo do Cloudflare.
 - Repositório: https://github.com/marcospaulo869/ta-na-mao (login do GitHub é pelo Google, e-mail do usuário)
 
 ### Ao atualizar o banco (supabase.sql)
