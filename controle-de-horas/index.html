@@ -57,6 +57,7 @@ th{font-size:12px;color:var(--mut);background:var(--bg)}
 td.l,th.l{text-align:left}
 td input,td select{padding:5px;min-width:92px}
 td.sel{min-width:130px}
+button.clr{font-size:11.5px;padding:2px 8px;min-height:0;margin:3px 0 0 8px;font-weight:600;color:var(--mut)}
 td small.st{display:block;font-size:11.5px;font-weight:600;color:var(--mut)}
 tr.off td{background:var(--bg);color:var(--mut)}
 tr.hol small.st{color:var(--hol)}
@@ -121,6 +122,7 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
  td[data-l]::before{content:attr(data-l);display:block;font-size:11px;color:var(--mut);font-weight:600}
  td.l,td.sel,td.al{grid-column:1/-1}
  td.l{font-weight:700}
+ button.clr{min-height:32px;font-size:13px;margin:0 0 0 8px}
  tbody tr.wkrow{display:block;padding:0;border:0;background:none;margin-bottom:10px}
  tbody tr.wkrow td{display:block;border:1px solid var(--pri);border-radius:10px;padding:10px 12px}
  td.al:empty,td.sel:empty{display:none}
@@ -216,7 +218,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10';
-const APP_VERSAO='21/10/2026 · 1';
+const APP_VERSAO='22/10/2026 · 1';
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -317,13 +319,25 @@ function empData(e){const {id,token,...data}=e;return data}
 function persistEmp(e){if(!CLOUD){save();return}
  later('e'+e.id,async()=>{const {data,error}=await sb.from('employees').upsert({id:e.id,data:empData(e)}).select('token').single();
   if(error)return toast('Não salvou: '+error.message);if(data&&data.token!==e.token){e.token=data.token;rAccess(e)}})}
+const PENDDAY={};
 function persistEntry(e,ym,d,field){if(!CLOUD){save();return}
- later('n'+e.id+ym+d,async()=>{const r=((S.rec[e.id]||{})[ym]||{})[d]||{};
+ const dk=e.id+'|'+ym+'|'+d,fk=field||'*';(PENDDAY[dk]=PENDDAY[dk]||new Set()).add(fk);
+ later('n'+dk+'|'+fk,async()=>{try{const r=((S.rec[e.id]||{})[ym]||{})[d]||{};
   const row={emp_id:e.id,day:ym+'-'+pad(d),editado:true};
   if(!field||'abcd'.includes(field))for(const f of (field?[field]:['a','b','c','d']))row[f]=r[f]||null;
   if(!field||field==='t')row.t=r.t||'';
   const {error}=await sb.from('entries').upsert(row,{onConflict:'emp_id,day'});
-  if(error)toast('Não salvou: '+error.message)})}
+  if(error)toast('Não salvou: '+error.message)}finally{const q=PENDDAY[dk];if(q){q.delete(fk);if(!q.size)delete PENDDAY[dk]}}})}
+const isPend=(id,ym,d)=>!!PENDDAY[id+'|'+ym+'|'+d];
+async function clearEntry(e,ym,d){const dk=e.id+'|'+ym+'|'+d;
+ for(const f of ['a','b','c','d','t','*']){clearTimeout(QUEUE['n'+dk+'|'+f]);delete QUEUE['n'+dk+'|'+f]}
+ delete PENDDAY[dk];const m=(S.rec[e.id]||{})[ym];if(m)delete m[d];
+ if(!CLOUD){save();return true}
+ const day=ym+'-'+pad(d);PENDDAY[dk]=new Set(['x']);
+ try{const a=await sb.from('entries').delete().eq('emp_id',e.id).eq('day',day);if(a.error){toast('Não limpou: '+a.error.message);return false}
+  const b=await sb.from('punches').update({status:'rejected',decided_at:new Date().toISOString()}).eq('emp_id',e.id).eq('day',day).neq('status','rejected');
+  if(b.error)toast('Limpou o dia, mas não consegui anular os registros do ponto: '+b.error.message);return true}
+ finally{delete PENDDAY[dk]}}
 function persistCfg(){if(!CLOUD){save();return}
  later('cfg',async()=>{const {ip_recentes,...resto}=S.cfg;const {error}=await sb.rpc('cfg_salvar',{p_data:resto});if(error)toast('Não salvou: '+error.message)})}
 async function delEmp(e){if(CLOUD){const {error}=await sb.from('employees').delete().eq('id',e.id);if(error)return toast('Não excluiu: '+error.message)}
@@ -345,10 +359,10 @@ async function loadPend(){if(!CLOUD||!USER)return;
 const LOADED={};
 async function loadMonth(ym){if(!CLOUD||!S.emps.length)return;const [y,m]=ym.split('-').map(Number);
  const {data,error}=await sb.from('entries').select('emp_id,day,a,b,c,d,t,editado').in('emp_id',S.emps.map(e=>e.id)).gte('day',ym+'-01').lte('day',ym+'-'+pad(dim(y,m)));
- if(error)return;const busy=k=>QUEUE[k]&&true;
+ if(error)return;const busy=(id,d)=>isPend(id,ym,d);
  S.emps.forEach(e=>{(S.rec[e.id]=S.rec[e.id]||{});const old=S.rec[e.id][ym]||{},nw={};
-  for(const d in old)if(busy('n'+e.id+ym+d))nw[d]=old[d];S.rec[e.id][ym]=nw});
- data.forEach(r=>{const d=+r.day.slice(8),k='n'+r.emp_id+ym+d;if(busy(k))return;S.rec[r.emp_id][ym][d]={a:(r.a||'').slice(0,5),b:(r.b||'').slice(0,5),c:(r.c||'').slice(0,5),d:(r.d||'').slice(0,5),t:r.t||'',ed:!!r.editado}});
+  for(const d in old)if(busy(e.id,d))nw[d]=old[d];S.rec[e.id][ym]=nw});
+ data.forEach(r=>{const d=+r.day.slice(8);if(busy(r.emp_id,d))return;S.rec[r.emp_id][ym][d]={a:(r.a||'').slice(0,5),b:(r.b||'').slice(0,5),c:(r.c||'').slice(0,5),d:(r.d||'').slice(0,5),t:r.t||'',ed:!!r.editado}});
  LOADED[ym]=true}
 
 /* ===== cálculo da folha ===== */
@@ -638,10 +652,10 @@ function rFolha(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(e.nome+'-'+ym+'.csv').replace(/\s+/g,'_');a.click()};
  $('#fE').onchange=ev=>{S.sel=ev.target.value;save();rFolha()};
  $('#fM').onchange=ev=>{if(ev.target.value){S.ym=ev.target.value;save();rFolha()}};
- const [Y,M]=ym.split('-').map(Number),rec=(S.rec[e.id]=S.rec[e.id]||{}),mr=(rec[ym]=rec[ym]||{}),td=todayS();
+ const [Y,M]=ym.split('-').map(Number),rec=(S.rec[e.id]=S.rec[e.id]||{}),td=todayS(),MR=()=>((S.rec[e.id]=S.rec[e.id]||{})[ym]=S.rec[e.id][ym]||{});
  let rows='';
- for(let d=1;d<=dim(Y,M);d++){const wd=new Date(Date.UTC(Y,M-1,d)).getUTCDay(),r=mr[d]||{},ds=ym+'-'+pad(d);
-  rows+=`<tr data-d="${d}" class="${ds===td?'today':''}"><td class="l">${pad(d)} ${DN[wd]}<small class="st"></small></td>`+
+ for(let d=1;d<=dim(Y,M);d++){const wd=new Date(Date.UTC(Y,M-1,d)).getUTCDay(),r=MR()[d]||{},ds=ym+'-'+pad(d);
+  rows+=`<tr data-d="${d}" class="${ds===td?'today':''}"><td class="l">${pad(d)} ${DN[wd]}<small class="st"></small><button type="button" class="b clr" data-clr title="Apagar todos os horários deste dia" aria-label="Limpar o dia ${d}">Limpar</button></td>`+
   (clt?`<td class="sel" data-l="Situação"><select data-f="t" aria-label="Situação do dia ${d}">${opts.map(o=>`<option value="${o[0]}" ${(r.t||'')===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></td>`:'')+
   [['a','Entrada manhã'],['b','Saída manhã'],['c','Entrada tarde'],['d','Saída tarde']].map(([f,l])=>`<td data-l="${l}"><input type="time" data-f="${f}" aria-label="${l} dia ${d}" value="${r[f]||''}"></td>`).join('')+
   `<td class="c-tot" data-l="Total"></td><td class="c-n" data-l="Normais"></td><td class="c-e ext" data-l="Extras"></td><td class="c-v" data-l="Valor do dia"></td><td class="al c-al"></td></tr>`;
@@ -671,7 +685,13 @@ function rFolha(){
    (T.dAdm?`<div class="info">Admissão neste mês: salário proporcional, desconto de ${brl(T.dAdm)} pelos dias antes da admissão.</div>`:'');
   paintFoot(R,e)};
  $('#tb').addEventListener('input',ev=>{const f=ev.target.dataset.f;if(!f)return;const d=+ev.target.closest('tr').dataset.d;
-  const r=mr[d]=mr[d]||{};r[f]=ev.target.value;r.ed=true;persistEntry(e,ym,d,f);paint()});
+  const mr=MR(),r=mr[d]=mr[d]||{};let v=ev.target.value;
+  if(v==='00:00'&&'abcd'.includes(f)){v='';ev.target.value='';toast('00:00 é meia-noite e não é usado. Campo deixado vazio.')}
+  r[f]=v;r.ed=true;persistEntry(e,ym,d,f);paint()});
+ $('#tb').addEventListener('click',async ev=>{const b=ev.target.closest('[data-clr]');if(!b)return;
+  const tr=b.closest('tr'),d=+tr.dataset.d;
+  if(!confirm('Apagar todos os horários do dia '+pad(d)+'?'+(CLOUD?' Os registros de ponto desse dia também serão anulados.':'')))return;
+  if(await clearEntry(e,ym,d)){FOLHA.sync();toast('Dia '+pad(d)+' limpo')}});
  $('#tb').addEventListener('change',ev=>{if(ev.target.tagName==='SELECT')ev.target.dispatchEvent(new Event('input',{bubbles:true}))});
  $('#impGo').onclick=()=>{const r=importLista(e,$('#impLista').value);
   $('#impRes').innerHTML=`<p class="${r.n?'info':'warn'}">${r.n} dia(s) importado(s)${r.meses.length?' em '+r.meses.map(ymLabel).join(', '):''}.${r.n?' Troque o mês acima para conferir.':''}</p>${r.bad.length?`<p class="warn">${r.bad.length} linha(s) não entendida(s):<br>${r.bad.map(esc).join('<br>')}</p>`:''}`;
