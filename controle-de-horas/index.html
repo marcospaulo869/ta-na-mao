@@ -142,6 +142,8 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
 .pgh:last-child{border-bottom:0}.pgh small{color:var(--mut);display:block}
 .pgh .v{font-weight:700;text-align:right}.pgh .ac{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
 .pgh .ac button{padding:4px 10px;min-height:0}
+.rbadge{display:block;font-size:12.5px;font-weight:600;margin-top:3px;color:var(--mut)}
+.rbadge.ok{color:var(--pri)}.rbadge.no{color:var(--err)}.rbadge.wait{color:var(--warn)}
 .dsem{width:100%;min-width:0;font-size:13.5px}.dsem td{padding:4px 6px;text-align:left}.dsem td:nth-child(n+3){text-align:right}
 .avatar{width:84px;height:84px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:2px solid var(--line)}
 .avatar.ph{display:grid;place-items:center;background:var(--pri2);color:var(--pri);font-weight:700;font-size:30px}
@@ -222,8 +224,8 @@ let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.rem
 async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast('Link copiado')}catch(e){if(inp){inp.select();toast('Selecionado: copie com Ctrl+C')}}}
 
 /* ===== aviso de privacidade (LGPD) ===== */
-const POL_VERSAO='2026-10b';
-const APP_VERSAO='23/10/2026 · 5';
+const POL_VERSAO='2026-10c';
+const APP_VERSAO='23/10/2026 · 6';
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -235,7 +237,7 @@ function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  <li><b>Contato e endereço:</b> telefone, e-mail, contato de emergência, endereço.</li>
  <li><b>Trabalho:</b> data de início, regime (carteira assinada ou diarista), valor da hora ou salário, PIS e carteira de trabalho (quando houver), dias de trabalho.</li>
  <li><b>Ponto:</b> data e hora de cada registro, o IP da internet usada e a localização aproximada (GPS), <b>somente no momento em que você toca em "Registrar"</b>.</li>
- <li><b>Pagamento:</b> valores, vales, chave Pix, banco e comprovantes.</li>
+ <li><b>Pagamento:</b> valores, vales, chave Pix, banco e comprovantes, e a <b>sua confirmação de recebimento</b> (data, hora, rede de internet e tipo de aparelho no momento em que você confirma).</li>
  <li><b>Documentos:</b> arquivos que a empresa anexar ao seu cadastro (por exemplo, RG, comprovante de residência, atestados).</li></ul>
  <h3>3. Para que usamos e em que base legal</h3><ul>
  <li><b>Calcular e pagar o trabalho</b> (horas, extras, faltas, vales, rescisão): execução do contrato e cumprimento de obrigação legal trabalhista e fiscal.</li>
@@ -358,8 +360,35 @@ async function cloudLoad(){
  if(b.data&&b.data.data)S.cfg=Object.assign({minimo:1621,feriados:[],whats:''},b.data.data);
  fixCfg();
  if(!S.emps.find(e=>e.id===S.sel))S.sel=S.emps[0]?.id||null;
- await loadPend()}
+ await loadPend();await loadRecibos()}
 const PEND={list:[],recentes:[]};
+/* ===== confirmação de recebimento do pagamento (recibos) ===== */
+const REC={list:[]};
+const fmtD=iso=>iso?String(iso).split('-').reverse().join('/'):'';
+const fmtDT=(iso,seg)=>iso?new Date(iso).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:seg?'2-digit':undefined}):'';
+async function loadRecibos(){if(!CLOUD||!USER)return;const {data,error}=await sb.from('recibos').select('*').order('criado_em',{ascending:false}).limit(500);if(!error)REC.list=data||[]}
+const recDe=(empId,pagId)=>REC.list.find(r=>r.emp_id===empId&&r.pag_id===pagId)||null;
+function snapPag(e,p){const W=p.ref?calcSemana(e,p.ref):null;
+ return {d:p.d,v:p.v,forma:p.forma||'',obs:p.obs||'',ref:p.ref||'',refTxt:p.ref?'Semana '+fmtBR(p.ref)+' a '+fmtBR(addD(p.ref,6)):'Pagamento avulso',
+  horas:W?hm(W.min):'',dias:W?W.dias:0,valHoras:W?r2(W.val):null,ajuda:W&&W.ajuda?r2(W.ajuda):0,vales:W&&W.vales?r2(W.vales):0,comprovante:!!p.file}}
+async function pedirCiencia(e,p){const {error}=await sb.from('recibos').insert({emp_id:e.id,pag_id:p.id,snapshot:snapPag(e,p)});
+ if(error){toast('Não consegui pedir a confirmação: '+error.message);return false}
+ await loadRecibos();return true}
+function abrirCiencia(rc,e){const s=rc.snapshot||{},em=S.cfg.empresa||{},ok=rc.status==='confirmado';
+ const d=document.createElement('div');d.className='priv';d.id='priv';
+ d.innerHTML=`<div class="privbar"><button class="b p" id="privX">Fechar</button><button class="b" onclick="window.print()">Imprimir / PDF</button></div>
+ <div class="privtxt"><h2>Comprovante de ciência de pagamento</h2>
+ <p><b>Empresa:</b> ${esc(em.nome||'—')}${em.cnpj?' · CNPJ '+esc(em.cnpj):''}</p>
+ <p><b>Colaborador:</b> ${esc(e.nome)}${e.cpf?' · CPF '+esc(MASK.cpf(e.cpf).replace(/^\d{3}\.\d{3}\.\d{3}/,'***.***.***')):''}</p>
+ <h3>Pagamento</h3><ul><li><b>Valor:</b> ${brl(s.v)}</li><li><b>Pago em:</b> ${fmtD(s.d)} · ${esc(s.forma||'')}</li><li><b>Referente a:</b> ${esc(s.refTxt||'')}</li>
+ ${s.valHoras!=null?`<li><b>Horas da semana:</b> ${esc(s.horas)} em ${s.dias} dia(s) · ${brl(s.valHoras)}</li>`:''}${s.ajuda?`<li><b>Ajuda de custo:</b> + ${brl(s.ajuda)}</li>`:''}${s.vales?`<li><b>Vales:</b> − ${brl(s.vales)}</li>`:''}${s.obs?`<li><b>Observação:</b> ${esc(s.obs)}</li>`:''}</ul>
+ <h3>Resposta do colaborador</h3>
+ <p>${ok?'<b>CONFIRMOU o recebimento</b>':'<b>CONTESTOU</b> o pagamento'} em <b>${fmtDT(rc.decidido_em,true)}</b> (horário de Brasília), pelo link pessoal dele no aplicativo.</p>
+ ${rc.obs?`<p><b>Motivo informado:</b> ${esc(rc.obs)}</p>`:''}
+ <p><small>Pedido enviado em ${fmtDT(rc.criado_em,true)}. Rede (IP): ${esc(rc.ip||'—')} · Aparelho: ${esc(rc.ua||'—')}</small></p>
+ <p><b>Código de verificação:</b> <code style="word-break:break-all">${esc(rc.selo||'')}</code></p>
+ <p><small>Data, hora, rede e código foram gravados pelo servidor no momento da resposta e não podem ser alterados depois. Esta confirmação vale somente para o valor e o período indicados e não significa renúncia a outros direitos do colaborador. Ela complementa, mas não substitui, o comprovante da transferência (Pix ou banco).</small></p></div>`;
+ document.body.appendChild(d);$('#privX').onclick=()=>d.remove()}
 async function loadPend(){if(!CLOUD||!USER)return;
  const [a,b]=await Promise.all([sb.from('punches').select('*').eq('status','pending').order('ts'),sb.from('punches').select('*').neq('status','pending').order('ts',{ascending:false}).limit(30)]);
  if(!a.error)PEND.list=a.data;if(!b.error)PEND.recentes=b.data}
@@ -765,6 +794,9 @@ function resumoTexto(e,W){const L=[`*Resumo da semana: ${e.nome}*`,`${fmtBR(W.mo
  L.push(`*A pagar: ${brl(W.pagar)}*`);return L.join('\n')}
 function rBanner(){const b=$('#banner');if(!b)return;b.innerHTML='';
  if(CLOUD&&PEND.list.length&&CUR!=='pon'){b.insertAdjacentHTML('beforeend',`<div class="warn noprint" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>${PEND.list.length} registro(s) de ponto aguardando a sua aprovação.</b> Foram feitos fora do local ou sem localização.</div><button class="b p" id="bnPon">Ver pendências</button></div>`);$('#bnPon').onclick=()=>show('pon')}
+ if(CLOUD&&CUR!=='pag'){const ct=REC.list.filter(r=>r.status==='contestado'&&!REC.list.some(o=>o.emp_id===r.emp_id&&o.pag_id===r.pag_id&&o.status!=='contestado'));
+  if(ct.length){b.insertAdjacentHTML('beforeend',`<div class="warn noprint" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>${ct.length} pagamento(s) contestado(s) pelo colaborador.</b> Veja o motivo no histórico da aba Pagar.</div><button class="b p" id="bnCt">Ver</button></div>`);
+   $('#bnCt').onclick=()=>{const e0=S.emps.find(x=>x.id===ct[0].emp_id);if(e0)S.sel=e0.id;show('pag')}}}
  if(CUR==='pag'||!S.emps.length)return;
  const mon=semanaAlvo(),pend=[];
  S.emps.forEach(e=>{const W=calcSemana(e,mon);if(W.dias>0&&W.pago<=0)pend.push({e,W})});
@@ -778,7 +810,7 @@ function rPag(fresh){
  if(!e){el.innerHTML='<div class="card">Cadastre um colaborador na aba Equipe.</div>';return}
  if(!PAG.mon)PAG.mon=semanaAlvo();
  const mon=PAG.mon;
- if(CLOUD&&!fresh){Promise.all([...new Set([mon.slice(0,7),addD(mon,6).slice(0,7)])].map(loadMonth)).then(()=>{if(CUR==='pag')rPag(true)})}
+ if(CLOUD&&!fresh){Promise.all([...new Set([mon.slice(0,7),addD(mon,6).slice(0,7)])].map(loadMonth).concat(loadRecibos())).then(()=>{if(CUR==='pag')rPag(true)})}
  const W=calcSemana(e,mon),pagos=(e.pagamentos||[]).slice().sort((a,b)=>(b.d||'').localeCompare(a.d||'')),totPago=pagos.reduce((a,p)=>a+(+p.v||0),0);
  const FORMAS=['Pix','Dinheiro','Transferência','Outro'];
  el.innerHTML=`<div class="card noprint"><div class="row"><div><label for="pE">Colaborador</label>${empSelect('pE')}</div>
@@ -802,11 +834,14 @@ function rPag(fresh){
   <div><label for="pg-r">Referente a</label><select id="pg-r"><option value="${mon}">Semana ${fmtBR(mon)} a ${fmtBR(W.fim)}</option><option value="">Avulso (sem semana)</option></select></div>
   <div><label for="pg-o">Observação</label><input id="pg-o" placeholder="Ex.: Pix para a chave do telefone"></div>
   <div><label for="pg-a">Comprovante (foto, print ou PDF)</label><input id="pg-a" type="file" accept="image/*,application/pdf"></div></div>
+  ${CLOUD?`<label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-weight:400"><input type="checkbox" id="pg-c" checked style="width:auto;min-height:0;margin-top:3px"><span>Pedir ao colaborador que <b>confirme o recebimento</b> no app. Fica registrado com data, hora e código, como prova do pagamento.</span></label>`:''}
   <div class="row" style="margin-top:10px"><button class="b p" id="pgSave">Salvar pagamento</button></div><div id="pgMsg"></div>
   <p class="note">${CLOUD?'O comprovante é guardado na nuvem, privado para a sua conta.':'<b>Modo local:</b> o comprovante fica guardado só neste navegador e não entra no backup.'}</p></div>
  <div class="card"><h2>Histórico de pagamentos de ${esc(e.nome)}</h2>
-  ${pagos.length?pagos.map(p=>`<div class="pgh"><div><b>${(p.d||'').split('-').reverse().join('/')}</b></div><div>${esc(p.forma||'')}${p.obs?' · '+esc(p.obs):''}<small>${p.ref?'Semana '+fmtBR(p.ref)+' a '+fmtBR(addD(p.ref,6)):'Avulso'}</small></div><div class="v">${brl(p.v)}</div>
-   <div class="ac noprint">${p.file?`<button class="b" data-pv="${p.id}">Ver comprovante</button>`:'<small>Sem comprovante</small>'}<button class="b d" data-pd="${p.id}">Excluir</button></div></div>`).join('')+`<p class="note"><b>Total pago: ${brl(totPago)}</b></p>`:'<p class="note">Nenhum pagamento registrado.</p>'}</div>`;
+  ${pagos.length?pagos.map(p=>{const rc=CLOUD?recDe(e.id,p.id):null;
+   const bd=!CLOUD?'':!rc?'<span class="rbadge">Sem pedido de confirmação</span>':rc.status==='confirmado'?`<span class="rbadge ok">✔ Recebimento confirmado em ${fmtDT(rc.decidido_em)}</span>`:rc.status==='contestado'?`<span class="rbadge no">⚠ Contestado em ${fmtDT(rc.decidido_em)}: ${esc(rc.obs||'')}</span>`:'<span class="rbadge wait">⏳ Aguardando o colaborador confirmar</span>';
+   return `<div class="pgh"><div><b>${(p.d||'').split('-').reverse().join('/')}</b></div><div>${esc(p.forma||'')}${p.obs?' · '+esc(p.obs):''}<small>${p.ref?'Semana '+fmtBR(p.ref)+' a '+fmtBR(addD(p.ref,6)):'Avulso'}</small>${bd}</div><div class="v">${brl(p.v)}</div>
+   <div class="ac noprint">${p.file?`<button class="b" data-pv="${p.id}">Ver comprovante</button>`:'<small>Sem comprovante</small>'}${CLOUD&&(!rc||rc.status==='contestado')?`<button class="b" data-pc="${p.id}">Pedir confirmação</button>`:''}${rc&&rc.status!=='aguardando'?`<button class="b" data-pp="${rc.id}">Comprovante de ciência</button>`:''}${rc&&rc.status==='confirmado'?'<small>Confirmado: não pode ser excluído</small>':`<button class="b d" data-pd="${p.id}">Excluir</button>`}</div></div>`}).join('')+`<p class="note"><b>Total pago: ${brl(totPago)}</b></p>`:'<p class="note">Nenhum pagamento registrado.</p>'}</div>`;
  $('#pE').onchange=ev=>{S.sel=ev.target.value;save();rPag()};
  $('#wPrev').onclick=()=>{PAG.mon=addD(mon,-7);rPag()};$('#wNext').onclick=()=>{PAG.mon=addD(mon,7);rPag()};$('#wHoje').onclick=()=>{PAG.mon=semanaAlvo();rPag()};
  const txt=resumoTexto(e,W);
@@ -818,11 +853,17 @@ function rPag(fresh){
   const fl=$('#pg-a').files[0];if(fl&&fl.size>12*1024*1024){msg.innerHTML='<p class="warn">Arquivo muito grande (máximo 12 MB).</p>';return}
   msg.innerHTML='<p class="note">Salvando…</p>';let file=null;
   try{if(fl)file=await storeFile(fl)}catch(x){msg.innerHTML='<p class="warn">Não consegui guardar o comprovante: '+esc(x.message||x)+'</p>';return}
-  (e.pagamentos=e.pagamentos||[]).push({id:uuid(),d,v:r2(v),forma:$('#pg-f').value,ref:$('#pg-r').value,obs:$('#pg-o').value.trim(),file});
-  persistEmp(e);toast('Pagamento registrado');rPag(true)};
+  const np={id:uuid(),d,v:r2(v),forma:$('#pg-f').value,ref:$('#pg-r').value,obs:$('#pg-o').value.trim(),file};
+  (e.pagamentos=e.pagamentos||[]).push(np);
+  const quer=CLOUD&&$('#pg-c')&&$('#pg-c').checked;
+  persistEmp(e);if(quer)await pedirCiencia(e,np);toast(quer?'Pagamento registrado. Aguardando a confirmação do colaborador':'Pagamento registrado');rPag(true)};
+ el.querySelectorAll('[data-pc]').forEach(b=>b.onclick=async()=>{const p=e.pagamentos.find(x=>x.id===b.dataset.pc);if(!p)return;b.disabled=true;if(await pedirCiencia(e,p))toast('Pedido enviado ao colaborador');rPag(true)});
+ el.querySelectorAll('[data-pp]').forEach(b=>b.onclick=()=>{const rc=REC.list.find(r=>r.id===b.dataset.pp);if(rc)abrirCiencia(rc,e)});
  el.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>{const p=e.pagamentos.find(x=>x.id===b.dataset.pv);if(p&&p.file)openFile(p.file)});
  el.querySelectorAll('[data-pd]').forEach(b=>b.onclick=async()=>{if(b.dataset.ok!=='1'){b.dataset.ok='1';b.textContent='Confirmar exclusão?';setTimeout(()=>{b.dataset.ok='';b.textContent='Excluir'},4000);return}
-  const p=e.pagamentos.find(x=>x.id===b.dataset.pd);if(p&&p.file)await removeFile(p.file);e.pagamentos=e.pagamentos.filter(x=>x!==p);persistEmp(e);rPag(true)});
+  const p=e.pagamentos.find(x=>x.id===b.dataset.pd);const rc=CLOUD&&p?recDe(e.id,p.id):null;if(rc&&rc.status==='confirmado')return;
+  if(rc&&rc.status==='aguardando'){await sb.from('recibos').delete().eq('id',rc.id);await loadRecibos()}
+  if(p&&p.file)await removeFile(p.file);e.pagamentos=e.pagamentos.filter(x=>x!==p);persistEmp(e);rPag(true)});
 }
 
 /* ===== ponto pelo celular (administração) ===== */
@@ -1058,7 +1099,7 @@ async function empFetch(){
   if(data.settings&&data.settings.feriados)S.cfg.feriados=data.settings.feriados;
   EMP.recs={};(data.entries||[]).forEach(r=>{EMP.recs[+r.day.slice(8)]={a:(r.a||'').slice(0,5),b:(r.b||'').slice(0,5),c:(r.c||'').slice(0,5),d:(r.d||'').slice(0,5),t:r.t||''}});
   const t=data.today_entry||{};EMP.todayRec={a:(t.a||'').slice(0,5),b:(t.b||'').slice(0,5),c:(t.c||'').slice(0,5),d:(t.d||'').slice(0,5)};
-  EMP.punches=data.punches||[];EMP.proximo=data.proximo;EMP.ponto=data.ponto||{};EMP.empresa=(data.settings&&data.settings.empresa)||{};return true}
+  EMP.recibos=data.recibos||[];EMP.punches=data.punches||[];EMP.proximo=data.proximo;EMP.ponto=data.ponto||{};EMP.empresa=(data.settings&&data.settings.empresa)||{};return true}
  const e=S.emps.find(x=>x.id===EMP.tok);if(!e)return false;
  EMP.e=e;EMP.empresa=S.cfg.empresa||{};EMP.today=todayS();EMP.recs=(S.rec[e.id]||{})[EMP.ym]||{};
  const tm=EMP.today.slice(0,7),td=+EMP.today.slice(8);EMP.todayRec=Object.assign({},((S.rec[e.id]||{})[tm]||{})[td]);return true}
@@ -1111,6 +1152,24 @@ function instBind(){const g=document.getElementById('instGo');if(!g)return;
  g.onclick=async()=>{if(INST){try{INST.prompt();await INST.userChoice}catch(e){}INST=null;const c=document.getElementById('instCard');if(c&&jaInstalado())c.remove()}
   else{const h=document.getElementById('instHow');h.style.fontWeight='600';h.scrollIntoView({block:'center',behavior:'smooth'});toast('Siga os passos abaixo do botão')}};
  const n=document.getElementById('instNo');if(n)n.onclick=()=>{try{localStorage.setItem(INST_KEY,String(Date.now()))}catch(e){}document.getElementById('instCard').remove()}}
+function recCard(){const L=EMP.recibos||[];if(!CLOUD||!L.length)return '';
+ const pend=L.filter(r=>r.status==='aguardando'),feitos=L.filter(r=>r.status!=='aguardando').slice(0,8);
+ const lin=(t,v,c)=>v?`<div class="emp-day"><div>${t}</div><div class="r ${c||''}">${v}</div></div>`:'';
+ const box=r=>{const s=r.snapshot||{};return `<div class="card" style="border:2px solid var(--pri)"><h2>Confirme o seu pagamento</h2>
+  ${lin('Referente a',esc(s.refTxt||''))}${s.valHoras!=null?lin('Horas ('+esc(s.horas)+', '+s.dias+' dia(s))',brl(s.valHoras)):''}${lin('Ajuda de custo',s.ajuda?'+ '+brl(s.ajuda):'')}${lin('Vales',s.vales?'− '+brl(s.vales):'')}
+  ${lin('<b>Valor pago</b>','<b>'+brl(s.v)+'</b>')}${lin('Forma',esc(s.forma||''))}${lin('Data do pagamento',fmtD(s.d))}
+  <p class="note" style="margin-top:10px">Ao tocar em <b>"Confirmo que recebi"</b>, você declara que recebeu <b>${brl(s.v)}</b>${s.forma?' por '+esc(s.forma):''} em ${fmtD(s.d)}, referente a ${esc((s.refTxt||'').toLowerCase())}. O sistema grava a data, a hora e a sua rede. Esta confirmação vale só para este pagamento e <b>não significa renúncia a outros direitos</b>. Se não recebeu ou o valor está errado, toque em "Não recebi / discordo".</p>
+  <button class="b p" data-rok="${r.id}" style="width:100%;font-size:17px;padding:14px">Confirmo que recebi ${brl(s.v)}</button>
+  <button class="b" data-rno="${r.id}" style="width:100%;margin-top:8px">Não recebi / discordo</button>
+  <div id="rno-${r.id}" class="hide" style="margin-top:8px"><label for="rob-${r.id}">Explique o que está errado</label><textarea id="rob-${r.id}" rows="3" maxlength="500" style="width:100%"></textarea><button class="b" data-rsend="${r.id}" style="margin-top:6px">Enviar para a empresa</button></div></div>`};
+ const hist=feitos.length?`<div class="card"><h2>Meus pagamentos</h2>${feitos.map(r=>{const s=r.snapshot||{};
+  return `<div class="emp-day"><div><b>${brl(s.v)}</b><small>${esc(s.refTxt||'')} · ${fmtD(s.d)}</small></div><div class="r">${r.status==='confirmado'?'<b style="color:var(--pri)">✔ Confirmado</b>':'<b style="color:var(--err)">Contestado</b>'}<small>${fmtDT(r.decidido_em)}</small><small>Código ${esc((r.selo||'').slice(0,8))}</small></div></div>`}).join('')}</div>`:'';
+ return pend.map(box).join('')+hist}
+async function respRec(id,acao,obs){const r=(EMP.recibos||[]).find(x=>x.id===id);if(!r)return;
+ if(!confirm(acao==='confirmar'?'Confirmar que você recebeu '+brl(r.snapshot.v)+'?':'Enviar a sua contestação para a empresa?'))return;
+ const {data,error}=await sb.rpc('emp_recibo',{p_token:EMP.tok,p_id:id,p_acao:acao,p_obs:obs||''});
+ if(error||!data||!data.ok){toast((data&&data.erro)||'Não salvou. Verifique a internet e tente de novo.');return}
+ await empFetch();rEmpView();toast(acao==='confirmar'?'Recebimento confirmado. Obrigado!':'Contestação enviada para a empresa')}
 function rEmpView(){
  const e=EMP.e,clt=e.tipo==='clt',vv=e.verValores!==false,td=EMP.today,wd=new Date(td+'T12:00:00Z').getUTCDay(),hol=holName(td);
  const liberado=e.dias.includes(wd),r=EMP.todayRec;
@@ -1124,7 +1183,7 @@ function rEmpView(){
  ${EMP.ponto&&EMP.ponto.externo?`<details style="margin-top:8px"><summary>Estou fora da empresa (trabalho externo)</summary><textarea id="pMot" rows="2" placeholder="Motivo e local. Ex.: montagem na obra do cliente X" style="width:100%;margin:8px 0;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:7px;padding:8px"></textarea><button class="b" id="bExt">Registrar fora da empresa</button><p class="note">Fica aguardando a aprovação do responsável.</p></details>`:''}`:'<p class="info">Você já registrou os 4 horários de hoje.</p>'}
  <div id="pMsg" class="note">${esc(EMP.msg||'')}</div>
  ${(EMP.punches||[]).map(q=>`<div class="emp-day"><div><b>${CAMPO[q.field]||''}</b><small>${PLACE[q.place]||''}</small></div><div class="r"><b>${q.hora}</b><small>${q.status==='pending'?'Aguardando aprovação':q.status==='rejected'?'Recusado':'Registrado'}</small></div></div>`).join('')}</div>`:'';
- $('#main').innerHTML=`${instCard()}${cardHoje}<div class="card emp-today ${nuvem?'hide':''}"><h2>Hoje, ${DN[wd]} ${td.slice(8)}/${td.slice(5,7)}</h2>
+ $('#main').innerHTML=`${recCard()}${instCard()}${cardHoje}<div class="card emp-today ${nuvem?'hide':''}"><h2>Hoje, ${DN[wd]} ${td.slice(8)}/${td.slice(5,7)}</h2>
  ${hol?`<p class="info">Feriado: ${esc(hol)}</p>`:''}
  ${liberado?`<div class="times">${F.map(([f,l])=>`<div><label for="p-${f}">${l}</label><div class="in"><input id="p-${f}" type="time" data-p="${f}" value="${r[f]||''}"><button class="b p" data-now="${f}">Agora</button></div></div>`).join('')}</div>
  <p class="note" id="pst">${EMP.msg||'Toque em "Agora" ao chegar e ao sair. O horário é salvo na hora.'}</p>`:'<p class="note">Hoje não é um dia liberado na sua escala.</p>'}</div>
@@ -1145,6 +1204,9 @@ function rEmpView(){
  <p class="note">Algum dado errado? Fale com o responsável. Só ele pode alterar o cadastro e corrigir dias anteriores.</p>
  <div class="row"><button class="b" id="ePriv">Aviso de privacidade</button></div></div>`;
  instBind();
+ document.querySelectorAll('[data-rok]').forEach(b=>b.onclick=()=>respRec(b.dataset.rok,'confirmar'));
+ document.querySelectorAll('[data-rno]').forEach(b=>b.onclick=()=>$('#rno-'+b.dataset.rno).classList.toggle('hide'));
+ document.querySelectorAll('[data-rsend]').forEach(b=>b.onclick=()=>respRec(b.dataset.rsend,'contestar',$('#rob-'+b.dataset.rsend).value));
  $('#mPrev').onclick=async()=>{EMP.ym=ymAdd(EMP.ym,-1);await empFetch();rEmpView()};
  $('#mNext').onclick=async()=>{EMP.ym=ymAdd(EMP.ym,1);await empFetch();rEmpView()};
  const doPunch=async(ext)=>{const btn=$(ext?'#bExt':'#bPunch'),mot=ext?$('#pMot').value.trim():null;

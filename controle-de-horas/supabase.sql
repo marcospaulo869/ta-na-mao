@@ -46,6 +46,23 @@ create table if not exists punches (
 create index if not exists punches_emp_day on punches (emp_id, day);
 create index if not exists punches_pending on punches (status) where status = 'pending';
 
+-- Confirmação de recebimento de pagamento. A empresa cria o pedido (aguardando); só o colaborador
+-- (pelo link pessoal, via emp_recibo) responde. Depois de respondido, ninguém altera nem apaga.
+create table if not exists recibos (
+  id uuid primary key default gen_random_uuid(),
+  emp_id uuid not null references employees(id) on delete cascade,
+  pag_id text not null,                                   -- id do pagamento na ficha do colaborador
+  snapshot jsonb not null,                                -- o que o colaborador viu (valor, data, semana, forma...)
+  status text not null default 'aguardando' check (status in ('aguardando','confirmado','contestado')),
+  criado_em timestamptz not null default now(),
+  decidido_em timestamptz,                                -- hora gravada pelo servidor
+  obs text,                                               -- motivo, se contestou
+  ip text, ua text,                                       -- rede e aparelho de quem respondeu (lidos pelo servidor)
+  selo text                                               -- código de verificação (SHA-256)
+);
+create unique index if not exists recibos_ativo on recibos (emp_id, pag_id) where status <> 'contestado';
+create index if not exists recibos_emp on recibos (emp_id, criado_em desc);
+
 -- Parâmetros da empresa (salário mínimo, feriados municipais, regras de ponto, locais).
 create table if not exists company_settings (
   owner uuid primary key default auth.uid() references auth.users(id) on delete cascade,
@@ -56,6 +73,7 @@ alter table employees enable row level security;
 alter table entries enable row level security;
 alter table punches enable row level security;
 alter table company_settings enable row level security;
+alter table recibos enable row level security;
 
 -- --------------------------------------------------- acesso do administrador
 
@@ -77,8 +95,41 @@ drop policy if exists cfg_owner on company_settings;
 create policy cfg_owner on company_settings for all
   using (owner = auth.uid()) with check (owner = auth.uid());
 
+-- recibos: a empresa lê, pede (insere) e só apaga pedidos ainda sem resposta. Nunca altera.
+drop policy if exists rec_sel on recibos;
+create policy rec_sel on recibos for select
+  using (exists (select 1 from employees e where e.id = emp_id and e.owner = auth.uid()));
+drop policy if exists rec_ins on recibos;
+create policy rec_ins on recibos for insert
+  with check (status = 'aguardando' and decidido_em is null and selo is null and ip is null
+    and exists (select 1 from employees e where e.id = emp_id and e.owner = auth.uid()));
+drop policy if exists rec_del on recibos;
+create policy rec_del on recibos for delete
+  using (status = 'aguardando'
+    and exists (select 1 from employees e where e.id = emp_id and e.owner = auth.uid()));
+
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on employees, entries, punches, company_settings to authenticated;
+grant select, insert, delete on recibos to authenticated;
+revoke update on recibos from authenticated;
+revoke all on recibos from anon;
+revoke truncate, references, trigger on recibos from authenticated;
+
+-- Defesa extra: uma resposta já dada não muda, e o que o colaborador viu também não.
+create or replace function recibos_guard() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if old.status <> 'aguardando' then
+    raise exception 'Este registro já foi respondido e não pode ser alterado.';
+  end if;
+  if new.snapshot is distinct from old.snapshot or new.emp_id <> old.emp_id or new.pag_id <> old.pag_id
+     or new.criado_em <> old.criado_em or new.id <> old.id then
+    raise exception 'Os dados do pagamento não podem ser alterados.';
+  end if;
+  return new;
+end $$;
+drop trigger if exists recibos_guard_t on recibos;
+create trigger recibos_guard_t before update on recibos for each row execute function recibos_guard();
 
 -- ------------------------------------------------------------- utilidades
 
@@ -207,6 +258,10 @@ begin
                           'hora', to_char(p.ts at time zone 'America/Sao_Paulo', 'HH24:MI'),
                           'status', p.status, 'place', p.place) order by p.ts)
                           from punches p where p.emp_id = e.id and p.day = hoje), '[]'::jsonb),
+    'recibos', coalesce((select jsonb_agg(jsonb_build_object('id', x.id, 'snapshot', x.snapshot, 'status', x.status,
+                          'criado_em', x.criado_em, 'decidido_em', x.decidido_em, 'selo', x.selo, 'obs', x.obs)
+                          order by x.criado_em desc)
+                          from (select * from recibos where emp_id = e.id order by criado_em desc limit 30) x), '[]'::jsonb),
     'proximo', case n when 0 then 'a' when 1 then 'b' when 2 then 'c' when 3 then 'd' else null end,
     'ponto', jsonb_build_object(
       'verif', coalesce(cfg->'ponto'->>'verif', 'block'),
@@ -251,6 +306,35 @@ begin
   update employees set data = jsonb_set(data, '{aceite}',
     to_jsonb(to_char(now() at time zone 'America/Sao_Paulo', 'YYYY-MM-DD"T"HH24:MI')), true) where id = e.id;
   return jsonb_build_object('ok', true);
+end $$;
+
+-- O colaborador confirma (ou contesta) o recebimento de um pagamento. O servidor grava hora, rede e aparelho
+-- e gera um código de verificação; depois disso o registro não muda mais.
+create or replace function emp_recibo(p_token uuid, p_id uuid, p_acao text, p_obs text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  e employees; r recibos; hdr jsonb; agora timestamptz := now(); novo text; h text; motivo text;
+begin
+  select * into e from employees where token = p_token;
+  if not found then return jsonb_build_object('ok', false, 'erro', 'Link inválido.'); end if;
+  if p_acao not in ('confirmar', 'contestar') then return jsonb_build_object('ok', false, 'erro', 'Ação inválida.'); end if;
+  motivo := nullif(left(trim(coalesce(p_obs, '')), 500), '');
+  if p_acao = 'contestar' and length(coalesce(motivo, '')) < 5 then
+    return jsonb_build_object('ok', false, 'erro', 'Explique o motivo em poucas palavras.');
+  end if;
+  select * into r from recibos where id = p_id and emp_id = e.id for update;
+  if not found then return jsonb_build_object('ok', false, 'erro', 'Pagamento não encontrado.'); end if;
+  if r.status <> 'aguardando' then
+    return jsonb_build_object('ok', false, 'erro', 'Este pagamento já foi respondido.');
+  end if;
+  novo := case when p_acao = 'confirmar' then 'confirmado' else 'contestado' end;
+  hdr := coalesce(nullif(current_setting('request.headers', true), '')::jsonb, '{}'::jsonb);
+  h := encode(sha256(convert_to(r.id::text || '|' || r.emp_id::text || '|' || r.snapshot::text || '|' || novo || '|' ||
+        to_char(agora at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US') || '|' || coalesce(client_ip(), '') || '|' ||
+        coalesce(motivo, ''), 'UTF8')), 'hex');
+  update recibos set status = novo, decidido_em = agora, obs = motivo, ip = client_ip(),
+    ua = left(hdr ->> 'user-agent', 300), selo = upper(h) where id = r.id;
+  return jsonb_build_object('ok', true, 'status', novo, 'decidido_em', agora, 'selo', upper(h));
 end $$;
 
 -- O colaborador toca no botão; o servidor grava a hora e confere o local.
@@ -353,6 +437,7 @@ revoke all on function emp_get(uuid, date, date) from public;
 revoke all on function emp_punch(uuid, float8, float8, float8, timestamptz, boolean, text) from public;
 revoke all on function emp_perfil(uuid, jsonb) from public;
 revoke all on function emp_aceite(uuid) from public;
+revoke all on function emp_recibo(uuid, uuid, text, text) from public;
 revoke all on function cfg_salvar(jsonb) from public;
 revoke all on function ips_limpar() from public;
 revoke all on function meu_ip() from public;
@@ -360,6 +445,7 @@ grant execute on function emp_get(uuid, date, date) to anon, authenticated;
 grant execute on function emp_punch(uuid, float8, float8, float8, timestamptz, boolean, text) to anon, authenticated;
 grant execute on function emp_perfil(uuid, jsonb) to anon, authenticated;
 grant execute on function emp_aceite(uuid) to anon, authenticated;
+grant execute on function emp_recibo(uuid, uuid, text, text) to anon, authenticated;
 grant execute on function cfg_salvar(jsonb) to authenticated;
 grant execute on function ips_limpar() to authenticated;
 grant execute on function meu_ip() to authenticated;
@@ -389,6 +475,7 @@ alter function client_ip() set search_path = public;
 alter function meu_ip() set search_path = public;
 -- funções internas: ninguém precisa chamar pela internet
 revoke all on function punches_sync() from public, anon, authenticated;
+revoke all on function recibos_guard() from public, anon, authenticated;
 do $$ begin
   if to_regprocedure('public.rls_auto_enable()') is not null then
     revoke all on function public.rls_auto_enable() from public, anon, authenticated;
