@@ -181,6 +181,7 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
 <script>
 /* ===== utilitários ===== */
 const $=s=>document.querySelector(s);
+const ajudaDia=()=>Math.max(0,+((S.cfg.empresa||{}).ajudaDia)||0);
 const brl=n=>(isFinite(n)?n:0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const r2=n=>Math.round((n+Number.EPSILON)*100)/100;
 const hm=min=>{min=Math.round(min||0);const s=min<0?'-':'';min=Math.abs(min);return s+Math.floor(min/60)+':'+String(min%60).padStart(2,'0')};
@@ -221,7 +222,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10b';
-const APP_VERSAO='23/10/2026 · 3';
+const APP_VERSAO='23/10/2026 · 4';
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -446,10 +447,13 @@ function calcMonth(e,ym,recs,today){
   wl.forEach(w=>{if(w.dias>=3)alerts.push('Semana de '+pad(w.ini)+' a '+pad(w.fim)+': '+w.dias+' dias trabalhados. Três ou mais dias por semana para o mesmo contratante podem caracterizar vínculo (doméstico: LC 150/2015; demais: CLT art. 3º).')});
  }
  T.vales=(e.vales||[]).filter(v=>v.d&&v.d.startsWith(ym)).reduce((a,v)=>a+(+v.v||0),0);
- T.liquido=T.pagar-T.vales;
+ const AJ=ajudaDia();
+ days.forEach(x=>{x.ajuda=x.w>0?AJ:0});T.ajuda=days.reduce((a,x)=>a+x.ajuda,0);
+ T.liquido=T.pagar-T.vales+T.ajuda;
  /* vales por dia e por semana (só a parte da semana que cai neste mês, igual às linhas mostradas) */
  const vm=(e.vales||[]).filter(v=>v.d&&v.d.startsWith(ym)&&+v.v);
  days.forEach(x=>{x.vale=vm.filter(v=>v.d===x.ds).reduce((a,v)=>a+(+v.v||0),0)});
+ wl.forEach(w=>{w.ajuda=days.filter(x=>x.d>=w.ini&&x.d<=w.fim).reduce((a,x)=>a+x.ajuda,0)});
  wl.forEach(w=>{w.vale=vm.filter(v=>{const n=+v.d.slice(8);return n>=w.ini&&n<=w.fim}).reduce((a,v)=>a+(+v.v||0),0)});
  return {days,T,hora,alerts,weeks:wl};
 }
@@ -656,7 +660,7 @@ function rFolha(){
  $('#bCsv').onclick=()=>{const R=calcMonth(e,ym),q=v=>'"'+String(v??'').replace(/"/g,'""')+'"',f=n=>(+n||0).toFixed(2).replace('.',',');
   const rows=[['Data','Dia','Situação','Entrada manhã','Saída manhã','Entrada tarde','Saída tarde','Total','Normais','Extras','Valor do dia']];
   R.days.forEach(x=>rows.push([x.ds.split('-').reverse().join('/'),DN[x.wd],x.st,x.r.a||'',x.r.b||'',x.r.c||'',x.r.d||'',x.w?hm(x.w):'',x.norm?hm(x.norm):'',(x.ext||x.fer)?hm(x.ext||x.fer):'',x.vlr!=null?f(x.vlr):'']));
-  rows.push([],['Total do mês','','','','','',hm(R.T.total),hm(R.T.norm),hm(R.T.ext),f(R.T.valHoras)],['Vales','','','','','','','','',f(R.T.vales)],['Total a pagar','','','','','','','','',f(R.T.liquido)]);
+  rows.push([],['Total do mês','','','','','',hm(R.T.total),hm(R.T.norm),hm(R.T.ext),f(R.T.valHoras)],['Ajuda de custo','','','','','','','','',f(R.T.ajuda)],['Vales','','','','','','','','',f(R.T.vales)],['Total a pagar','','','','','','','','',f(R.T.liquido)]);
   const blob=new Blob(['\ufeff'+rows.map(r=>r.map(q).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(e.nome+'-'+ym+'.csv').replace(/\s+/g,'_');a.click()};
  $('#fE').onchange=ev=>{S.sel=ev.target.value;save();rFolha()};
@@ -682,7 +686,7 @@ function rFolha(){
    tr.querySelector('.c-v').innerHTML=(x.vlr!=null?brl(x.vlr):(x.falta?'− '+brl(x.desc):''))+(x.vale?`<small class="vl">Vale − ${brl(x.vale)}</small>`:'');
    tr.querySelector('.c-al').textContent=x.al.join(' · ')});
   document.querySelectorAll('#tb tr.wkrow').forEach(tr=>{const W=R.weeks.find(w=>w.wk===tr.dataset.wk);
-   tr.firstElementChild.innerHTML=W?`<div class="wkl"><span><b>Semana ${pad(W.ini)} a ${pad(W.fim)}</b> · ${W.dias} dia(s) trabalhado(s) · ${hm(W.min)}${W.ext?` <span class="ext">(${hm(W.ext)} de extras)</span>`:''}</span>${W.ve?`<span class="wkx">Valor das horas extras: <b>${brl(W.ve)}</b></span>`:''}${W.vf?`<span class="wkx">Domingo/feriado: <b>${brl(W.vf)}</b></span>`:''}</div><div class="wk2">${W.vale?`Horas da semana: <b>${brl(W.val)}</b> · Vale: <b class="vl">− ${brl(W.vale)}</b> · Valor com desconto: <b>${brl(W.val-W.vale)}</b>`:`Valor acumulado da semana: <b>${brl(W.val)}</b>`}${W.ve||W.vf?` <small class="mut">(horas normais ${brl(W.vn)}${W.ve?' + extras '+brl(W.ve):''}${W.vf?' + domingo/feriado '+brl(W.vf):''})</small>`:''}</div>`:''});
+   tr.firstElementChild.innerHTML=W?`<div class="wkl"><span><b>Semana ${pad(W.ini)} a ${pad(W.fim)}</b> · ${W.dias} dia(s) trabalhado(s) · ${hm(W.min)}${W.ext?` <span class="ext">(${hm(W.ext)} de extras)</span>`:''}</span>${W.ve?`<span class="wkx">Valor das horas extras: <b>${brl(W.ve)}</b></span>`:''}${W.vf?`<span class="wkx">Domingo/feriado: <b>${brl(W.vf)}</b></span>`:''}</div><div class="wk2">${W.vale||W.ajuda?`Horas da semana: <b>${brl(W.val)}</b>${W.ajuda?` · Ajuda de custo: <b>+ ${brl(W.ajuda)}</b>`:''}${W.vale?` · Vale: <b class="vl">− ${brl(W.vale)}</b>`:''} · ${W.ajuda?'Total a receber':'Valor com desconto'}: <b>${brl(W.val+W.ajuda-W.vale)}</b>`:`Valor acumulado da semana: <b>${brl(W.val)}</b>`}${W.ve||W.vf?` <small class="mut">(horas normais ${brl(W.vn)}${W.ve?' + extras '+brl(W.ve):''}${W.vf?' + domingo/feriado '+brl(W.vf):''})</small>`:''}</div>`:''});
   const T=R.T;
   $('#sum').innerHTML=clt?`<div><span>Horas normais</span><b>${hm(T.norm)}</b></div><div><span>Horas extras</span><b class="ext">${hm(T.ext)}</b></div>${T.fer?`<div><span>Domingos e feriados</span><b>${hm(T.fer)}</b></div>`:''}
    <div><span>Faltas</span><b>${T.nFaltas}</b></div><div><span>Valor da hora</span><b>${brl(R.hora)}</b></div><div><span>Salário base</span><b>${brl(e.salario)}</b></div>
@@ -732,8 +736,8 @@ function centerWeek(ym){const td=todayS();if(td.slice(0,7)!==ym)return null;
  if(innerWidth<=720||b-t>(bot-top)*0.95){const row=document.querySelector(`#tb tr[data-d="${+td.slice(8)}"]`);if(row){t=rect(row).top;b=rect(row).bottom}}
  scrollTo(0,Math.max(0,scrollY+(t+b)/2-(top+bot)/2));return scrollY}
 function paintFoot(R,e){const T=R.T,clt=e.tipo==='clt';
- $('#foot').innerHTML=`<div class="wk">${R.weeks.map(w=>`<div>Semana ${pad(w.ini)}–${pad(w.fim)}<b>${w.dias} dia(s) · ${hm(w.min)}</b>${brl(w.val)}${w.ext?` · <span class="ext">${hm(w.ext)} extra</span>`:''}${w.ve?`<br><span class="ext">Extras: ${brl(w.ve)}</span>`:''}${w.vale?`<br><span class="vl">Vale − ${brl(w.vale)}</span> · ${brl(w.val-w.vale)}`:''}</div>`).join('')}</div>
- <div class="mo"><span>Mês: <b>${T.diasTrab} dias · ${hm(T.total)}</b></span>${T.ext?`<span>Extras do mês: <b class="ext">${hm(T.ext)} · ${brl(T.vExt)}</b></span>`:''}<span class="dk">Valor das horas: <b>${brl(T.valHoras)}</b></span>${clt?`<span class="dk">Descontos: <b>${brl(T.dAtr+T.dFalta+T.dDsr+T.dAdm)}</b></span>`:''}${T.vales?`<span>Total bruto: <b>${brl(T.pagar)}</b></span><span>Vales: <b>− ${brl(T.vales)}</b></span><span class="tot">A pagar após vales: <b>${brl(T.liquido)}</b></span>`:`<span class="tot">Total a pagar no mês${clt?' (bruto)':''}: <b>${brl(T.pagar)}</b></span>`}</div>`}
+ $('#foot').innerHTML=`<div class="wk">${R.weeks.map(w=>`<div>Semana ${pad(w.ini)}–${pad(w.fim)}<b>${w.dias} dia(s) · ${hm(w.min)}</b>${brl(w.val)}${w.ext?` · <span class="ext">${hm(w.ext)} extra</span>`:''}${w.ve?`<br><span class="ext">Extras: ${brl(w.ve)}</span>`:''}${w.ajuda?`<br>Ajuda + ${brl(w.ajuda)}`:''}${w.vale?`<br><span class="vl">Vale − ${brl(w.vale)}</span>`:''}${w.vale||w.ajuda?` · ${brl(w.val+w.ajuda-w.vale)}`:''}</div>`).join('')}</div>
+ <div class="mo"><span>Mês: <b>${T.diasTrab} dias · ${hm(T.total)}</b></span>${T.ext?`<span>Extras do mês: <b class="ext">${hm(T.ext)} · ${brl(T.vExt)}</b></span>`:''}<span class="dk">Valor das horas: <b>${brl(T.valHoras)}</b></span>${clt?`<span class="dk">Descontos: <b>${brl(T.dAtr+T.dFalta+T.dDsr+T.dAdm)}</b></span>`:''}${T.vales||T.ajuda?`<span>Total bruto: <b>${brl(T.pagar)}</b></span>${T.ajuda?`<span>Ajuda de custo: <b>+ ${brl(T.ajuda)}</b></span>`:''}${T.vales?`<span>Vales: <b>− ${brl(T.vales)}</b></span>`:''}<span class="tot">${T.vales?'A pagar após vales':'A pagar com ajuda de custo'}: <b>${brl(T.liquido)}</b></span>`:`<span class="tot">Total a pagar no mês${clt?' (bruto)':''}: <b>${brl(T.pagar)}</b></span>`}</div>`}
 setInterval(()=>{if(CLOUD&&USER&&CUR==='folha'&&!document.hidden&&FOLHA)loadMonth(FOLHA.ym).then(()=>FOLHA&&FOLHA.sync())},15000);
 
 /* ===== fechamento semanal e pagamentos ===== */
@@ -748,12 +752,14 @@ function calcSemana(e,mon){const fim=addD(mon,6),cm={},days=[];
  days.forEach(x=>{if(x.w>0){W.dias++;W.min+=x.w}W.vn+=x.vn||0;W.ve+=x.ve||0;W.vf+=x.vf||0;W.ext+=x.ext||0;W.acima=(W.acima||0)+(x.acima||0);W.fer+=x.fer||0;W.val+=x.vlr||0;if(x.falta)W.faltas++});
  W.vales=(e.vales||[]).filter(v=>v.d>=mon&&v.d<=fim).reduce((a,v)=>a+(+v.v||0),0);
  W.pago=(e.pagamentos||[]).filter(p=>p.ref===mon).reduce((a,p)=>a+(+p.v||0),0);
- W.pagar=Math.max(0,W.val-W.vales-W.pago);return W}
+ W.ajuda=W.dias*ajudaDia();
+ W.pagar=Math.max(0,W.val+W.ajuda-W.vales-W.pago);return W}
 function resumoTexto(e,W){const L=[`*Resumo da semana: ${e.nome}*`,`${fmtBR(W.mon)} a ${fmtBR(W.fim)}`,''];
  W.days.forEach(x=>{const dd=DN[x.wd]+' '+fmtBR(x.ds);
   if(x.w>0)L.push(`${dd}: ${hm(x.w)}${x.ext?' ('+hm(x.ext)+' extra)':''}${x.fer?' (feriado/domingo)':''} - ${brl(x.vlr)}`);
   else if(x.falta||x.st==='Falta injustificada'||x.st==='Folga'||x.st==='Falta justificada / atestado'||x.hol)L.push(`${dd}: ${x.falta?'falta':x.hol?'feriado':x.st.toLowerCase()}`)});
  L.push('',`Total: ${hm(W.min)} em ${W.dias} dia(s)${W.ext?', '+hm(W.ext)+' de extras':''}`,`Valor das horas: ${brl(W.val)}`);
+ if(W.ajuda)L.push(`Ajuda de custo (celular): + ${brl(W.ajuda)} (${W.dias} dia(s) × ${brl(ajudaDia())})`);
  if(W.vales)L.push(`Vales: - ${brl(W.vales)}`);if(W.pago)L.push(`Já pago: - ${brl(W.pago)}`);
  L.push(`*A pagar: ${brl(W.pagar)}*`);return L.join('\n')}
 function rBanner(){const b=$('#banner');if(!b)return;b.innerHTML='';
@@ -780,12 +786,12 @@ function rPag(fresh){
  <div class="card"><h2>Fechamento: ${esc(e.nome)}</h2>
  <div class="pg-grid" style="margin-bottom:10px"><div class="sum" style="display:contents">
   <div><span>Dias trabalhados</span><b>${W.dias}</b></div><div><span>Horas na semana</span><b>${hm(W.min)}</b></div><div><span>Horas extras</span><b class="ext">${hm(W.ext)}</b></div>
-  <div><span>Valor das horas</span><b>${brl(W.val)}</b></div>${W.ve?`<div><span>Das horas extras</span><b class="ext">${brl(W.ve)}</b></div>`:''}${W.vales?`<div><span>Vales</span><b>− ${brl(W.vales)}</b></div>`:''}${W.pago?`<div><span>Já pago</span><b>− ${brl(W.pago)}</b></div>`:''}
+  <div><span>Valor das horas</span><b>${brl(W.val)}</b></div>${W.ve?`<div><span>Das horas extras</span><b class="ext">${brl(W.ve)}</b></div>`:''}${W.ajuda?`<div><span>Ajuda de custo (celular)</span><b>+ ${brl(W.ajuda)}</b></div>`:''}${W.vales?`<div><span>Vales</span><b>− ${brl(W.vales)}</b></div>`:''}${W.pago?`<div><span>Já pago</span><b>− ${brl(W.pago)}</b></div>`:''}
   <div class="hi"><span>A PAGAR</span><b>${brl(W.pagar)}</b></div></div></div>
  ${e.pix?`<p class="note"><b>Pix:</b> ${esc(e.pix)}${e.banco?' · '+esc(e.banco):''} <button class="b" id="pixCp" style="padding:2px 10px;min-height:0">Copiar chave</button></p>`:'<p class="note">Cadastre a chave Pix na ficha do colaborador para copiar aqui.</p>'}
  <div class="tw"><table class="dsem"><tbody>${W.days.map(x=>`<tr><td>${DN[x.wd]} ${fmtBR(x.ds)}</td><td>${x.w?[x.r.a&&x.r.b?x.r.a+'–'+x.r.b:'',x.r.c&&x.r.d?x.r.c+'–'+x.r.d:''].filter(Boolean).join(' · '):esc(x.st||'')}</td><td>${x.w?hm(x.w):''}</td><td>${x.vlr!=null?brl(x.vlr):''}</td></tr>`).join('')}</tbody></table></div>
  ${W.acima?`<div class="warn">${hm(W.acima)} acima da jornada estão sendo pagas pelo valor normal: a opção <b>"Pagar hora extra"</b> está desmarcada na ficha (aba Equipe).</div>`:''}
- <p class="note">${e.tipo==='clt'?'Valor das horas = horas trabalhadas × valor da hora. Para CLT o pagamento oficial é mensal; o fechamento semanal serve como controle ou adiantamento. ':''}Vales lançados na Folha dentro da semana são descontados.</p>
+ <p class="note">${e.tipo==='clt'?'Valor das horas = horas trabalhadas × valor da hora. Para CLT o pagamento oficial é mensal; o fechamento semanal serve como controle ou adiantamento. ':''}Vales lançados na Folha dentro da semana são descontados. A ajuda de custo (valor por dia trabalhado, definido em Ajustes) é somada.</p>
  <div class="row noprint"><button class="b p" id="wZap">Enviar resumo no WhatsApp</button><button class="b" id="wCopy">Copiar resumo</button><button class="b" onclick="window.print()">Imprimir / PDF</button></div>
  ${S.cfg.whats?'':'<p class="note noprint">Dica: cadastre o seu número em Ajustes para o WhatsApp abrir direto na sua conversa.</p>'}</div>
  <div class="card noprint"><h2>Registrar pagamento</h2><div class="grid">
