@@ -218,7 +218,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10';
-const APP_VERSAO='22/10/2026 · 5';
+const APP_VERSAO='23/10/2026 · 1';
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -731,7 +731,7 @@ setInterval(()=>{if(CLOUD&&USER&&CUR==='folha'&&!document.hidden&&FOLHA)loadMont
 const mondayOf=ds=>{const [y,m,d]=ds.split('-').map(Number),wd=new Date(Date.UTC(y,m-1,d)).getUTCDay();return new Date(Date.UTC(y,m-1,d-((wd+6)%7))).toISOString().slice(0,10)};
 const addD=(ds,n)=>{const [y,m,d]=ds.split('-').map(Number);return new Date(Date.UTC(y,m-1,d+n)).toISOString().slice(0,10)};
 const fmtBR=ds=>ds.slice(8)+'/'+ds.slice(5,7);
-function semanaAlvo(now=new Date()){const mon=mondayOf(todayS()),wd=now.getDay();return (wd===5&&now.getHours()>=18)||wd===6||wd===0?mon:addD(mon,-7)}
+function semanaAlvo(now=new Date()){const mon=mondayOf(todayS()),wd=now.getDay();return wd===5||wd===6||wd===0?mon:addD(mon,-7)}
 function calcSemana(e,mon){const fim=addD(mon,6),cm={},days=[];
  new Set([mon.slice(0,7),fim.slice(0,7)]).forEach(ym=>cm[ym]=calcMonth(e,ym,null,todayS()));
  for(let i=0;i<7;i++){const ds=addD(mon,i),x=cm[ds.slice(0,7)].days.find(z=>z.ds===ds);if(x)days.push(x)}
@@ -753,7 +753,7 @@ function rBanner(){const b=$('#banner');if(!b)return;b.innerHTML='';
  const mon=semanaAlvo(),pend=[];
  S.emps.forEach(e=>{const W=calcSemana(e,mon);if(W.dias>0&&W.pago<=0)pend.push({e,W})});
  if(!pend.length)return;
- const n=new Date(),sex=n.getDay()===5&&n.getHours()>=18;
+ const n=new Date(),sex=n.getDay()===5;
  b.insertAdjacentHTML('beforeend',`<div class="warn noprint" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>${sex?'Sexta-feira: hora de fechar a semana.':'Semana sem pagamento registrado.'}</b> ${fmtBR(mon)} a ${fmtBR(addD(mon,6))}: ${pend.map(p=>esc(p.e.nome)+' ('+brl(p.W.pagar)+')').join(', ')}</div><button class="b p" id="bnGo">Abrir fechamento</button></div>`);
  $('#bnGo').onclick=()=>{S.sel=pend[0].e.id;PAG.mon=mon;show('pag')}}
 const PAG={mon:null};
