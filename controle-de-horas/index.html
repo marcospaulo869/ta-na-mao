@@ -182,6 +182,7 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
 /* ===== utilitários ===== */
 const $=s=>document.querySelector(s);
 const ajudaDia=()=>Math.max(0,+((S.cfg.empresa||{}).ajudaDia)||0);
+const ajudaOk=ds=>{const d=(S.cfg.empresa||{}).ajudaDesde;return !d||ds>=d};
 const brl=n=>(isFinite(n)?n:0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const r2=n=>Math.round((n+Number.EPSILON)*100)/100;
 const hm=min=>{min=Math.round(min||0);const s=min<0?'-':'';min=Math.abs(min);return s+Math.floor(min/60)+':'+String(min%60).padStart(2,'0')};
@@ -222,7 +223,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10b';
-const APP_VERSAO='23/10/2026 · 4';
+const APP_VERSAO='23/10/2026 · 5';
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -448,7 +449,7 @@ function calcMonth(e,ym,recs,today){
  }
  T.vales=(e.vales||[]).filter(v=>v.d&&v.d.startsWith(ym)).reduce((a,v)=>a+(+v.v||0),0);
  const AJ=ajudaDia();
- days.forEach(x=>{x.ajuda=x.w>0?AJ:0});T.ajuda=days.reduce((a,x)=>a+x.ajuda,0);
+ days.forEach(x=>{x.ajuda=x.w>0&&ajudaOk(x.ds)?AJ:0});T.ajuda=days.reduce((a,x)=>a+x.ajuda,0);
  T.liquido=T.pagar-T.vales+T.ajuda;
  /* vales por dia e por semana (só a parte da semana que cai neste mês, igual às linhas mostradas) */
  const vm=(e.vales||[]).filter(v=>v.d&&v.d.startsWith(ym)&&+v.v);
@@ -752,14 +753,14 @@ function calcSemana(e,mon){const fim=addD(mon,6),cm={},days=[];
  days.forEach(x=>{if(x.w>0){W.dias++;W.min+=x.w}W.vn+=x.vn||0;W.ve+=x.ve||0;W.vf+=x.vf||0;W.ext+=x.ext||0;W.acima=(W.acima||0)+(x.acima||0);W.fer+=x.fer||0;W.val+=x.vlr||0;if(x.falta)W.faltas++});
  W.vales=(e.vales||[]).filter(v=>v.d>=mon&&v.d<=fim).reduce((a,v)=>a+(+v.v||0),0);
  W.pago=(e.pagamentos||[]).filter(p=>p.ref===mon).reduce((a,p)=>a+(+p.v||0),0);
- W.ajuda=W.dias*ajudaDia();
+ W.diasAjuda=ajudaDia()?days.filter(x=>x.w>0&&ajudaOk(x.ds)).length:0;W.ajuda=W.diasAjuda*ajudaDia();
  W.pagar=Math.max(0,W.val+W.ajuda-W.vales-W.pago);return W}
 function resumoTexto(e,W){const L=[`*Resumo da semana: ${e.nome}*`,`${fmtBR(W.mon)} a ${fmtBR(W.fim)}`,''];
  W.days.forEach(x=>{const dd=DN[x.wd]+' '+fmtBR(x.ds);
   if(x.w>0)L.push(`${dd}: ${hm(x.w)}${x.ext?' ('+hm(x.ext)+' extra)':''}${x.fer?' (feriado/domingo)':''} - ${brl(x.vlr)}`);
   else if(x.falta||x.st==='Falta injustificada'||x.st==='Folga'||x.st==='Falta justificada / atestado'||x.hol)L.push(`${dd}: ${x.falta?'falta':x.hol?'feriado':x.st.toLowerCase()}`)});
  L.push('',`Total: ${hm(W.min)} em ${W.dias} dia(s)${W.ext?', '+hm(W.ext)+' de extras':''}`,`Valor das horas: ${brl(W.val)}`);
- if(W.ajuda)L.push(`Ajuda de custo (celular): + ${brl(W.ajuda)} (${W.dias} dia(s) × ${brl(ajudaDia())})`);
+ if(W.ajuda)L.push(`Ajuda de custo (celular): + ${brl(W.ajuda)} (${W.diasAjuda} dia(s) × ${brl(ajudaDia())})`);
  if(W.vales)L.push(`Vales: - ${brl(W.vales)}`);if(W.pago)L.push(`Já pago: - ${brl(W.pago)}`);
  L.push(`*A pagar: ${brl(W.pagar)}*`);return L.join('\n')}
 function rBanner(){const b=$('#banner');if(!b)return;b.innerHTML='';
@@ -791,7 +792,7 @@ function rPag(fresh){
  ${e.pix?`<p class="note"><b>Pix:</b> ${esc(e.pix)}${e.banco?' · '+esc(e.banco):''} <button class="b" id="pixCp" style="padding:2px 10px;min-height:0">Copiar chave</button></p>`:'<p class="note">Cadastre a chave Pix na ficha do colaborador para copiar aqui.</p>'}
  <div class="tw"><table class="dsem"><tbody>${W.days.map(x=>`<tr><td>${DN[x.wd]} ${fmtBR(x.ds)}</td><td>${x.w?[x.r.a&&x.r.b?x.r.a+'–'+x.r.b:'',x.r.c&&x.r.d?x.r.c+'–'+x.r.d:''].filter(Boolean).join(' · '):esc(x.st||'')}</td><td>${x.w?hm(x.w):''}</td><td>${x.vlr!=null?brl(x.vlr):''}</td></tr>`).join('')}</tbody></table></div>
  ${W.acima?`<div class="warn">${hm(W.acima)} acima da jornada estão sendo pagas pelo valor normal: a opção <b>"Pagar hora extra"</b> está desmarcada na ficha (aba Equipe).</div>`:''}
- <p class="note">${e.tipo==='clt'?'Valor das horas = horas trabalhadas × valor da hora. Para CLT o pagamento oficial é mensal; o fechamento semanal serve como controle ou adiantamento. ':''}Vales lançados na Folha dentro da semana são descontados. A ajuda de custo (valor por dia trabalhado, definido em Ajustes) é somada.</p>
+ <p class="note">${e.tipo==='clt'?'Valor das horas = horas trabalhadas × valor da hora. Para CLT o pagamento oficial é mensal; o fechamento semanal serve como controle ou adiantamento. ':''}Vales lançados na Folha dentro da semana são descontados. ${ajudaDia()?'A ajuda de custo ('+brl(ajudaDia())+' por dia trabalhado'+((S.cfg.empresa||{}).ajudaDesde?', a partir de '+fmtBR((S.cfg.empresa||{}).ajudaDesde):'')+') é somada.':'<b>Ajuda de custo do celular: não configurada.</b> Para usar, vá em Ajustes → Dados da empresa.'}</p>
  <div class="row noprint"><button class="b p" id="wZap">Enviar resumo no WhatsApp</button><button class="b" id="wCopy">Copiar resumo</button><button class="b" onclick="window.print()">Imprimir / PDF</button></div>
  ${S.cfg.whats?'':'<p class="note noprint">Dica: cadastre o seu número em Ajustes para o WhatsApp abrir direto na sua conversa.</p>'}</div>
  <div class="card noprint"><h2>Registrar pagamento</h2><div class="grid">
@@ -933,6 +934,7 @@ function rCfg(){
   <div><label for="em-r">Responsável pelos dados</label><input id="em-r" data-k="encarregado" value="${esc(S.cfg.empresa.encarregado||'')}"></div>
   <div><label for="em-e">E-mail para assuntos de privacidade</label><input id="em-e" type="email" data-k="email" value="${esc(S.cfg.empresa.email||'')}"></div>
   <div><label for="em-t">Telefone</label><input id="em-t" type="tel" data-k="telefone" data-mask="tel" value="${esc(S.cfg.empresa.telefone||'')}"></div>
+  <div><label for="em-ad">Ajuda de custo vale a partir de (data)</label><input id="em-ad" type="date" data-k="ajudaDesde" value="${esc(S.cfg.empresa.ajudaDesde||'')}"></div>
   <div><label for="em-aj">Ajuda de custo por dia trabalhado, pelo uso do celular e da internet (R$)</label><input id="em-aj" type="number" step="0.01" min="0" data-k="ajudaDia" value="${S.cfg.empresa.ajudaDia===undefined?'':S.cfg.empresa.ajudaDia}" placeholder="deixe vazio se não houver"></div></div>
   <div class="row" style="margin-top:10px"><button class="b" id="verPriv">Ver o aviso de privacidade</button></div>
   <p class="note">Estes dados aparecem no aviso que o colaborador lê no primeiro acesso. Se você preencher a ajuda de custo, ela aparece como uma cláusula no aviso. Só preencha o que a empresa realmente paga. O texto é um modelo: peça a um advogado ou ao contador para revisar antes de usar.</p></div>
