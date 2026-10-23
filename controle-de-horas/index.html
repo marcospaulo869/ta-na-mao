@@ -220,8 +220,8 @@ let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.rem
 async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast('Link copiado')}catch(e){if(inp){inp.select();toast('Selecionado: copie com Ctrl+C')}}}
 
 /* ===== aviso de privacidade (LGPD) ===== */
-const POL_VERSAO='2026-10';
-const APP_VERSAO='23/10/2026 · 2';
+const POL_VERSAO='2026-10b';
+const APP_VERSAO='23/10/2026 · 3';
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -244,7 +244,7 @@ function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  <li>A empresa (a pessoa administradora do sistema) vê o seu cadastro completo.</li>
  <li><b>Você</b> vê, no seu celular, o seu perfil, os seus registros de ponto e o resumo do mês. O CPF aparece parcialmente escondido. Você não vê dados de outros colaboradores.</li>
  <li>Contador e órgãos públicos (como Receita, Previdência e Justiça do Trabalho) recebem dados apenas quando a lei exige ou a empresa precisa para cumprir obrigações.</li>
- <li><b>Serviços de tecnologia usados pelo sistema:</b> o banco de dados e os arquivos ficam no Supabase, em servidor no Brasil (São Paulo), e o site é entregue pela Netlify. Eles apenas guardam os dados, sem usar para outros fins. Ao digitar o CEP, o sistema consulta o serviço público ViaCEP, que recebe somente o CEP.</li>
+ <li><b>Serviços de tecnologia usados pelo sistema:</b> o banco de dados e os arquivos ficam no Supabase, em servidor no Brasil (São Paulo), e o site é entregue pela Cloudflare. Eles apenas guardam os dados, sem usar para outros fins. Ao digitar o CEP, o sistema consulta o serviço público ViaCEP, que recebe somente o CEP.</li>
  <li>Os dados <b>não são vendidos</b> nem usados para publicidade.</li></ul>
  <h3>5. Por quanto tempo guardamos</h3>
  <p>Pelo tempo que durar o seu trabalho e depois dele, pelo prazo que a legislação trabalhista, previdenciária e fiscal exigir para guardar registros de jornada, pagamentos e documentos (em regra, cerca de cinco anos após o fim do contrato; alguns documentos, por mais tempo). Depois disso, os dados são excluídos ou anonimizados.</p>
@@ -255,7 +255,9 @@ function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  <li>Fotos, documentos e comprovantes ficam em pastas privadas. Nenhum sistema é totalmente imune a falhas, e em caso de incidente que possa causar risco a você, a empresa informará.</li></ul>
  <h3>7. Os seus direitos</h3>
  <p>Você pode pedir à empresa, a qualquer momento: confirmar se usa os seus dados; acessar os dados; corrigir dados incompletos ou errados (o telefone, o endereço, os contatos e a foto você mesmo atualiza no seu perfil); pedir anonimização, bloqueio ou eliminação de dados desnecessários; receber uma cópia; saber com quem os dados foram compartilhados; e reclamar à Autoridade Nacional de Proteção de Dados (ANPD). Alguns dados precisam ser mantidos por obrigação legal, e a empresa explicará quando for o caso.</p>
- <h3>8. Mudanças neste aviso</h3>
+ ${+em.ajudaDia>0?`<h3>8. Uso do seu celular para registrar o ponto</h3>
+ <p>Para registrar o ponto você pode usar o seu próprio celular e a sua internet. Pelo uso do aparelho e da internet nesse registro, a empresa paga uma <b>ajuda de custo de ${brl(+em.ajudaDia)} por dia trabalhado</b>, que não é salário e serve para ressarcir esse custo. Se você não quiser usar o seu celular para isso, avise o responsável para combinar outra forma de registro.</p>`:''}
+ <h3>${+em.ajudaDia>0?'9':'8'}. Mudanças neste aviso</h3>
  <p>Se este aviso mudar de forma importante, o sistema mostrará o novo texto e pedirá que você leia de novo.</p></div>`}
 function politicaResumo(){return `<ul style="padding-left:18px;margin:6px 0"><li>Usamos os seus dados para <b>calcular e pagar o seu trabalho</b> e controlar a jornada.</li><li>No ponto, guardamos <b>hora, IP e localização</b> só no momento em que você toca em Registrar.</li><li>A foto serve para <b>identificar você no cadastro</b>, sem reconhecimento facial.</li><li>Seus dados <b>não são vendidos</b>. Só a empresa e os serviços de tecnologia que guardam os dados têm acesso.</li><li>Você pode <b>corrigir, pedir cópia ou exclusão</b> de dados, conforme a lei.</li></ul>`}
 function abrirPolitica(em){const d=document.createElement('div');d.className='priv';d.id='priv';
@@ -924,9 +926,10 @@ function rCfg(){
   <div><label for="em-c">CNPJ</label><input id="em-c" data-k="cnpj" data-mask="cnpj" inputmode="numeric" value="${esc(S.cfg.empresa.cnpj||'')}"></div>
   <div><label for="em-r">Responsável pelos dados</label><input id="em-r" data-k="encarregado" value="${esc(S.cfg.empresa.encarregado||'')}"></div>
   <div><label for="em-e">E-mail para assuntos de privacidade</label><input id="em-e" type="email" data-k="email" value="${esc(S.cfg.empresa.email||'')}"></div>
-  <div><label for="em-t">Telefone</label><input id="em-t" type="tel" data-k="telefone" data-mask="tel" value="${esc(S.cfg.empresa.telefone||'')}"></div></div>
+  <div><label for="em-t">Telefone</label><input id="em-t" type="tel" data-k="telefone" data-mask="tel" value="${esc(S.cfg.empresa.telefone||'')}"></div>
+  <div><label for="em-aj">Ajuda de custo por dia trabalhado, pelo uso do celular e da internet (R$)</label><input id="em-aj" type="number" step="0.01" min="0" data-k="ajudaDia" value="${S.cfg.empresa.ajudaDia===undefined?'':S.cfg.empresa.ajudaDia}" placeholder="deixe vazio se não houver"></div></div>
   <div class="row" style="margin-top:10px"><button class="b" id="verPriv">Ver o aviso de privacidade</button></div>
-  <p class="note">Estes dados aparecem no aviso que o colaborador lê no primeiro acesso. O texto é um modelo: peça a um advogado ou ao contador para revisar antes de usar com outras empresas.</p></div>
+  <p class="note">Estes dados aparecem no aviso que o colaborador lê no primeiro acesso. Se você preencher a ajuda de custo, ela aparece como uma cláusula no aviso. Só preencha o que a empresa realmente paga. O texto é um modelo: peça a um advogado ou ao contador para revisar antes de usar.</p></div>
  <div class="card"><h2>Feriados</h2>
  <p class="note">Nacionais de ${y}, marcados automaticamente: ${Object.entries(nac).sort().map(([d,n])=>pad(+d.slice(8))+'/'+d.slice(5,7)+' '+esc(n)).join(' · ')}.</p>
  <label>Feriados estaduais e municipais da sua cidade</label>
