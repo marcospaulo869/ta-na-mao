@@ -225,7 +225,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10c';
-const APP_VERSAO='23/10/2026 · 6';
+const APP_VERSAO='27/10/2026 · 1';
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -1236,9 +1236,13 @@ function rEmpView(){
 /* ===== início ===== */
 try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
 load();
-(function route(){
+(async function route(){
  const m=location.hash.match(/^#\/c\/([\w-]+)/);let tok=m?m[1]:null;
- if(!tok&&CLOUD){try{tok=localStorage.getItem(TOKKEY)}catch(x){}}
+ if(!tok&&CLOUD){
+  /* endereço simples: quem está entrado como administrador vê o painel; só quem não está usa o acesso guardado do colaborador */
+  let adm=false;try{const {data}=await sb.auth.getSession();adm=!!(data&&data.session)}catch(x){}
+  if(!adm){try{tok=localStorage.getItem(TOKKEY)}catch(x){}}
+ }
  if(tok)empBoot(tok);else adminBoot();
 })();
 </script>
