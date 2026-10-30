@@ -267,6 +267,7 @@ begin
       'verif', coalesce(cfg->'ponto'->>'verif', 'block'),
       'externo', coalesce((cfg->'ponto'->>'externo')::boolean, true),
       'foto', coalesce((cfg->'ponto'->>'foto')::boolean, false)),
+    'travado', ponto_travado(e.id),
     'settings', jsonb_build_object('feriados', cfg->'feriados', 'empresa', cfg->'empresa')
   );
 end $$;
@@ -307,6 +308,27 @@ begin
     to_jsonb(to_char(now() at time zone 'America/Sao_Paulo', 'YYYY-MM-DD"T"HH24:MI')), true) where id = e.id;
   return jsonb_build_object('ok', true);
 end $$;
+
+-- Ponto travado: se a empresa ligou "travar o ponto" e há pagamento sem resposta há mais dias do que o prazo.
+-- Responder (confirmar ou contestar) libera. O administrador também libera cancelando o pedido.
+create or replace function ponto_travado(p_emp uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce((cs.data->'ponto'->>'travar')::boolean, false)
+    and exists (select 1 from recibos r where r.emp_id = e.id and r.status = 'aguardando'
+      and r.criado_em < now() - make_interval(days => greatest(0, coalesce((cs.data->'ponto'->>'travar_dias')::int, 0))))
+  from employees e left join company_settings cs on cs.owner = e.owner where e.id = p_emp
+$$;
+
+create or replace function punches_travado_guard() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if ponto_travado(new.emp_id) then
+    raise exception 'PONTO_TRAVADO: responda à confirmação de pagamento (confirmar ou contestar) para liberar o ponto.';
+  end if;
+  return new;
+end $$;
+drop trigger if exists punches_travado_t on punches;
+create trigger punches_travado_t before insert on punches for each row execute function punches_travado_guard();
 
 -- O colaborador confirma (ou contesta) o recebimento de um pagamento. O servidor grava hora, rede e aparelho
 -- e gera um código de verificação; depois disso o registro não muda mais.
@@ -476,6 +498,8 @@ alter function meu_ip() set search_path = public;
 -- funções internas: ninguém precisa chamar pela internet
 revoke all on function punches_sync() from public, anon, authenticated;
 revoke all on function recibos_guard() from public, anon, authenticated;
+revoke all on function ponto_travado(uuid) from public, anon, authenticated;
+revoke all on function punches_travado_guard() from public, anon, authenticated;
 do $$ begin
   if to_regprocedure('public.rls_auto_enable()') is not null then
     revoke all on function public.rls_auto_enable() from public, anon, authenticated;

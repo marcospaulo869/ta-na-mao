@@ -146,6 +146,10 @@ tr.pisca{animation:pisca 1.4s ease-out}
 .pgh:last-child{border-bottom:0}.pgh small{color:var(--mut);display:block}
 .pgh .v{font-weight:700;text-align:right}.pgh .ac{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
 .pgh .ac button{padding:4px 10px;min-height:0}
+.trava{background:#b91c1c;color:#fff;border-radius:12px;padding:14px;margin-bottom:12px;text-align:center;animation:trava 1s ease-in-out infinite}
+.trava .t1{font-size:20px;font-weight:800;letter-spacing:.3px}.trava .t2{font-size:16px;font-weight:700;margin-top:4px}.trava .t3{font-size:13px;margin-top:8px;opacity:.95}
+@keyframes trava{0%,100%{background:#b91c1c;box-shadow:0 0 0 0 rgba(185,28,28,.7)}50%{background:#ef4444;box-shadow:0 0 0 8px rgba(185,28,28,0)}}
+@media (prefers-reduced-motion:reduce){.trava{animation:none}}
 .rbadge{display:block;font-size:12.5px;font-weight:600;margin-top:3px;color:var(--mut)}
 .rbadge.ok{color:var(--pri)}.rbadge.no{color:var(--err)}.rbadge.wait{color:var(--warn)}
 .dsem{width:100%;min-width:0;font-size:13.5px}.dsem td{padding:4px 6px;text-align:left}.dsem td:nth-child(n+3){text-align:right}
@@ -229,7 +233,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10c';
-const APP_VERSAO='30/10/2026 · 2';
+const APP_VERSAO='30/10/2026 · 3';
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -329,9 +333,17 @@ function newEmp(){return fixEmp({id:uuid(),salario:S.cfg.minimo,deslig:''})}
 
 const QUEUE={};function later(k,fn,ms=600){clearTimeout(QUEUE[k]);QUEUE[k]=setTimeout(fn,ms)}
 function empData(e){const {id,token,...data}=e;return data}
+/* o colaborador também grava na própria ficha (aceite do aviso, foto, telefone, endereço): o administrador só envia o que ele mesmo mudou */
+const EBASE={};const snapEmp=e=>{const o={},d=empData(e);for(const k in d)o[k]=JSON.stringify(d[k]);return o};
 function persistEmp(e){if(!CLOUD){save();return}
- later('e'+e.id,async()=>{const {data,error}=await sb.from('employees').upsert({id:e.id,data:empData(e)}).select('token').single();
-  if(error)return toast('Não salvou: '+error.message);if(data&&data.token!==e.token){e.token=data.token;rAccess(e)}})}
+ later('e'+e.id,async()=>{const cur=empData(e),base=EBASE[e.id];let out=cur;
+  if(base){const {data:row}=await sb.from('employees').select('data').eq('id',e.id).maybeSingle();
+   if(row&&row.data){out={...row.data};for(const k in cur)if(JSON.stringify(cur[k])!==base[k]||!(k in row.data))out[k]=cur[k]}}
+  const {data,error}=await sb.from('employees').upsert({id:e.id,data:out}).select('token').single();
+  if(error)return toast('Não salvou: '+error.message);
+  for(const k in out)if(JSON.stringify(cur[k])===(base||{})[k]||!(k in cur))e[k]=out[k];
+  EBASE[e.id]=snapEmp(e);
+  if(data&&data.token!==e.token){e.token=data.token;rAccess(e)}})}
 const PENDDAY={};
 function persistEntry(e,ym,d,field){if(!CLOUD){save();return}
  const dk=e.id+'|'+ym+'|'+d,fk=field||'*';(PENDDAY[dk]=PENDDAY[dk]||new Set()).add(fk);
@@ -355,12 +367,13 @@ function persistCfg(){if(!CLOUD){save();return}
  later('cfg',async()=>{const {ip_recentes,...resto}=S.cfg;const {error}=await sb.rpc('cfg_salvar',{p_data:resto});if(error)toast('Não salvou: '+error.message)})}
 async function delEmp(e){if(CLOUD){const {error}=await sb.from('employees').delete().eq('id',e.id);if(error)return toast('Não excluiu: '+error.message)}
  S.emps=S.emps.filter(x=>x!==e);delete S.rec[e.id];S.sel=S.emps[0]?.id||null;save();rEmp()}
-const PONTO_PAD={verif:'block',metodo:'both',externo:true,aprender_ip:true,locais:[]};
+const PONTO_PAD={verif:'block',metodo:'both',externo:true,aprender_ip:true,travar:false,travar_dias:2,locais:[]};
 function fixCfg(){S.cfg.empresa=S.cfg.empresa||{};S.cfg.ponto=Object.assign({},PONTO_PAD,S.cfg.ponto||{});if(!Array.isArray(S.cfg.ponto.locais))S.cfg.ponto.locais=[];if(!Array.isArray(S.cfg.feriados))S.cfg.feriados=[]}
 async function cloudLoad(){
  const [a,b]=await Promise.all([sb.from('employees').select('id,token,data,created_at').order('created_at'),sb.from('company_settings').select('data').maybeSingle()]);
  if(a.error){toast('Erro ao carregar: '+a.error.message);return}
  S.emps=a.data.map(r=>fixEmp({...r.data,id:r.id,token:r.token}));
+ S.emps.forEach(e=>{EBASE[e.id]=snapEmp(e)});
  if(b.data&&b.data.data)S.cfg=Object.assign({minimo:1621,feriados:[],whats:''},b.data.data);
  fixCfg();
  if(!S.emps.find(e=>e.id===S.sel))S.sel=S.emps[0]?.id||null;
@@ -877,7 +890,7 @@ function rPag(fresh){
   ${pagos.length?pagos.map(p=>{const rc=CLOUD?recDe(e.id,p.id):null;
    const bd=!CLOUD?'':!rc?'<span class="rbadge">Sem pedido de confirmação</span>':rc.status==='confirmado'?`<span class="rbadge ok">✔ Recebimento confirmado em ${fmtDT(rc.decidido_em)}</span>`:rc.status==='contestado'?`<span class="rbadge no">⚠ Contestado em ${fmtDT(rc.decidido_em)}: ${esc(rc.obs||'')}</span>`:'<span class="rbadge wait">⏳ Aguardando o colaborador confirmar</span>';
    return `<div class="pgh"><div><b>${(p.d||'').split('-').reverse().join('/')}</b></div><div>${esc(p.forma||'')}${p.obs?' · '+esc(p.obs):''}<small>${p.ref==='vale'?'Vale (adiantamento)':p.ref?'Semana '+fmtBR(p.ref)+' a '+fmtBR(addD(p.ref,6)):'Avulso'}</small>${bd}</div><div class="v">${brl(p.v)}</div>
-   <div class="ac noprint">${p.file?`<button class="b" data-pv="${p.id}">Ver comprovante</button>`:'<small>Sem comprovante</small>'}${CLOUD&&(!rc||rc.status==='contestado')?`<button class="b" data-pc="${p.id}">Pedir confirmação</button>`:''}${rc&&rc.status!=='aguardando'?`<button class="b" data-pp="${rc.id}">Comprovante de ciência</button>`:''}${rc&&rc.status==='confirmado'?'<small>Confirmado: não pode ser excluído</small>':`<button class="b d" data-pd="${p.id}">Excluir</button>`}</div></div>`}).join('')+`<p class="note"><b>Total pago: ${brl(totPago)}</b></p>`:'<p class="note">Nenhum pagamento registrado.</p>'}</div>`;
+   <div class="ac noprint">${p.file?`<button class="b" data-pv="${p.id}">Ver comprovante</button>`:'<small>Sem comprovante</small>'}${CLOUD&&(!rc||rc.status==='contestado')?`<button class="b" data-pc="${p.id}">Pedir confirmação</button>`:''}${rc&&rc.status!=='aguardando'?`<button class="b" data-pp="${rc.id}">Comprovante de ciência</button>`:''}${rc&&rc.status==='aguardando'?`<button class="b" data-pcx="${rc.id}">Cancelar pedido de confirmação</button>`:''}${rc&&rc.status==='confirmado'?'<small>Confirmado: não pode ser excluído</small>':`<button class="b d" data-pd="${p.id}">Excluir</button>`}</div></div>`}).join('')+`<p class="note"><b>Total pago: ${brl(totPago)}</b></p>`:'<p class="note">Nenhum pagamento registrado.</p>'}</div>`;
  $('#pE').onchange=ev=>{S.sel=ev.target.value;PASTED=null;save();rPag()};
  $('#wPrev').onclick=()=>{PAG.mon=addD(mon,-7);rPag()};$('#wNext').onclick=()=>{PAG.mon=addD(mon,7);rPag()};$('#wHoje').onclick=()=>{PAG.mon=semanaAlvo();rPag()};
  const txt=resumoTexto(e,W);
@@ -902,6 +915,7 @@ function rPag(fresh){
   const quer=CLOUD&&$('#pg-c')&&$('#pg-c').checked;
   persistEmp(e);if(quer)await pedirCiencia(e,np);toast(quer?'Pagamento registrado. Aguardando a confirmação do colaborador':'Pagamento registrado');rPag(true)};
  el.querySelectorAll('[data-pc]').forEach(b=>b.onclick=async()=>{const p=e.pagamentos.find(x=>x.id===b.dataset.pc);if(!p)return;b.disabled=true;if(await pedirCiencia(e,p))toast('Pedido enviado ao colaborador');rPag(true)});
+ el.querySelectorAll('[data-pcx]').forEach(b=>b.onclick=async()=>{b.disabled=true;const {error}=await sb.from('recibos').delete().eq('id',b.dataset.pcx);if(error)toast('Não cancelou: '+error.message);else toast('Pedido cancelado. O ponto do colaborador é liberado');await loadRecibos();rPag(true)});
  el.querySelectorAll('[data-pp]').forEach(b=>b.onclick=()=>{const rc=REC.list.find(r=>r.id===b.dataset.pp);if(rc)abrirCiencia(rc,e)});
  el.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>{const p=e.pagamentos.find(x=>x.id===b.dataset.pv);if(p&&p.file)openFile(p.file)});
  el.querySelectorAll('[data-pd]').forEach(b=>b.onclick=async()=>{if(b.dataset.ok!=='1'){b.dataset.ok='1';b.textContent='Confirmar exclusão?';setTimeout(()=>{b.dataset.ok='';b.textContent='Excluir'},4000);return}
@@ -933,6 +947,9 @@ function rPonto(){
   <div><label for="pr-m">Como verificar</label><select id="pr-m" data-k="metodo"><option value="ip">Só pelo IP da internet</option><option value="gps">Só pelo GPS</option><option value="any">IP ou GPS (um dos dois)</option><option value="both">IP e GPS (os dois)</option></select></div></div>
   <label class="ck"><input type="checkbox" id="pr-e" data-k="externo" ${pr.externo?'checked':''}>Permitir registro fora da empresa, com justificativa (fica pendente)</label>
   <label class="ck"><input type="checkbox" id="pr-a" data-k="aprender_ip" ${pr.aprender_ip?'checked':''}>Aprender sozinho o IP da empresa quando o GPS confirma o local</label>
+  <div style="border:1px solid var(--line);border-radius:10px;padding:10px;margin:10px 0"><label class="ck"><input type="checkbox" id="pr-t" data-k="travar" ${pr.travar?'checked':''}>Travar o ponto do colaborador enquanto ele não responder à confirmação de pagamento</label>
+   <div class="row" style="align-items:flex-end;margin-top:6px"><div style="max-width:220px"><label for="pr-td">Travar só depois de (dias sem resposta)</label><input id="pr-td" type="number" min="0" max="30" data-k="travar_dias" value="${pr.travar_dias==null?2:pr.travar_dias}"></div></div>
+   <p class="note"><b>Cuidado:</b> o colaborador continua trabalhando mesmo com o ponto travado, e as horas trabalhadas precisam ser pagas e registradas (CLT art. 74). Se o ponto não for batido, você terá que lançar essas horas à mão, e uma confirmação obtida sob pressão vale menos como prova. Por isso o colaborador pode <b>confirmar ou contestar</b> para destravar, e você pode destravar cancelando o pedido na aba Pagar. Prefira um prazo de alguns dias.</p></div>
   <p class="note">Sem nenhum local cadastrado, o sistema não verifica. O IP é lido pelo servidor e o colaborador não consegue alterar. O GPS vem do celular e pode ser falsificado com aplicativos de localização falsa, por isso usar os dois juntos é mais seguro.</p></div>
  <div class="card noprint"><h2>Locais da empresa</h2>
   ${pr.locais.map((l,i)=>`<div class="row" style="margin:0 0 8px"><div><label>Nome</label><input data-li="${i}" data-lk="nome" value="${esc(l.nome)}"></div><div style="max-width:110px"><label>Raio (m)</label><input type="number" data-li="${i}" data-lk="raio" value="${l.raio||100}"></div><div><label>IPs da internet (separados por vírgula)</label><input data-li="${i}" data-lk="ips" value="${esc((l.ips||[]).join(', '))}"></div><button class="b d" data-ldel="${i}">Remover</button>
@@ -1143,7 +1160,7 @@ async function empFetch(){
   if(data.settings&&data.settings.feriados)S.cfg.feriados=data.settings.feriados;
   EMP.recs={};(data.entries||[]).forEach(r=>{EMP.recs[+r.day.slice(8)]={a:(r.a||'').slice(0,5),b:(r.b||'').slice(0,5),c:(r.c||'').slice(0,5),d:(r.d||'').slice(0,5),t:r.t||''}});
   const t=data.today_entry||{};EMP.todayRec={a:(t.a||'').slice(0,5),b:(t.b||'').slice(0,5),c:(t.c||'').slice(0,5),d:(t.d||'').slice(0,5)};
-  EMP.recibos=data.recibos||[];EMP.punches=data.punches||[];EMP.proximo=data.proximo;EMP.ponto=data.ponto||{};EMP.empresa=(data.settings&&data.settings.empresa)||{};return true}
+  EMP.recibos=data.recibos||[];EMP.travado=!!data.travado;EMP.punches=data.punches||[];EMP.proximo=data.proximo;EMP.ponto=data.ponto||{};EMP.empresa=(data.settings&&data.settings.empresa)||{};return true}
  const e=S.emps.find(x=>x.id===EMP.tok);if(!e)return false;
  EMP.e=e;EMP.empresa=S.cfg.empresa||{};EMP.today=todayS();EMP.recs=(S.rec[e.id]||{})[EMP.ym]||{};
  const tm=EMP.today.slice(0,7),td=+EMP.today.slice(8);EMP.todayRec=Object.assign({},((S.rec[e.id]||{})[tm]||{})[td]);return true}
@@ -1196,6 +1213,10 @@ function instBind(){const g=document.getElementById('instGo');if(!g)return;
  g.onclick=async()=>{if(INST){try{INST.prompt();await INST.userChoice}catch(e){}INST=null;const c=document.getElementById('instCard');if(c&&jaInstalado())c.remove()}
   else{const h=document.getElementById('instHow');h.style.fontWeight='600';h.scrollIntoView({block:'center',behavior:'smooth'});toast('Siga os passos abaixo do botão')}};
  const n=document.getElementById('instNo');if(n)n.onclick=()=>{try{localStorage.setItem(INST_KEY,String(Date.now()))}catch(e){}document.getElementById('instCard').remove()}}
+function travaCard(){if(!CLOUD||!EMP.travado)return '';
+ return `<div class="trava" role="alert" aria-live="assertive"><div class="t1">⛔ BANCO DE HORAS TRAVADO</div><div class="t2">Aceite a confirmação de pagamento para liberá-lo</div>
+ <div class="t3">Role até <b>"Confirme o seu pagamento"</b> e toque em <b>Confirmo que recebi</b>. Se o valor estiver errado, toque em <b>Não recebi / discordo</b> e explique: isso também libera.</div>
+ <button class="b" id="travaIr" style="margin-top:8px;background:#fff;color:#7a0b0b;border:0;font-weight:700">Responder agora</button></div>`}
 function recCard(){const L=EMP.recibos||[];if(!CLOUD||!L.length)return '';
  const pend=L.filter(r=>r.status==='aguardando'),feitos=L.filter(r=>r.status!=='aguardando').slice(0,8);
  const lin=(t,v,c)=>v?`<div class="emp-day"><div>${t}</div><div class="r ${c||''}">${v}</div></div>`:'';
@@ -1222,12 +1243,12 @@ function rEmpView(){
  const nuvem=CLOUD&&Array.isArray(EMP.punches);
  const cardHoje=nuvem?`<div class="card emp-today"><h2>Hoje, ${DN[wd]} ${td.slice(8)}/${td.slice(5,7)}</h2>
  ${hol?`<p class="info">Feriado: ${esc(hol)}</p>`:''}
- ${!liberado?'<p class="note">Hoje não é um dia liberado na sua escala.</p>':EMP.proximo?`<button class="b p" id="bPunch" style="width:100%;font-size:18px;padding:16px 10px">Registrar: ${CAMPO[EMP.proximo]}</button>
+ ${!liberado?'<p class="note">Hoje não é um dia liberado na sua escala.</p>':EMP.travado?'<p class="warn"><b>Ponto travado.</b> Responda à confirmação de pagamento para registrar o horário.</p>':EMP.proximo?`<button class="b p" id="bPunch" style="width:100%;font-size:18px;padding:16px 10px">Registrar: ${CAMPO[EMP.proximo]}</button>
  <p class="note">A hora é gravada pelo sistema no momento do toque. Ao registrar, o sistema guarda a sua localização e a rede usada, somente nesse momento.</p>
  ${EMP.ponto&&EMP.ponto.externo?`<details style="margin-top:8px"><summary>Estou fora da empresa (trabalho externo)</summary><textarea id="pMot" rows="2" placeholder="Motivo e local. Ex.: montagem na obra do cliente X" style="width:100%;margin:8px 0;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:7px;padding:8px"></textarea><button class="b" id="bExt">Registrar fora da empresa</button><p class="note">Fica aguardando a aprovação do responsável.</p></details>`:''}`:'<p class="info">Você já registrou os 4 horários de hoje.</p>'}
  <div id="pMsg" class="note">${esc(EMP.msg||'')}</div>
  ${(EMP.punches||[]).map(q=>`<div class="emp-day"><div><b>${CAMPO[q.field]||''}</b><small>${PLACE[q.place]||''}</small></div><div class="r"><b>${q.hora}</b><small>${q.status==='pending'?'Aguardando aprovação':q.status==='rejected'?'Recusado':'Registrado'}</small></div></div>`).join('')}</div>`:'';
- $('#main').innerHTML=`${recCard()}${instCard()}${cardHoje}<div class="card emp-today ${nuvem?'hide':''}"><h2>Hoje, ${DN[wd]} ${td.slice(8)}/${td.slice(5,7)}</h2>
+ $('#main').innerHTML=`${travaCard()}${recCard()}${instCard()}${cardHoje}<div class="card emp-today ${nuvem?'hide':''}"><h2>Hoje, ${DN[wd]} ${td.slice(8)}/${td.slice(5,7)}</h2>
  ${hol?`<p class="info">Feriado: ${esc(hol)}</p>`:''}
  ${liberado?`<div class="times">${F.map(([f,l])=>`<div><label for="p-${f}">${l}</label><div class="in"><input id="p-${f}" type="time" data-p="${f}" value="${r[f]||''}"><button class="b p" data-now="${f}">Agora</button></div></div>`).join('')}</div>
  <p class="note" id="pst">${EMP.msg||'Toque em "Agora" ao chegar e ao sair. O horário é salvo na hora.'}</p>`:'<p class="note">Hoje não é um dia liberado na sua escala.</p>'}</div>
@@ -1248,6 +1269,7 @@ function rEmpView(){
  <p class="note">Algum dado errado? Fale com o responsável. Só ele pode alterar o cadastro e corrigir dias anteriores.</p>
  <div class="row"><button class="b" id="ePriv">Aviso de privacidade</button></div></div>`;
  instBind();
+ {const ti=$('#travaIr');if(ti)ti.onclick=()=>{const c=document.querySelector('[data-rok]');if(c)c.scrollIntoView({block:'center',behavior:'smooth'})}}
  document.querySelectorAll('[data-rok]').forEach(b=>b.onclick=()=>respRec(b.dataset.rok,'confirmar'));
  document.querySelectorAll('[data-rno]').forEach(b=>b.onclick=()=>$('#rno-'+b.dataset.rno).classList.toggle('hide'));
  document.querySelectorAll('[data-rsend]').forEach(b=>b.onclick=()=>respRec(b.dataset.rsend,'contestar',$('#rob-'+b.dataset.rsend).value));
@@ -1258,6 +1280,7 @@ function rEmpView(){
   btn.disabled=true;$('#pMsg').textContent='Pegando a sua localização…';
   const g=await pegarGps();$('#pMsg').textContent='Registrando…';
   const {data,error}=await sb.rpc('emp_punch',{p_token:EMP.tok,p_lat:g?g.lat:null,p_lon:g?g.lon:null,p_acc:g?g.acc:null,p_device_ts:new Date().toISOString(),p_externo:!!ext,p_motivo:mot});
+  if(error&&/PONTO_TRAVADO/.test(error.message||'')){EMP.travado=true;EMP.msg='Ponto travado: responda à confirmação de pagamento.';await empFetch();rEmpView();return}
   if(error||!data)EMP.msg='Não salvou. Verifique a internet e tente de novo.';
   else if(!data.ok)EMP.msg=data.erro;
   else EMP.msg=(data.status==='ok'?`Registrado às ${data.hora}.`:`Registrado às ${data.hora}. Fica aguardando a aprovação do responsável (${(PLACE[data.place]||'').toLowerCase()}).`)+(g?'':' Sem localização: permita o acesso ao local no navegador.');
