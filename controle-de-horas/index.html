@@ -225,7 +225,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10c';
-const APP_VERSAO='27/10/2026 · 2';
+const APP_VERSAO='30/10/2026 · 1';
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -368,8 +368,8 @@ const fmtD=iso=>iso?String(iso).split('-').reverse().join('/'):'';
 const fmtDT=(iso,seg)=>iso?new Date(iso).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:seg?'2-digit':undefined}):'';
 async function loadRecibos(){if(!CLOUD||!USER)return;const {data,error}=await sb.from('recibos').select('*').order('criado_em',{ascending:false}).limit(500);if(!error)REC.list=data||[]}
 const recDe=(empId,pagId)=>REC.list.find(r=>r.emp_id===empId&&r.pag_id===pagId)||null;
-function snapPag(e,p){const W=p.ref?calcSemana(e,p.ref):null;
- return {d:p.d,v:p.v,forma:p.forma||'',obs:p.obs||'',ref:p.ref||'',refTxt:p.ref?'Semana '+fmtBR(p.ref)+' a '+fmtBR(addD(p.ref,6)):'Pagamento avulso',
+function snapPag(e,p){const W=p.ref&&p.ref!=='vale'?calcSemana(e,p.ref):null;
+ return {d:p.d,v:p.v,forma:p.forma||'',obs:p.obs||'',ref:p.ref||'',refTxt:p.ref==='vale'?'Vale (adiantamento)':p.ref?'Semana '+fmtBR(p.ref)+' a '+fmtBR(addD(p.ref,6)):'Pagamento avulso',
   horas:W?hm(W.min):'',dias:W?W.dias:0,valHoras:W?r2(W.val):null,ajuda:W&&W.ajuda?r2(W.ajuda):0,vales:W&&W.vales?r2(W.vales):0,comprovante:!!p.file}}
 async function pedirCiencia(e,p){const {error}=await sb.from('recibos').insert({emp_id:e.id,pag_id:p.id,snapshot:snapPag(e,p)});
  if(error){toast('Não consegui pedir a confirmação: '+error.message);return false}
@@ -805,6 +805,21 @@ function rBanner(){const b=$('#banner');if(!b)return;b.innerHTML='';
  b.insertAdjacentHTML('beforeend',`<div class="warn noprint" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>${sex?'Sexta-feira: hora de fechar a semana.':'Semana sem pagamento registrado.'}</b> ${fmtBR(mon)} a ${fmtBR(addD(mon,6))}: ${pend.map(p=>esc(p.e.nome)+' ('+brl(p.W.pagar)+')').join(', ')}</div><button class="b p" id="bnGo">Abrir fechamento</button></div>`);
  $('#bnGo').onclick=()=>{S.sel=pend[0].e.id;PAG.mon=mon;show('pag')}}
 const PAG={mon:null};
+let PASTED=null;
+function pegaArquivo(dt){if(!dt)return null;let f=(dt.files&&dt.files[0])||null;
+ if(!f&&dt.items)for(const it of dt.items)if(it.kind==='file'){f=it.getAsFile();if(f)break}return f}
+function mostraColado(){const i=$('#pasteInfo');if(!i)return;
+ if(!PASTED){i.innerHTML='';return}
+ const img=/^image\//.test(PASTED.type),u=img?URL.createObjectURL(PASTED):'';
+ i.innerHTML=`<div style="display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap">${img?`<img alt="Prévia do comprovante" src="${u}" style="max-height:90px;border-radius:6px;border:1px solid var(--line)">`:'<span aria-hidden="true">📄</span>'}
+  <span><b>${esc(PASTED.name||'comprovante')}</b><br><small>${Math.round(PASTED.size/1024)} KB · pronto para salvar</small></span><button type="button" class="b" id="pasteX">Remover</button></div>`;
+ $('#pasteX').onclick=ev=>{ev.stopPropagation();PASTED=null;const f=$('#pg-a');if(f)f.value='';mostraColado()}}
+function aceitaArquivo(f){if(!f)return false;
+ if(!(/^image\//.test(f.type)||f.type==='application/pdf')){toast('Só aceito foto, print ou PDF.');return false}
+ PASTED=f;mostraColado();toast('Comprovante anexado');return true}
+document.addEventListener('paste',ev=>{if(CUR!=='pag'||!$('#pasteBox'))return;
+ const t=ev.target;if(t&&/^(INPUT|TEXTAREA)$/.test(t.tagName)&&t.type!=='file'&&!pegaArquivo(ev.clipboardData))return;
+ const f=pegaArquivo(ev.clipboardData);if(!f)return;ev.preventDefault();aceitaArquivo(f)});
 function rPag(fresh){
  const el=$('#t-pag'),e=emp();
  if(!e){el.innerHTML='<div class="card">Cadastre um colaborador na aba Equipe.</div>';return}
@@ -831,30 +846,42 @@ function rPag(fresh){
   <div><label for="pg-d">Data do pagamento</label><input id="pg-d" type="date" value="${todayS()}"></div>
   <div><label for="pg-v">Valor pago (R$)</label><input id="pg-v" type="number" step="0.01" value="${r2(W.pagar)}"></div>
   <div><label for="pg-f">Forma</label><select id="pg-f">${FORMAS.map(f=>`<option>${f}</option>`).join('')}</select></div>
-  <div><label for="pg-r">Referente a</label><select id="pg-r"><option value="${mon}">Semana ${fmtBR(mon)} a ${fmtBR(W.fim)}</option><option value="">Avulso (sem semana)</option></select></div>
+  <div><label for="pg-r">Referente a</label><select id="pg-r"><option value="${mon}">Semana ${fmtBR(mon)} a ${fmtBR(W.fim)}</option><option value="vale">Vale (adiantamento)</option><option value="">Avulso (sem semana)</option></select></div>
   <div><label for="pg-o">Observação</label><input id="pg-o" placeholder="Ex.: Pix para a chave do telefone"></div>
-  <div><label for="pg-a">Comprovante (foto, print ou PDF)</label><input id="pg-a" type="file" accept="image/*,application/pdf"></div></div>
+  <div style="grid-column:1/-1"><label for="pasteBox">Comprovante do Pix (foto, print ou PDF)</label>
+   <div id="pasteBox" tabindex="0" role="button" aria-label="Colar ou escolher o comprovante" style="border:2px dashed var(--line);border-radius:10px;padding:14px;text-align:center;cursor:pointer;outline-offset:2px">
+    <b>Cole o comprovante aqui</b><div class="note" style="margin:4px 0 0">No WhatsApp, copie a imagem ou o arquivo e aperte <b>Ctrl + V</b> nesta página. Também pode arrastar o arquivo para cá ou tocar aqui para escolher.</div>
+    <div id="pasteInfo" style="margin-top:8px"></div></div>
+   <input id="pg-a" type="file" accept="image/*,application/pdf" class="hide"></div></div>
   ${CLOUD?`<label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-weight:400"><input type="checkbox" id="pg-c" checked style="width:auto;min-height:0;margin-top:3px"><span>Pedir ao colaborador que <b>confirme o recebimento</b> no app. Fica registrado com data, hora e código, como prova do pagamento.</span></label>`:''}
   <div class="row" style="margin-top:10px"><button class="b p" id="pgSave">Salvar pagamento</button></div><div id="pgMsg"></div>
   <p class="note">${CLOUD?'O comprovante é guardado na nuvem, privado para a sua conta.':'<b>Modo local:</b> o comprovante fica guardado só neste navegador e não entra no backup.'}</p></div>
  <div class="card"><h2>Histórico de pagamentos de ${esc(e.nome)}</h2>
   ${pagos.length?pagos.map(p=>{const rc=CLOUD?recDe(e.id,p.id):null;
    const bd=!CLOUD?'':!rc?'<span class="rbadge">Sem pedido de confirmação</span>':rc.status==='confirmado'?`<span class="rbadge ok">✔ Recebimento confirmado em ${fmtDT(rc.decidido_em)}</span>`:rc.status==='contestado'?`<span class="rbadge no">⚠ Contestado em ${fmtDT(rc.decidido_em)}: ${esc(rc.obs||'')}</span>`:'<span class="rbadge wait">⏳ Aguardando o colaborador confirmar</span>';
-   return `<div class="pgh"><div><b>${(p.d||'').split('-').reverse().join('/')}</b></div><div>${esc(p.forma||'')}${p.obs?' · '+esc(p.obs):''}<small>${p.ref?'Semana '+fmtBR(p.ref)+' a '+fmtBR(addD(p.ref,6)):'Avulso'}</small>${bd}</div><div class="v">${brl(p.v)}</div>
+   return `<div class="pgh"><div><b>${(p.d||'').split('-').reverse().join('/')}</b></div><div>${esc(p.forma||'')}${p.obs?' · '+esc(p.obs):''}<small>${p.ref==='vale'?'Vale (adiantamento)':p.ref?'Semana '+fmtBR(p.ref)+' a '+fmtBR(addD(p.ref,6)):'Avulso'}</small>${bd}</div><div class="v">${brl(p.v)}</div>
    <div class="ac noprint">${p.file?`<button class="b" data-pv="${p.id}">Ver comprovante</button>`:'<small>Sem comprovante</small>'}${CLOUD&&(!rc||rc.status==='contestado')?`<button class="b" data-pc="${p.id}">Pedir confirmação</button>`:''}${rc&&rc.status!=='aguardando'?`<button class="b" data-pp="${rc.id}">Comprovante de ciência</button>`:''}${rc&&rc.status==='confirmado'?'<small>Confirmado: não pode ser excluído</small>':`<button class="b d" data-pd="${p.id}">Excluir</button>`}</div></div>`}).join('')+`<p class="note"><b>Total pago: ${brl(totPago)}</b></p>`:'<p class="note">Nenhum pagamento registrado.</p>'}</div>`;
- $('#pE').onchange=ev=>{S.sel=ev.target.value;save();rPag()};
+ $('#pE').onchange=ev=>{S.sel=ev.target.value;PASTED=null;save();rPag()};
  $('#wPrev').onclick=()=>{PAG.mon=addD(mon,-7);rPag()};$('#wNext').onclick=()=>{PAG.mon=addD(mon,7);rPag()};$('#wHoje').onclick=()=>{PAG.mon=semanaAlvo();rPag()};
  const txt=resumoTexto(e,W);
  $('#wCopy').onclick=()=>copy(txt);
  const pc=$('#pixCp');if(pc)pc.onclick=()=>copy(e.pix);
  $('#wZap').onclick=()=>{let n=(S.cfg.whats||'').replace(/\D/g,'');if(n&&n.length<=11)n='55'+n;window.open('https://wa.me/'+n+'?text='+encodeURIComponent(txt),'_blank')};
+ const pb=$('#pasteBox');mostraColado();
+ pb.onclick=()=>$('#pg-a').click();pb.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();$('#pg-a').click()}};
+ $('#pg-a').onchange=ev=>{const f=ev.target.files[0];if(f)aceitaArquivo(f)};
+ ['dragover','dragenter'].forEach(n=>pb.addEventListener(n,ev=>{ev.preventDefault();pb.style.borderColor='var(--pri)'}));
+ ['dragleave','drop'].forEach(n=>pb.addEventListener(n,()=>{pb.style.borderColor=''}));
+ pb.addEventListener('drop',ev=>{ev.preventDefault();aceitaArquivo(pegaArquivo(ev.dataTransfer))});
  $('#pgSave').onclick=async()=>{const v=+$('#pg-v').value,d=$('#pg-d').value,msg=$('#pgMsg');
   if(!d||!(v>0)){msg.innerHTML='<p class="warn">Informe a data e um valor maior que zero.</p>';return}
-  const fl=$('#pg-a').files[0];if(fl&&fl.size>12*1024*1024){msg.innerHTML='<p class="warn">Arquivo muito grande (máximo 12 MB).</p>';return}
+  const fl=PASTED||$('#pg-a').files[0];if(fl&&fl.size>12*1024*1024){msg.innerHTML='<p class="warn">Arquivo muito grande (máximo 12 MB).</p>';return}
   msg.innerHTML='<p class="note">Salvando…</p>';let file=null;
   try{if(fl)file=await storeFile(fl)}catch(x){msg.innerHTML='<p class="warn">Não consegui guardar o comprovante: '+esc(x.message||x)+'</p>';return}
   const np={id:uuid(),d,v:r2(v),forma:$('#pg-f').value,ref:$('#pg-r').value,obs:$('#pg-o').value.trim(),file};
   (e.pagamentos=e.pagamentos||[]).push(np);
+  if(np.ref==='vale')(e.vales=e.vales||[]).push({d,v:np.v,n:'Vale (Pix)'+(np.obs?': '+np.obs:''),pagId:np.id});
+  PASTED=null;
   const quer=CLOUD&&$('#pg-c')&&$('#pg-c').checked;
   persistEmp(e);if(quer)await pedirCiencia(e,np);toast(quer?'Pagamento registrado. Aguardando a confirmação do colaborador':'Pagamento registrado');rPag(true)};
  el.querySelectorAll('[data-pc]').forEach(b=>b.onclick=async()=>{const p=e.pagamentos.find(x=>x.id===b.dataset.pc);if(!p)return;b.disabled=true;if(await pedirCiencia(e,p))toast('Pedido enviado ao colaborador');rPag(true)});
@@ -863,7 +890,7 @@ function rPag(fresh){
  el.querySelectorAll('[data-pd]').forEach(b=>b.onclick=async()=>{if(b.dataset.ok!=='1'){b.dataset.ok='1';b.textContent='Confirmar exclusão?';setTimeout(()=>{b.dataset.ok='';b.textContent='Excluir'},4000);return}
   const p=e.pagamentos.find(x=>x.id===b.dataset.pd);const rc=CLOUD&&p?recDe(e.id,p.id):null;if(rc&&rc.status==='confirmado')return;
   if(rc&&rc.status==='aguardando'){await sb.from('recibos').delete().eq('id',rc.id);await loadRecibos()}
-  if(p&&p.file)await removeFile(p.file);e.pagamentos=e.pagamentos.filter(x=>x!==p);persistEmp(e);rPag(true)});
+  if(p&&p.file)await removeFile(p.file);e.pagamentos=e.pagamentos.filter(x=>x!==p);if(p&&p.ref==='vale')e.vales=(e.vales||[]).filter(v=>v.pagId!==p.id);persistEmp(e);rPag(true)});
 }
 
 /* ===== ponto pelo celular (administração) ===== */
