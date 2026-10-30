@@ -87,6 +87,10 @@ table.r tr.t td{font-weight:700;background:var(--pri2)}
 #foot .wk{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
 #foot .wk div{flex:0 0 auto;border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:12px;line-height:1.3}
 #foot .wk div b{display:block;font-size:13px}
+#foot .wk div[data-wk]{cursor:pointer;transition:background .15s,border-color .15s}
+#foot .wk div[data-wk]:hover,#foot .wk div[data-wk]:focus-visible{border-color:var(--pri);background:var(--pri2);outline:none}
+@keyframes pisca{0%{box-shadow:inset 0 0 0 2px var(--pri)}100%{box-shadow:inset 0 0 0 2px transparent}}
+tr.pisca{animation:pisca 1.4s ease-out}
 #foot .mo{display:flex;gap:6px 18px;flex-wrap:wrap;align-items:baseline;font-size:13px;color:var(--mut)}
 #foot .mo b{font-size:16px;color:var(--ink)}
 #foot .mo .tot b{color:var(--pri);font-size:18px}
@@ -225,7 +229,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10c';
-const APP_VERSAO='30/10/2026 · 1';
+const APP_VERSAO='30/10/2026 · 2';
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -765,8 +769,21 @@ function centerWeek(ym){const td=todayS();if(td.slice(0,7)!==ym)return null;
  const rect=l=>l.getBoundingClientRect();let t=rect(trs[0]).top,b=rect(trs[trs.length-1]).bottom;
  {const row=document.querySelector(`#tb tr[data-d="${+td.slice(8)}"]`);if(row){t=rect(row).top;b=rect(row).bottom}}
  scrollTo(0,Math.max(0,scrollY+(t+b)/2-(top+bot)/2));return scrollY}
+/* clicar numa semana do rodapé leva a Folha até ela, no meio da tela */
+function irParaSemana(wk){
+ const ym=FOLHA&&FOLHA.ym;if(!ym)return;
+ const trs=[...document.querySelectorAll('#tb tr')].filter(tr=>tr.dataset.d?mondayOf(ym+'-'+pad(+tr.dataset.d))===wk:tr.dataset.wk===wk);if(!trs.length)return;
+ const nav=document.querySelector('nav'),foot=document.getElementById('foot'),H=innerHeight,nr=nav.getBoundingClientRect();
+ let top=nr.top<H/2?nr.bottom:0,bot=nr.top>=H/2?nr.top:H;
+ if(foot&&foot.getClientRects().length){const fr=foot.getBoundingClientRect();if(fr.top>H/2)bot=Math.min(bot,fr.top)}
+ const t=trs[0].getBoundingClientRect().top,b=trs[trs.length-1].getBoundingClientRect().bottom;
+ const y=(b-t)<=(bot-top)-8?scrollY+(t+b)/2-(top+bot)/2:scrollY+t-top-8;
+ scrollTo({top:Math.max(0,y),behavior:'smooth'});
+ trs.forEach(tr=>{tr.classList.remove('pisca');void tr.offsetWidth;tr.classList.add('pisca')})}
+document.addEventListener('click',ev=>{const b=ev.target.closest('#foot [data-wk]');if(b)irParaSemana(b.dataset.wk)});
+document.addEventListener('keydown',ev=>{if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches&&ev.target.matches('#foot [data-wk]')){ev.preventDefault();irParaSemana(ev.target.dataset.wk)}});
 function paintFoot(R,e){const T=R.T,clt=e.tipo==='clt';
- $('#foot').innerHTML=`<div class="wk">${R.weeks.map(w=>`<div>Semana ${pad(w.ini)}–${pad(w.fim)}<b>${w.dias} dia(s) · ${hm(w.min)}</b>${brl(w.val)}${w.ext?` · <span class="ext">${hm(w.ext)} extra</span>`:''}${w.ve?`<br><span class="ext">Extras: ${brl(w.ve)}</span>`:''}${w.ajuda?`<br>Ajuda + ${brl(w.ajuda)}`:''}${w.vale?`<br><span class="vl">Vale − ${brl(w.vale)}</span>`:''}${w.vale||w.ajuda?` · ${brl(w.val+w.ajuda-w.vale)}`:''}</div>`).join('')}</div>
+ $('#foot').innerHTML=`<div class="wk">${R.weeks.map(w=>`<div data-wk="${w.wk}" role="button" tabindex="0" title="Ir para esta semana" aria-label="Ir para a semana ${pad(w.ini)} a ${pad(w.fim)}">Semana ${pad(w.ini)}–${pad(w.fim)}<b>${w.dias} dia(s) · ${hm(w.min)}</b>${brl(w.val)}${w.ext?` · <span class="ext">${hm(w.ext)} extra</span>`:''}${w.ve?`<br><span class="ext">Extras: ${brl(w.ve)}</span>`:''}${w.ajuda?`<br>Ajuda + ${brl(w.ajuda)}`:''}${w.vale?`<br><span class="vl">Vale − ${brl(w.vale)}</span>`:''}${w.vale||w.ajuda?` · ${brl(w.val+w.ajuda-w.vale)}`:''}</div>`).join('')}</div>
  <div class="mo"><span>Mês: <b>${T.diasTrab} dias · ${hm(T.total)}</b></span>${T.ext?`<span>Extras do mês: <b class="ext">${hm(T.ext)} · ${brl(T.vExt)}</b></span>`:''}<span class="dk">Valor das horas: <b>${brl(T.valHoras)}</b></span>${clt?`<span class="dk">Descontos: <b>${brl(T.dAtr+T.dFalta+T.dDsr+T.dAdm)}</b></span>`:''}${T.vales||T.ajuda?`<span>Total bruto: <b>${brl(T.pagar)}</b></span>${T.ajuda?`<span>Ajuda de custo: <b>+ ${brl(T.ajuda)}</b></span>`:''}${T.vales?`<span>Vales: <b>− ${brl(T.vales)}</b></span>`:''}<span class="tot">${T.vales?'A pagar após vales':'A pagar com ajuda de custo'}: <b>${brl(T.liquido)}</b></span>`:`<span class="tot">Total a pagar no mês${clt?' (bruto)':''}: <b>${brl(T.pagar)}</b></span>`}</div>`}
 setInterval(()=>{if(CLOUD&&USER&&CUR==='folha'&&!document.hidden&&FOLHA)loadMonth(FOLHA.ym).then(()=>FOLHA&&FOLHA.sync())},15000);
 
