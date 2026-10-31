@@ -18,6 +18,7 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-variant-numeric:tabular-nums}
 header{padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));background:var(--pri);color:var(--onpri);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 header h1{margin:0;font-size:19px}
+header h1 .ver{font-size:12px;font-weight:500;opacity:.8;margin-left:6px;white-space:nowrap}
 header small{opacity:.85;display:block}
 header .hx{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:13px}
 header .hx button{background:transparent;color:var(--onpri);border:1px solid currentColor;border-radius:7px;padding:5px 10px;font:inherit;cursor:pointer}
@@ -68,6 +69,9 @@ tr.wkrow .wkx{color:var(--ext);font-weight:600}
 tr.wkrow .wkx b{font-size:15px}
 tr.wkrow .mut{color:var(--mut);font-size:12px;font-weight:400}
 small.vl,.vl{color:var(--err)}
+.stp{font-weight:800;letter-spacing:.2px}.stp.ok{color:var(--pri)}.stp.no{color:var(--err)}
+#foot .wk div .stp{font-size:11.5px;display:inline-block;margin-top:2px}
+#foot .wk div small{display:block;color:var(--warn);font-size:11px}
 td small.vl{display:block;font-size:12px;font-weight:600}
 tr.wkrow .wk2 b.vl{color:var(--err)}
 tr.wkrow .wk2{font-size:15px;margin-top:2px}
@@ -168,7 +172,7 @@ tr.pisca{animation:pisca 1.4s ease-out}
 <script src="supabase.min.js"></script>
 </head>
 <body>
-<header id="hdr"><div><h1>Controle de Horas</h1><small id="sub">Carteira assinada (CLT) e diaristas</small></div><div class="hx" id="hx"></div></header>
+<header id="hdr"><div><h1>Controle de Horas <span class="ver" id="ver"></span></h1><small id="sub">Carteira assinada (CLT) e diaristas</small></div><div class="hx" id="hx"></div></header>
 <nav id="tabs">
 <button data-t="emp" class="on">Equipe</button>
 <button data-t="folha">Folha</button>
@@ -233,7 +237,8 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10c';
-const APP_VERSAO='30/10/2026 · 3';
+const APP_VERSAO='31/10/2026 · 1';
+{const v=document.getElementById('ver');if(v)v.textContent='v '+APP_VERSAO}
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
  <p>Este aviso explica, em linguagem simples, quais dados pessoais o sistema <b>Controle de Horas</b> usa, para quê, quem pode ver e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
@@ -733,7 +738,7 @@ function rFolha(){
    tr.querySelector('.c-v').innerHTML=(x.vlr!=null?brl(x.vlr):(x.falta?'− '+brl(x.desc):''))+(x.vale?`<small class="vl">Vale − ${brl(x.vale)}</small>`:'');
    tr.querySelector('.c-al').textContent=x.al.join(' · ')});
   document.querySelectorAll('#tb tr.wkrow').forEach(tr=>{const W=R.weeks.find(w=>w.wk===tr.dataset.wk);
-   tr.firstElementChild.innerHTML=W?`<div class="wkl"><span><b>Semana ${pad(W.ini)} a ${pad(W.fim)}</b> · ${W.dias} dia(s) trabalhado(s) · ${hm(W.min)}${W.ext?` <span class="ext">(${hm(W.ext)} de extras)</span>`:''}</span>${W.ve?`<span class="wkx">Valor das horas extras: <b>${brl(W.ve)}</b></span>`:''}${W.vf?`<span class="wkx">Domingo/feriado: <b>${brl(W.vf)}</b></span>`:''}</div><div class="wk2">${W.vale||W.ajuda?`Horas da semana: <b>${brl(W.val)}</b>${W.ajuda?` · Ajuda de custo: <b>+ ${brl(W.ajuda)}</b>`:''}${W.vale?` · Vale: <b class="vl">− ${brl(W.vale)}</b>`:''} · ${W.ajuda?'Total a receber':'Valor com desconto'}: <b>${brl(W.val+W.ajuda-W.vale)}</b>`:`Valor acumulado da semana: <b>${brl(W.val)}</b>`}${W.ve||W.vf?` <small class="mut">(horas normais ${brl(W.vn)}${W.ve?' + extras '+brl(W.ve):''}${W.vf?' + domingo/feriado '+brl(W.vf):''})</small>`:''}</div>`:''});
+   tr.firstElementChild.innerHTML=W?`<div class="wkl"><span><b>Semana ${pad(W.ini)} a ${pad(W.fim)}</b> · ${W.dias} dia(s) trabalhado(s) · ${hm(W.min)}${W.ext?` <span class="ext">(${hm(W.ext)} de extras)</span>`:''}</span>${W.ve?`<span class="wkx">Valor das horas extras: <b>${brl(W.ve)}</b></span>`:''}${W.vf?`<span class="wkx">Domingo/feriado: <b>${brl(W.vf)}</b></span>`:''}</div><div class="wk2">${W.vale||W.ajuda?`Horas da semana: <b>${brl(W.val)}</b>${W.ajuda?` · Ajuda de custo: <b>+ ${brl(W.ajuda)}</b>`:''}${W.vale?` · Vale: <b class="vl">− ${brl(W.vale)}</b>`:''} · ${W.ajuda?'Total a receber':'Valor com desconto'}: <b>${brl(W.val+W.ajuda-W.vale)}</b>`:`Valor acumulado da semana: <b>${brl(W.val)}</b>`}${(()=>{const t=statusSemana(e,W.wk);return t?`<div style="margin-top:4px">${stHtml(t)}</div>`:''})()}${W.ve||W.vf?` <small class="mut">(horas normais ${brl(W.vn)}${W.ve?' + extras '+brl(W.ve):''}${W.vf?' + domingo/feriado '+brl(W.vf):''})</small>`:''}</div>`:''});
   const T=R.T;
   $('#sum').innerHTML=clt?`<div><span>Horas normais</span><b>${hm(T.norm)}</b></div><div><span>Horas extras</span><b class="ext">${hm(T.ext)}</b></div>${T.fer?`<div><span>Domingos e feriados</span><b>${hm(T.fer)}</b></div>`:''}
    <div><span>Faltas</span><b>${T.nFaltas}</b></div><div><span>Valor da hora</span><b>${brl(R.hora)}</b></div><div><span>Salário base</span><b>${brl(e.salario)}</b></div>
@@ -770,7 +775,7 @@ function rFolha(){
  ['touchstart','wheel','keydown','mousedown'].forEach(t=>addEventListener(t,para,{capture:true,passive:true}));
  const centro=()=>{if(!mexeu&&FOLHA&&FOLHA.ym===ym&&FOLHA.e===e&&CUR==='folha')centerWeek(ym)};
  centro();[150,500,1200].forEach(ms=>setTimeout(centro,ms));setTimeout(para,2500);
- if(CLOUD)loadMonth(ym).then(()=>{if(FOLHA&&FOLHA.ym===ym&&FOLHA.e===e){FOLHA.sync();centro()}});
+ if(CLOUD)Promise.all([loadMonth(ym),loadMonth(ymAdd(ym,-1)),loadMonth(ymAdd(ym,1)),loadRecibos()]).then(()=>{if(FOLHA&&FOLHA.ym===ym&&FOLHA.e===e){FOLHA.sync();centro()}});
 }
 /* deixa o dia de hoje no meio da tela (celular e computador); só no mês atual */
 function centerWeek(ym){const td=todayS();if(td.slice(0,7)!==ym)return null;
@@ -783,6 +788,23 @@ function centerWeek(ym){const td=todayS();if(td.slice(0,7)!==ym)return null;
  {const row=document.querySelector(`#tb tr[data-d="${+td.slice(8)}"]`);if(row){t=rect(row).top;b=rect(row).bottom}}
  scrollTo(0,Math.max(0,scrollY+(t+b)/2-(top+bot)/2));return scrollY}
 /* clicar numa semana do rodapé leva a Folha até ela, no meio da tela */
+/* pago x pendente: cruza o que deve ser pago na semana com o que o colaborador CONFIRMOU ter recebido */
+function statusSemana(e,wk){
+ if(CLOUD){const [a,b]=[wk.slice(0,7),addD(wk,6).slice(0,7)];if(!LOADED[a]||!LOADED[b])return null}
+ const W=calcSemana(e,wk),devido=r2(Math.max(0,W.val+W.ajuda-W.vales));
+ if(!(W.dias>0)&&devido<=0)return null;
+ let conf=0,aguard=0,contest=0,semPed=0;
+ for(const p of (e.pagamentos||[]).filter(x=>x.ref===wk)){const v=+p.v||0;
+  if(!CLOUD){conf+=v;continue}
+  const rc=recDe(e.id,p.id);
+  if(!rc)semPed+=v;else if(rc.status==='confirmado')conf+=v;else if(rc.status==='aguardando')aguard+=v;else contest+=v}
+ conf=r2(conf);const falta=r2(devido-conf);
+ return {devido,conf,aguard:r2(aguard),contest:r2(contest),semPed:r2(semPed),falta,pago:falta<=0.009}}
+function stNotas(t){return [t.aguard>0?`R$ ${brl(t.aguard).replace('R$','').trim()} pago, aguardando confirmação`:'',t.contest>0?`${brl(t.contest)} contestado`:'',t.semPed>0?`${brl(t.semPed)} pago sem pedido de confirmação`:'',t.conf>t.devido+0.009?`pago a mais: ${brl(t.conf-t.devido)}`:''].filter(Boolean)}
+function stHtml(t,curto){if(!t)return '';
+ const n=stNotas(t).join(' · ');
+ return t.pago?`<span class="stp ok">✔ VALOR DA SEMANA PAGA</span>${n&&!curto?` <small>${n}</small>`:''}`:
+  `<span class="stp no">⚠ VALOR DA SEMANA PENDENTE</span> <b class="stp no">Falta ${brl(t.falta)}</b>${n?` <small>${n}</small>`:''}`}
 function irParaSemana(wk){
  const ym=FOLHA&&FOLHA.ym;if(!ym)return;
  const trs=[...document.querySelectorAll('#tb tr')].filter(tr=>tr.dataset.d?mondayOf(ym+'-'+pad(+tr.dataset.d))===wk:tr.dataset.wk===wk);if(!trs.length)return;
@@ -796,7 +818,7 @@ function irParaSemana(wk){
 document.addEventListener('click',ev=>{const b=ev.target.closest('#foot [data-wk]');if(b)irParaSemana(b.dataset.wk)});
 document.addEventListener('keydown',ev=>{if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches&&ev.target.matches('#foot [data-wk]')){ev.preventDefault();irParaSemana(ev.target.dataset.wk)}});
 function paintFoot(R,e){const T=R.T,clt=e.tipo==='clt';
- $('#foot').innerHTML=`<div class="wk">${R.weeks.map(w=>`<div data-wk="${w.wk}" role="button" tabindex="0" title="Ir para esta semana" aria-label="Ir para a semana ${pad(w.ini)} a ${pad(w.fim)}">Semana ${pad(w.ini)}–${pad(w.fim)}<b>${w.dias} dia(s) · ${hm(w.min)}</b>${brl(w.val)}${w.ext?` · <span class="ext">${hm(w.ext)} extra</span>`:''}${w.ve?`<br><span class="ext">Extras: ${brl(w.ve)}</span>`:''}${w.ajuda?`<br>Ajuda + ${brl(w.ajuda)}`:''}${w.vale?`<br><span class="vl">Vale − ${brl(w.vale)}</span>`:''}${w.vale||w.ajuda?` · ${brl(w.val+w.ajuda-w.vale)}`:''}</div>`).join('')}</div>
+ $('#foot').innerHTML=`<div class="wk">${R.weeks.map(w=>`<div data-wk="${w.wk}" role="button" tabindex="0" title="Ir para esta semana" aria-label="Ir para a semana ${pad(w.ini)} a ${pad(w.fim)}">Semana ${pad(w.ini)}–${pad(w.fim)}<b>${w.dias} dia(s) · ${hm(w.min)}</b>${brl(w.val)}${w.ext?` · <span class="ext">${hm(w.ext)} extra</span>`:''}${w.ve?`<br><span class="ext">Extras: ${brl(w.ve)}</span>`:''}${w.ajuda?`<br>Ajuda + ${brl(w.ajuda)}`:''}${w.vale?`<br><span class="vl">Vale − ${brl(w.vale)}</span>`:''}${w.vale||w.ajuda?` · ${brl(w.val+w.ajuda-w.vale)}`:''}${(()=>{const t=statusSemana(e,w.wk);return t?`<br>${stHtml(t,true)}${t.pago?'':''}`:''})()}</div>`).join('')}</div>
  <div class="mo"><span>Mês: <b>${T.diasTrab} dias · ${hm(T.total)}</b></span>${T.ext?`<span>Extras do mês: <b class="ext">${hm(T.ext)} · ${brl(T.vExt)}</b></span>`:''}<span class="dk">Valor das horas: <b>${brl(T.valHoras)}</b></span>${clt?`<span class="dk">Descontos: <b>${brl(T.dAtr+T.dFalta+T.dDsr+T.dAdm)}</b></span>`:''}${T.vales||T.ajuda?`<span>Total bruto: <b>${brl(T.pagar)}</b></span>${T.ajuda?`<span>Ajuda de custo: <b>+ ${brl(T.ajuda)}</b></span>`:''}${T.vales?`<span>Vales: <b>− ${brl(T.vales)}</b></span>`:''}<span class="tot">${T.vales?'A pagar após vales':'A pagar com ajuda de custo'}: <b>${brl(T.liquido)}</b></span>`:`<span class="tot">Total a pagar no mês${clt?' (bruto)':''}: <b>${brl(T.pagar)}</b></span>`}</div>`}
 setInterval(()=>{if(CLOUD&&USER&&CUR==='folha'&&!document.hidden&&FOLHA)loadMonth(FOLHA.ym).then(()=>FOLHA&&FOLHA.sync())},15000);
 
@@ -865,7 +887,7 @@ function rPag(fresh){
  <div class="pg-grid" style="margin-bottom:10px"><div class="sum" style="display:contents">
   <div><span>Dias trabalhados</span><b>${W.dias}</b></div><div><span>Horas na semana</span><b>${hm(W.min)}</b></div><div><span>Horas extras</span><b class="ext">${hm(W.ext)}</b></div>
   <div><span>Valor das horas</span><b>${brl(W.val)}</b></div>${W.ve?`<div><span>Das horas extras</span><b class="ext">${brl(W.ve)}</b></div>`:''}${W.ajuda?`<div><span>Ajuda de custo (celular)</span><b>+ ${brl(W.ajuda)}</b></div>`:''}${W.vales?`<div><span>Vales</span><b>− ${brl(W.vales)}</b></div>`:''}${W.pago?`<div><span>Já pago</span><b>− ${brl(W.pago)}</b></div>`:''}
-  <div class="hi"><span>A PAGAR</span><b>${brl(W.pagar)}</b></div></div></div>
+  <div class="hi"><span>A PAGAR</span><b>${brl(W.pagar)}</b></div></div>${(()=>{const t=statusSemana(e,mon);return t?`<div style="margin:8px 0">${stHtml(t)}</div>`:''})()}</div>
  ${e.pix?`<p class="note"><b>Pix:</b> ${esc(e.pix)}${e.banco?' · '+esc(e.banco):''} <button class="b" id="pixCp" style="padding:2px 10px;min-height:0">Copiar chave</button></p>`:'<p class="note">Cadastre a chave Pix na ficha do colaborador para copiar aqui.</p>'}
  <div class="tw"><table class="dsem"><tbody>${W.days.map(x=>`<tr><td>${DN[x.wd]} ${fmtBR(x.ds)}</td><td>${x.w?[x.r.a&&x.r.b?x.r.a+'–'+x.r.b:'',x.r.c&&x.r.d?x.r.c+'–'+x.r.d:''].filter(Boolean).join(' · '):esc(x.st||'')}</td><td>${x.w?hm(x.w):''}</td><td>${x.vlr!=null?brl(x.vlr):''}</td></tr>`).join('')}</tbody></table></div>
  ${W.acima?`<div class="warn">${hm(W.acima)} acima da jornada estão sendo pagas pelo valor normal: a opção <b>"Pagar hora extra"</b> está desmarcada na ficha (aba Equipe).</div>`:''}
