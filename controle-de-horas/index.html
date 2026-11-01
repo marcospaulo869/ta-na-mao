@@ -73,6 +73,7 @@ small.vl,.vl{color:var(--err)}
 #foot .wk div .stp{font-size:11.5px;display:inline-block;margin-top:2px}
 #foot .wk div small{display:block;color:var(--warn);font-size:11px}
 td small.vl{display:block;font-size:12px;font-weight:600}
+button.lkv{padding:1px 8px;min-height:0;min-width:0;font-size:11.5px;margin-left:6px;font-weight:600}
 tr.wkrow .wk2 b.vl{color:var(--err)}
 tr.wkrow .wk2{font-size:15px;margin-top:2px}
 tr.wkrow .wk2 b{color:var(--pri);font-size:17px}
@@ -237,7 +238,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10c';
-const APP_VERSAO='31/10/2026 · 1';
+const APP_VERSAO='01/11/2026 · 1';
 {const v=document.getElementById('ver');if(v)v.textContent='v '+APP_VERSAO}
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
@@ -504,7 +505,7 @@ function calcMonth(e,ym,recs,today){
  T.liquido=T.pagar-T.vales+T.ajuda;
  /* vales por dia e por semana (só a parte da semana que cai neste mês, igual às linhas mostradas) */
  const vm=(e.vales||[]).filter(v=>v.d&&v.d.startsWith(ym)&&+v.v);
- days.forEach(x=>{x.vale=vm.filter(v=>v.d===x.ds).reduce((a,v)=>a+(+v.v||0),0)});
+ days.forEach(x=>{x.valesL=vm.filter(v=>v.d===x.ds);x.vale=x.valesL.reduce((a,v)=>a+(+v.v||0),0)});
  wl.forEach(w=>{w.ajuda=days.filter(x=>x.d>=w.ini&&x.d<=w.fim).reduce((a,x)=>a+x.ajuda,0)});
  wl.forEach(w=>{w.vale=vm.filter(v=>{const n=+v.d.slice(8);return n>=w.ini&&n<=w.fim}).reduce((a,v)=>a+(+v.v||0),0)});
  return {days,T,hora,alerts,weeks:wl};
@@ -735,7 +736,7 @@ function rFolha(){
    tr.querySelector('.c-tot').textContent=x.w?hm(x.w):'';
    tr.querySelector('.c-n').textContent=x.fer?'':(x.norm?hm(x.norm):'');
    tr.querySelector('.c-e').textContent=x.fer?hm(x.fer)+' (100%)':(x.ext?hm(x.ext):'');
-   tr.querySelector('.c-v').innerHTML=(x.vlr!=null?brl(x.vlr):(x.falta?'− '+brl(x.desc):''))+(x.vale?`<small class="vl">Vale − ${brl(x.vale)}</small>`:'');
+   tr.querySelector('.c-v').innerHTML=(x.vlr!=null?brl(x.vlr):(x.falta?'− '+brl(x.desc):''))+(x.valesL||[]).map(v=>{const pg=v.pagId&&(e.pagamentos||[]).find(q=>q.id===v.pagId);return `<small class="vl">Vale − ${brl(+v.v||0)}${pg&&pg.file?` <button type="button" class="b lkv" data-vc="${esc(pg.id)}" title="Abrir o comprovante deste vale">Ver comprovante</button>`:''}</small>`}).join('');
    tr.querySelector('.c-al').textContent=x.al.join(' · ')});
   document.querySelectorAll('#tb tr.wkrow').forEach(tr=>{const W=R.weeks.find(w=>w.wk===tr.dataset.wk);
    tr.firstElementChild.innerHTML=W?`<div class="wkl"><span><b>Semana ${pad(W.ini)} a ${pad(W.fim)}</b> · ${W.dias} dia(s) trabalhado(s) · ${hm(W.min)}${W.ext?` <span class="ext">(${hm(W.ext)} de extras)</span>`:''}</span>${W.ve?`<span class="wkx">Valor das horas extras: <b>${brl(W.ve)}</b></span>`:''}${W.vf?`<span class="wkx">Domingo/feriado: <b>${brl(W.vf)}</b></span>`:''}</div><div class="wk2">${W.vale||W.ajuda?`Horas da semana: <b>${brl(W.val)}</b>${W.ajuda?` · Ajuda de custo: <b>+ ${brl(W.ajuda)}</b>`:''}${W.vale?` · Vale: <b class="vl">− ${brl(W.vale)}</b>`:''} · ${W.ajuda?'Total a receber':'Valor com desconto'}: <b>${brl(W.val+W.ajuda-W.vale)}</b>`:`Valor acumulado da semana: <b>${brl(W.val)}</b>`}${(()=>{const t=statusSemana(e,W.wk);return t?`<div style="margin-top:4px">${stHtml(t)}</div>`:''})()}${W.ve||W.vf?` <small class="mut">(horas normais ${brl(W.vn)}${W.ve?' + extras '+brl(W.ve):''}${W.vf?' + domingo/feriado '+brl(W.vf):''})</small>`:''}</div>`:''});
@@ -753,7 +754,8 @@ function rFolha(){
   const mr=MR(),r=mr[d]=mr[d]||{};let v=ev.target.value;
   if(v==='00:00'&&'abcd'.includes(f)){v='';ev.target.value='';toast('00:00 é meia-noite e não é usado. Campo deixado vazio.')}
   r[f]=v;r.ed=true;persistEntry(e,ym,d,f);paint()});
- $('#tb').addEventListener('click',async ev=>{const b=ev.target.closest('[data-clr]');if(!b)return;
+ $('#tb').addEventListener('click',async ev=>{const vc=ev.target.closest('[data-vc]');if(vc){const pg=(e.pagamentos||[]).find(q=>q.id===vc.dataset.vc);if(pg&&pg.file)openFile(pg.file);return}
+  const b=ev.target.closest('[data-clr]');if(!b)return;
   const tr=b.closest('tr'),d=+tr.dataset.d;
   if(!confirm('Apagar todos os horários do dia '+pad(d)+'?'+(CLOUD?' Os registros de ponto desse dia também serão anulados.':'')))return;
   if(await clearEntry(e,ym,d)){FOLHA.sync();toast('Dia '+pad(d)+' limpo')}});
