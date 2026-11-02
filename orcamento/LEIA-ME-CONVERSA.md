@@ -292,6 +292,20 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - Vale para todos os quadros de assinatura: Meus dados, cliente no orçamento e as duas do recibo.
 - Lembrete: depois de assinar em Meus dados, toque em **Salvar meus dados** para a assinatura ir para os PDFs.
 
+## Atualização (02/11/2026): assinar com o touchpad ficou fácil (versão 67)
+
+- **Retorno do Marcos:** ele quer assinar com o touchpad do notebook. O print mostrava só um tracinho no canto do quadro.
+- **O que atrapalhava na versão 66:** a caneta desligava ao sair do quadro, e o "tocar e arrastar" do touchpad desligava a caneta em vez de riscar.
+- **Agora:**
+  - Um toque abaixa a caneta: a borda fica dourada e aparece "Caneta abaixada: deslize para escrever. Toque de novo para levantar".
+  - Com a caneta abaixada, deslizar o dedo escreve, e o "tocar e arrastar" também escreve. Só um toque sem arrastar levanta.
+  - Saindo do quadro com a caneta abaixada, o traço só para, sem ligar a saída à volta. Clicar fora do quadro (em Salvar, por exemplo) ou apertar Esc levanta a caneta.
+- **Dica fixa no notebook,** embaixo de cada quadro: "No touchpad: toque uma vez para baixar a caneta, deslize o dedo para escrever e toque de novo para levantar. Faça isso em cada parte da assinatura." No celular a dica não aparece.
+- **Botão Desfazer** ao lado do Limpar: volta o último traço (de abaixar a levantar a caneta). Também desfaz o Limpar.
+- **Traço mais suave:** o app liga os pontos com curvas, e o traço do touchpad não fica serrilhado.
+- **No PDF:** a assinatura é recortada e centralizada no espaço da assinatura. Uma assinatura pequena (feita num canto, comum no touchpad) é ampliada até 2,5 vezes.
+- Vale para todos os quadros: Meus dados, cliente no orçamento e as duas do recibo. Depois de assinar em Meus dados, toque em **Salvar meus dados**.
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.

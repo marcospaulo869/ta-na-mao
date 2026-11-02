@@ -201,6 +201,8 @@ input.caps::placeholder { text-transform: none; }
 .sig canvas { width: 100%; height: 140px; background: #FFFFFF; border: 1px dashed var(--line); border-radius: 8px; touch-action: none; cursor: crosshair; }
 .sig canvas.pen { border: 2px solid var(--accent); }
 .sig .sig-st { margin: 0; color: var(--accent); font-weight: 700; }
+.sig .sig-tip { display: none; margin: 0; }
+@media (hover: hover) and (pointer: fine) { .sig .sig-tip { display: block; } }
 .list { display: grid; gap: 8px; }
 .q { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
 .q .meta { font-size: 0.88rem; color: var(--muted); }
@@ -1433,61 +1435,108 @@ const inkBlue = (url) => new Promise((res) => {
 });
 function SigPad(canvas, onChange) {
   const ctx = canvas.getContext("2d");
-  // drawing: botão (ou dedo) apertado; follow: caneta ligada por um clique, segue o mouse/touchpad sem segurar
-  let drawing = false, follow = false, dirty = false, last = null, down = null;
+  // drawing: botão ou dedo apertado; follow: caneta abaixada por um toque, segue o mouse/touchpad sem segurar
+  let drawing = false, follow = false, dirty = false, last = null, mid = null, down = null;
+  const undo = []; // como o quadro estava antes de cada traço (Desfazer)
   const st = Object.assign(document.createElement("p"), { className: "hint sig-st", hidden: true });
-  st.setAttribute("role", "status"); canvas.after(st);
+  st.setAttribute("role", "status");
+  // no notebook a dica do touchpad fica sempre embaixo do quadro (no celular não aparece)
+  const tip = Object.assign(document.createElement("p"), { className: "hint sig-tip", textContent: "No touchpad: toque uma vez para baixar a caneta, deslize o dedo para escrever e toque de novo para levantar. Faça isso em cada parte da assinatura." });
+  canvas.after(st, tip);
+  const undoBtn = Object.assign(document.createElement("button"), { type: "button", className: "btn small", textContent: "Desfazer", disabled: true });
+  const row = canvas.parentElement.querySelector(".row");
+  if (row) row.insertBefore(undoBtn, row.children[1] || null);
   const fit = () => {
     const r = canvas.getBoundingClientRect();
     if (!r.width) return;
     const keep = dirty ? canvas.toDataURL() : null;
     canvas.width = Math.round(r.width * 2); canvas.height = Math.round(r.height * 2);
     ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = INK_BLUE;
-    if (keep) load(keep, true);
+    if (keep) load(keep);
   };
   const pos = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) * canvas.width / r.width, y: (e.clientY - r.top) * canvas.height / r.height }; };
   const dot = (p) => { ctx.beginPath(); ctx.arc(p.x, p.y, ctx.lineWidth, 0, Math.PI * 2); ctx.fillStyle = ctx.strokeStyle; ctx.fill(); dirty = true; };
-  const penOff = () => {
+  const snap = () => { undo.push(dirty ? canvas.toDataURL() : ""); if (undo.length > 40) undo.shift(); undoBtn.disabled = false; };
+  // traço suave: curva pelos pontos do meio (o touchpad manda pontos espaçados e o traço reto fica serrilhado)
+  const lineTo = (p) => {
+    const m = { x: (last.x + p.x) / 2, y: (last.y + p.y) / 2 };
+    ctx.beginPath(); ctx.moveTo(mid.x, mid.y); ctx.quadraticCurveTo(last.x, last.y, m.x, m.y); ctx.stroke();
+    last = p; mid = m; dirty = true;
+  };
+  const lift = () => { if (last && mid) { ctx.beginPath(); ctx.moveTo(mid.x, mid.y); ctx.lineTo(last.x, last.y); ctx.stroke(); } last = mid = null; };
+  const penDown = () => {
+    follow = true; canvas.classList.add("pen");
+    st.textContent = "Caneta abaixada: deslize para escrever. Toque de novo para levantar."; st.hidden = false;
+  };
+  const penUp = () => {
     if (!follow) return;
-    follow = false; canvas.classList.remove("pen"); st.hidden = true;
+    follow = false; lift(); canvas.classList.remove("pen"); st.hidden = true;
     onChange && onChange();
   };
   canvas.addEventListener("pointerdown", (e) => {
-    if (follow) { penOff(); return; } // o clique seguinte solta a caneta
-    drawing = true; last = pos(e); down = { x: e.clientX, y: e.clientY, type: e.pointerType, moved: false };
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault();
+    down = { x: e.clientX, y: e.clientY, type: e.pointerType, moved: false, pen: follow };
+    drawing = true;
+    const p = pos(e);
+    if (!follow) { snap(); last = mid = p; } else if (!last) last = mid = p;
     try { canvas.setPointerCapture(e.pointerId); } catch {}
   });
   canvas.addEventListener("pointermove", (e) => {
-    if (!drawing && !follow) return; const p = pos(e);
-    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; dirty = true;
-    if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4) down.moved = true;
+    if (!drawing && !follow) return;
+    const evs = typeof e.getCoalescedEvents === "function" ? e.getCoalescedEvents() : [];
+    for (const pe of evs.length ? evs : [e]) { const p = pos(pe); if (last) lineTo(p); else last = mid = p; }
+    if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) down.moved = true;
   });
   canvas.addEventListener("pointerup", () => {
     if (!drawing) return;
     drawing = false;
-    const tap = down && !down.moved, mouse = down && down.type === "mouse"; down = null;
-    if (tap) dot(last); // um toque sem arrastar deixa um ponto: dá para ver que o campo está ativo
-    // No notebook o touchpad quase nunca é usado segurando o clique: um clique sem arrastar liga a caneta,
-    // ela segue o ponteiro, e o próximo clique (ou sair do quadro) solta
-    if (tap && mouse) {
-      follow = true; canvas.classList.add("pen");
-      st.textContent = "Caneta ligada: mova para assinar. Clique de novo para soltar."; st.hidden = false;
-      return;
-    }
-    onChange && onChange();
+    const d = down; down = null;
+    const tap = !!d && !d.moved;
+    // A decisão é no soltar: um toque sem arrastar abaixa ou levanta a caneta; arrastar (botão apertado ou o
+    // "tocar e arrastar" do touchpad) sempre risca, e com a caneta abaixada ela continua abaixada
+    if (d && d.pen) { if (tap) penUp(); return; }
+    if (tap) dot(last);
+    if (tap && d.type === "mouse") { penDown(); return; }
+    lift(); onChange && onChange();
   });
-  canvas.addEventListener("pointercancel", () => { if (drawing) { drawing = false; down = null; onChange && onChange(); } });
-  canvas.addEventListener("pointerleave", penOff);
-  addEventListener("keydown", (e) => { if (e.key === "Escape") penOff(); });
-  function load(url, silent) {
+  canvas.addEventListener("pointercancel", () => { if (drawing) { drawing = false; down = null; if (!follow) { lift(); onChange && onChange(); } } });
+  // com a caneta abaixada, sair do quadro só interrompe o traço (não liga a saída à volta); clicar fora levanta
+  canvas.addEventListener("pointerleave", () => { if (follow && !drawing) lift(); });
+  document.addEventListener("pointerdown", (e) => { if (follow && e.target !== canvas) penUp(); }, true);
+  addEventListener("keydown", (e) => { if (e.key === "Escape") penUp(); });
+  function load(url, done) {
     const img = new Image();
-    img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); try { tintInk(ctx, canvas.width, canvas.height); } catch {} ctx.strokeStyle = INK_BLUE; dirty = true; };
+    img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); try { tintInk(ctx, canvas.width, canvas.height); } catch {} ctx.strokeStyle = INK_BLUE; dirty = true; done && done(); };
     img.src = url;
   }
+  undoBtn.onclick = () => {
+    if (!undo.length) return;
+    penUp();
+    const u = undo.pop(); undoBtn.disabled = !undo.length;
+    ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false;
+    if (u) load(u, () => onChange && onChange()); else onChange && onChange();
+  };
   const api = {
-    clear() { penOff(); ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; onChange && onChange(); },
-    value() { return dirty ? canvas.toDataURL("image/png") : ""; },
-    set(url) { ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; if (url) load(url); },
+    clear() { penUp(); if (dirty) snap(); ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; onChange && onChange(); },
+    // vai para o PDF num quadro de tamanho fixo: o traço é recortado e centralizado, e uma assinatura pequena
+    // (comum no touchpad) é ampliada até 2,5 vezes para ocupar o quadro
+    value() {
+      if (!dirty) return "";
+      try {
+        const W = canvas.width, H = canvas.height, px = ctx.getImageData(0, 0, W, H).data;
+        let x0 = W, y0 = H, x1 = -1, y1 = -1;
+        for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) if (px[(y * W + x) * 4 + 3] > 20) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        if (x1 < 0) return "";
+        const pad = Math.round(H * 0.06);
+        x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(W - 1, x1 + pad); y1 = Math.min(H - 1, y1 + pad);
+        const bw = x1 - x0 + 1, bh = y1 - y0 + 1, k = Math.min(W / bw, H / bh, 2.5);
+        const out = document.createElement("canvas"); out.width = W; out.height = H;
+        out.getContext("2d").drawImage(canvas, x0, y0, bw, bh, (W - bw * k) / 2, (H - bh * k) / 2, bw * k, bh * k);
+        return out.toDataURL("image/png");
+      } catch { return canvas.toDataURL("image/png"); }
+    },
+    set(url) { penUp(); undo.length = 0; undoBtn.disabled = true; ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; if (url) load(url); },
     fit,
   };
   new ResizeObserver(fit).observe(canvas);
@@ -3093,7 +3142,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "66";
+const APP_VERSION = "67";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
