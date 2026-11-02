@@ -238,7 +238,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10c';
-const APP_VERSAO='01/11/2026 · 1';
+const APP_VERSAO='02/11/2026 · 1';
 {const v=document.getElementById('ver');if(v)v.textContent='v '+APP_VERSAO}
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
@@ -1171,6 +1171,7 @@ async function adminBoot(){
   await cloudLoad();
  }else{$('#sub').textContent='Modo local · dados só neste navegador'}
  if(!S.sel&&S.emps[0])S.sel=S.emps[0].id;
+ S.ym=todayS().slice(0,7);save(); /* ao abrir, a Folha começa no mês de hoje (e a semana de hoje fica no meio) */
  show('emp');
 }
 
