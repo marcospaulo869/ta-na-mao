@@ -326,6 +326,17 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - **Agora:** a linha fica embaixo do VALOR TOTAL sempre que cabe antes do rodapé. Se não couber, ela vai para o alto da página do pré-contrato ("Orçamento válido até ... Condições e assinaturas abaixo."). Nunca há uma página só para ela.
 - Conferido com 204 orçamentos de tamanhos diferentes (com e sem Comprar fora, com e sem desconto).
 
+## Atualização (02/11/2026): enviar o PDF junto com a mensagem (versão 70)
+
+- **Pergunta do Marcos:** ao enviar pelo WhatsApp vai só a mensagem ou o PDF também? Ele quer que abra a conversa do cliente com a mensagem e o PDF anexado.
+- **O que o WhatsApp permite:** um site não consegue abrir a conversa de um contato já com um arquivo anexado. O link do WhatsApp (wa.me) abre a conversa certa, mas só com o texto. O arquivo só vai junto pela tela de compartilhar do aparelho, e aí a pessoa escolhe o WhatsApp e o contato.
+- **No celular (como já era):** Enviar PDF abre a tela de compartilhar com o PDF e a mensagem. Escolha o WhatsApp e a conversa do cliente: vai o PDF com a mensagem.
+- **No notebook (novo):**
+  - Se o Chrome deixa (Windows), a janela de envio tem o botão **Enviar o PDF**, que abre a janela Compartilhar do Windows com o PDF e a mensagem. Nela, escolha o WhatsApp e a conversa do cliente.
+  - O PDF também é salvo no computador (normalmente na pasta Downloads). Se o WhatsApp não aparecer na janela do Windows, use **Abrir WhatsApp de (cliente)**: abre a conversa com a mensagem, e o PDF é anexado pelo clipe → Documento → pasta Downloads, ou arrastando o PDF da lista de downloads do Chrome para a conversa.
+  - Os textos da janela agora dizem "PDF salvo no computador" (antes dizia "no celular" também no notebook) e explicam que o link leva só a mensagem.
+- Vale também para o envio do recibo.
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.

@@ -880,15 +880,15 @@ body.pv-open { overflow: hidden; }
     <h2 id="sh-title">Enviar pelo WhatsApp</h2>
     <p class="err" id="sh-own" hidden></p>
     <div class="shshare" id="sh-share-box" hidden>
-      <p>Toque em <b>Enviar o PDF</b>, escolha o <b>WhatsApp</b> e depois a conversa de <b id="sh-who">cliente</b>. O PDF vai anexado.</p>
+      <p><span id="sh-share-how">Toque em <b>Enviar o PDF</b>,</span> escolha o <b>WhatsApp</b> e depois a conversa de <b id="sh-who">cliente</b>. O PDF vai anexado, com a mensagem.</p>
       <div class="row"><button class="btn wa big" id="sh-share" type="button">Enviar o PDF</button></div>
       <p class="hint" id="sh-share-why"></p>
-      <p class="hint"><b>Outro jeito:</b> salve o PDF, abra a conversa e anexe pelo clipe.</p>
+      <p class="hint" id="sh-other"><b>Outro jeito:</b> salve o PDF, abra a conversa e anexe pelo clipe.</p>
     </div>
     <ol class="shsteps">
       <li><b id="sh-saved">Salvando o PDF…</b><span class="hint" id="sh-file"></span>
         <div class="row"><button class="btn small" id="sh-save" type="button">Salvar o PDF de novo</button></div></li>
-      <li><b>Abra a conversa e anexe o PDF.</b><span class="hint">No WhatsApp, toque no clipe, depois em Documento, e escolha o PDF salvo.</span>
+      <li><b>Abra a conversa e anexe o PDF.</b><span class="hint" id="sh-attach">No WhatsApp, toque no clipe, depois em Documento, e escolha o PDF salvo.</span>
         <div class="row"><a class="btn wa" id="sh-wa" target="_blank" rel="noopener">Abrir WhatsApp</a><a class="btn small" id="sh-wa-any" target="_blank" rel="noopener">Escolher outro contato</a></div></li>
     </ol>
     <div class="msgbox" id="sh-msg"></div>
@@ -2907,6 +2907,8 @@ async function savePdfFile(blob, name) {
 // só conta como bloqueado quando o navegador conhece a regra "web-share" e ela está negada (ex.: dentro do Claude)
 const shareAllowed = () => { try { const fp = document.permissionsPolicy || document.featurePolicy; if (!fp || typeof fp.allowsFeature !== "function") return true; const known = typeof fp.features === "function" ? fp.features() : null; return known && !known.includes("web-share") ? true : fp.allowsFeature("web-share"); } catch { return true; } };
 const canShareFile = (file) => { try { return matchMedia("(pointer: coarse)").matches && shareAllowed() && !!navigator.canShare && navigator.canShare({ files: [file] }); } catch { return false; } };
+// notebook (Chrome no Windows): a janela Compartilhar do Windows também manda o arquivo para o WhatsApp do computador
+const canShareFilePc = (file) => { try { return !matchMedia("(pointer: coarse)").matches && shareAllowed() && !!navigator.share && !!navigator.canShare && navigator.canShare({ files: [file] }); } catch { return false; } };
 const shareWhy = (e) => !e ? "" : e.name === "NotAllowedError" ? "o celular só abre o compartilhamento logo depois de um toque" : "o celular respondeu " + e.name;
 async function sendDoc({ doc, name, who, phone, message }) {
   const blob = doc.output("blob");
@@ -2925,23 +2927,30 @@ async function sendDoc({ doc, name, who, phone, message }) {
   const num = mine ? "" : waNumber(phone), text = encodeURIComponent(message);
   $("sh-own").hidden = !mine;
   $("sh-own").textContent = mine ? `O telefone de ${first} está igual ao seu (o de Meus dados), por isso o WhatsApp abriria a conversa com você mesmo. Corrija o telefone de ${first} ou escolha o contato no WhatsApp.` : "";
-  $("sh-share-box").hidden = !share;
+  const pc = !matchMedia("(pointer: coarse)").matches, sharePc = !share && canShareFilePc(file);
+  $("sh-share-box").hidden = !share && !sharePc;
+  $("sh-share-how").innerHTML = sharePc ? "Clique em <b>Enviar o PDF</b>: abre a janela Compartilhar do Windows. Nela," : "Toque em <b>Enviar o PDF</b>,";
+  $("sh-other").innerHTML = sharePc ? "<b>Se o WhatsApp não aparecer na janela:</b> o PDF já foi salvo; use os passos abaixo." : "<b>Outro jeito:</b> salve o PDF, abra a conversa e anexe pelo clipe.";
   $("sh-who").textContent = first;
   $("sh-share-why").textContent = why ? "Não abriu sozinho porque " + why + "." : "";
   $("sh-file").textContent = name;
   $("sh-msg").textContent = message;
   $("sh-wa").hidden = !num;
   if (num) { $("sh-wa").href = `https://wa.me/${num}?text=${text}`; $("sh-wa").textContent = `Abrir WhatsApp de ${first}`; }
-  $("sh-wa").className = share ? "btn small" : "btn wa";
+  $("sh-wa").className = share || sharePc ? "btn small" : "btn wa";
   $("sh-wa-any").href = `https://wa.me/?text=${text}`;
   $("sh-wa-any").textContent = num ? "Escolher outro contato" : "Abrir WhatsApp e escolher o contato";
-  $("sh-wa-any").className = num || share ? "btn small" : "btn wa";
+  $("sh-wa-any").className = num || share || sharePc ? "btn small" : "btn wa";
   $("sh-save").textContent = share ? "Salvar o PDF" : "Salvar o PDF de novo";
+  // no notebook o link do WhatsApp leva só a mensagem: o PDF fica salvo e é anexado pelo clipe (ou arrastado)
+  $("sh-attach").textContent = pc
+    ? "Pelo link, o WhatsApp abre só com a mensagem. Para o PDF ir junto: na conversa, clique no clipe, em Documento, e escolha o PDF na pasta Downloads. Ou arraste o PDF da lista de downloads do Chrome para dentro da conversa."
+    : "No WhatsApp, toque no clipe, depois em Documento, e escolha o PDF salvo.";
   $("sheet").hidden = false; openLayer("sheet");
   if (share) { $("sh-saved").textContent = "Salve o PDF no celular."; return; }
   $("sh-saved").textContent = "Salvando o PDF…";
   const r = await savePdfFile(blob, name);
-  $("sh-saved").textContent = r === "saved" ? "PDF salvo no celular." : r === "declined" ? "O PDF não foi salvo." : "Não consegui salvar o PDF.";
+  $("sh-saved").textContent = r === "saved" ? (pc ? "PDF salvo no computador (normalmente na pasta Downloads)." : "PDF salvo no celular.") : r === "declined" ? "O PDF não foi salvo." : "Não consegui salvar o PDF.";
 }
 $("sh-share").onclick = async () => {
   if (!sending || !sending.file) return;
@@ -2951,7 +2960,7 @@ $("sh-share").onclick = async () => {
 $("sh-save").onclick = async () => {
   if (!sending) return;
   const r = await savePdfFile(sending.blob, sending.name);
-  $("sh-saved").textContent = r === "saved" ? "PDF salvo no celular." : "O PDF não foi salvo.";
+  $("sh-saved").textContent = r === "saved" ? (matchMedia("(pointer: coarse)").matches ? "PDF salvo no celular." : "PDF salvo no computador (normalmente na pasta Downloads).") : "O PDF não foi salvo.";
 };
 function closeSheet(fromBack) {
   if ($("sheet").hidden) return;
@@ -3278,7 +3287,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "69";
+const APP_VERSION = "70";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
