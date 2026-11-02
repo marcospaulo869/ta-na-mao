@@ -214,6 +214,8 @@ input.caps::placeholder { text-transform: none; }
 .bar .total { font-family: var(--font-display); font-size: 1.2rem; font-variant-numeric: tabular-nums; }
 .toast { pointer-events: none; position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: 90px; background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-weight: 600; max-width: calc(100% - 32px); }
 .msgbox { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; white-space: pre-wrap; font-size: 0.95rem; user-select: all; }
+textarea.msgbox { display: block; width: 100%; box-sizing: border-box; font: inherit; font-size: 0.95rem; line-height: 1.45; color: inherit; user-select: auto; resize: vertical; min-height: 5.5em; overflow: hidden; }
+.sh-msglbl { display: block; font-weight: 700; margin: 4px 0 6px; }
 .logo-prev { max-height: 60px; max-width: 160px; }
 .qrbox { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .qrbox canvas { width: 110px; height: 110px; background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px; flex: none; }
@@ -891,7 +893,8 @@ body.pv-open { overflow: hidden; }
       <li><b>Abra a conversa e anexe o PDF.</b><span class="hint" id="sh-attach">No WhatsApp, toque no clipe, depois em Documento, e escolha o PDF salvo.</span>
         <div class="row"><a class="btn wa" id="sh-wa" target="_blank" rel="noopener">Abrir WhatsApp</a><a class="btn small" id="sh-wa-any" target="_blank" rel="noopener">Escolher outro contato</a></div></li>
     </ol>
-    <div class="msgbox" id="sh-msg"></div>
+    <label class="sh-msglbl" for="sh-msg">Mensagem <span class="hint">(pode mudar antes de enviar)</span></label>
+    <textarea class="msgbox" id="sh-msg" rows="4" lang="pt-BR" spellcheck="true" autocapitalize="sentences"></textarea>
     <div class="row"><button class="btn small" id="sh-copy" type="button">Copiar mensagem</button><button class="btn small" id="sh-close" type="button">Fechar</button></div>
   </div>
 </div>
@@ -2922,9 +2925,9 @@ async function sendDoc({ doc, name, who, phone, message }) {
   } else if (share) why = "o PDF demorou para ficar pronto";
   // 2) Mostra as opções: no celular, o botão Enviar o PDF (um toque novo abre o compartilhamento); senão salva o PDF e
   //    dá o atalho para a conversa (aí o PDF é anexado pelo clipe)
-  sending = { blob, name, file, message };
+  sending = { blob, name, file, message, num: "" };
   const mine = isOwnPhone(phone), first = (who || "cliente").split(" ")[0];
-  const num = mine ? "" : waNumber(phone), text = encodeURIComponent(message);
+  const num = mine ? "" : waNumber(phone);
   $("sh-own").hidden = !mine;
   $("sh-own").textContent = mine ? `O telefone de ${first} está igual ao seu (o de Meus dados), por isso o WhatsApp abriria a conversa com você mesmo. Corrija o telefone de ${first} ou escolha o contato no WhatsApp.` : "";
   const pc = !matchMedia("(pointer: coarse)").matches, sharePc = !share && canShareFilePc(file);
@@ -2934,11 +2937,12 @@ async function sendDoc({ doc, name, who, phone, message }) {
   $("sh-who").textContent = first;
   $("sh-share-why").textContent = why ? "Não abriu sozinho porque " + why + "." : "";
   $("sh-file").textContent = name;
-  $("sh-msg").textContent = message;
+  $("sh-msg").value = message;
+  sending.num = num;
   $("sh-wa").hidden = !num;
-  if (num) { $("sh-wa").href = `https://wa.me/${num}?text=${text}`; $("sh-wa").textContent = `Abrir WhatsApp de ${first}`; }
+  if (num) $("sh-wa").textContent = `Abrir WhatsApp de ${first}`;
+  waLinks();
   $("sh-wa").className = share || sharePc ? "btn small" : "btn wa";
-  $("sh-wa-any").href = `https://wa.me/?text=${text}`;
   $("sh-wa-any").textContent = num ? "Escolher outro contato" : "Abrir WhatsApp e escolher o contato";
   $("sh-wa-any").className = num || share || sharePc ? "btn small" : "btn wa";
   $("sh-save").textContent = share ? "Salvar o PDF" : "Salvar o PDF de novo";
@@ -2946,7 +2950,7 @@ async function sendDoc({ doc, name, who, phone, message }) {
   $("sh-attach").textContent = pc
     ? "Pelo link, o WhatsApp abre só com a mensagem. Para o PDF ir junto: na conversa, clique no clipe, em Documento, e escolha o PDF na pasta Downloads. Ou arraste o PDF da lista de downloads do Chrome para dentro da conversa."
     : "No WhatsApp, toque no clipe, depois em Documento, e escolha o PDF salvo.";
-  $("sheet").hidden = false; openLayer("sheet");
+  $("sheet").hidden = false; openLayer("sheet"); growBox($("sh-msg"));
   if (share) { $("sh-saved").textContent = "Salve o PDF no celular."; return; }
   $("sh-saved").textContent = "Salvando o PDF…";
   const r = await savePdfFile(blob, name);
@@ -2954,7 +2958,7 @@ async function sendDoc({ doc, name, who, phone, message }) {
 }
 $("sh-share").onclick = async () => {
   if (!sending || !sending.file) return;
-  try { await navigator.share({ files: [sending.file], text: sending.message }); closeSheet(); }
+  try { await navigator.share({ files: [sending.file], text: $("sh-msg").value }); closeSheet(); }
   catch (e) { if (e && e.name === "AbortError") return; $("sh-share-why").textContent = "Não abriu: " + shareWhy(e) + ". Use o outro jeito abaixo."; }
 };
 $("sh-save").onclick = async () => {
@@ -2969,7 +2973,14 @@ function closeSheet(fromBack) {
 }
 $("sh-close").onclick = () => closeSheet();
 $("sheet").onclick = (e) => { if (e.target.id === "sheet") closeSheet(); };
-$("sh-copy").onclick = () => copyText($("sh-msg").textContent, $("sh-msg"), "Mensagem copiada");
+$("sh-copy").onclick = () => copyText($("sh-msg").value, $("sh-msg"), "Mensagem copiada");
+// a mensagem pode ser mudada na janela: os links do WhatsApp e o Enviar o PDF usam o texto como está
+function waLinks() {
+  const text = encodeURIComponent($("sh-msg").value);
+  if (sending && sending.num) $("sh-wa").href = `https://wa.me/${sending.num}?text=${text}`;
+  $("sh-wa-any").href = `https://wa.me/?text=${text}`;
+}
+$("sh-msg").addEventListener("input", () => { waLinks(); growBox($("sh-msg")); });
 const sendQuote = async (q) => {
   await prepLogo();
   const pq = { ...q, clientSig: await inkBlue(q.clientSig) }; // assinatura antiga em preto sai azul
@@ -3287,7 +3298,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "70";
+const APP_VERSION = "71";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------

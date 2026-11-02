@@ -337,6 +337,14 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
   - Os textos da janela agora dizem "PDF salvo no computador" (antes dizia "no celular" também no notebook) e explicam que o link leva só a mensagem.
 - Vale também para o envio do recibo.
 
+## Atualização (02/11/2026): mensagem do WhatsApp editável (versão 71)
+
+- **Pedido do Marcos:** deixar o campo da mensagem editável na janela "Enviar pelo WhatsApp". O print dele mostrou que o botão **Enviar o PDF** (janela Compartilhar do Windows) já aparece no notebook dele.
+- **Agora:** a mensagem fica num campo com o título "Mensagem (pode mudar antes de enviar)". Dá para apagar, acrescentar ou trocar o texto, e o campo cresce junto.
+- O texto mudado é o que vai em **Enviar o PDF**, **Abrir WhatsApp de (cliente)**, **Escolher outro contato** e **Copiar mensagem**.
+- A mudança vale só para esse envio. O próximo envio começa de novo com a mensagem pronta.
+- **No celular,** quando a tela de compartilhar abre direto, a mensagem pode ser mudada no próprio WhatsApp antes de enviar (ela aparece junto do PDF).
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.
