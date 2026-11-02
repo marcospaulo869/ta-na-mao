@@ -306,6 +306,19 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - **No PDF:** a assinatura é recortada e centralizada no espaço da assinatura. Uma assinatura pequena (feita num canto, comum no touchpad) é ampliada até 2,5 vezes.
 - Vale para todos os quadros: Meus dados, cliente no orçamento e as duas do recibo. Depois de assinar em Meus dados, toque em **Salvar meus dados**.
 
+## Atualização (02/11/2026): assinatura por foto do papel (versão 68)
+
+- **Retorno do Marcos:** a assinatura feita no touchpad ficou feia. Ele quer assinar num papel, tirar uma foto "como um scanner" e usar no app.
+- **Em Meus dados → Sua assinatura,** há o botão **Usar foto da assinatura**:
+  - No celular ele abre a câmera ou a galeria. No notebook, escolha o arquivo da foto (por exemplo, mande a foto para você mesmo pelo WhatsApp Web e baixe).
+  - O app tira o fundo: papel, sombra, luz desigual, a mesa em volta da folha e a poeira. Fica só a tinta, em azul, com fundo transparente e recortada.
+  - Pingo de i e acento perto da assinatura ficam. Pontinhos de sujeira, que são menores que o traço da caneta, saem.
+  - A assinatura aparece no quadro. Confira e toque em **Salvar meus dados**. O Desfazer volta para a assinatura de antes.
+  - Se a foto não tiver assinatura (ou estiver muito escura), aparece: "Não achei a assinatura na foto. Tire de perto, em papel branco, com boa luz e caneta escura."
+- **Dica para a foto:** folha branca sem linhas, caneta azul ou preta, foto de perto, com boa luz e sem flash.
+- **No PDF:** a assinatura guardada agora é só o traço, recortado justo. O PDF a encaixa no espaço da assinatura sem esticar nem achatar, centralizada e apoiada na linha. Isso vale também para as assinaturas feitas no quadro.
+- **Recibo:** um recibo novo, ainda não salvo, passa a usar a assinatura nova assim que você salva Meus dados.
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.

@@ -815,7 +815,9 @@ body.pv-open { overflow: hidden; }
       <p class="hint">Desenhe uma vez. Ela entra em todos os PDFs.</p>
       <div class="sig">
         <canvas id="sig-me" aria-label="Área para sua assinatura"></canvas>
-        <div class="row"><button class="btn small" id="sig-me-clear">Limpar</button></div>
+        <div class="row"><button class="btn small" id="sig-me-clear">Limpar</button><button class="btn small" id="sig-me-photo-btn" type="button">Usar foto da assinatura</button></div>
+        <p class="hint">Quer usar a assinatura feita no papel? Assine numa folha branca com caneta azul ou preta, tire uma foto de perto e com boa luz, e toque em <b>Usar foto da assinatura</b>. O app tira o fundo e deixa só a tinta.</p>
+        <input type="file" id="sig-me-photo" accept="image/*" hidden>
       </div>
     </section>
     <section class="card">
@@ -1437,6 +1439,8 @@ function SigPad(canvas, onChange) {
   const ctx = canvas.getContext("2d");
   // drawing: botão ou dedo apertado; follow: caneta abaixada por um toque, segue o mouse/touchpad sem segurar
   let drawing = false, follow = false, dirty = false, last = null, mid = null, down = null;
+  // imagem posta por set()/photo() que ainda não foi desenhada: carregando, ou o quadro está escondido (sem tamanho)
+  let pend = null;
   const undo = []; // como o quadro estava antes de cada traço (Desfazer)
   const st = Object.assign(document.createElement("p"), { className: "hint sig-st", hidden: true });
   st.setAttribute("role", "status");
@@ -1449,10 +1453,10 @@ function SigPad(canvas, onChange) {
   const fit = () => {
     const r = canvas.getBoundingClientRect();
     if (!r.width) return;
-    const keep = dirty ? canvas.toDataURL() : null;
+    const keep = dirty && !pend ? canvas.toDataURL() : null;
     canvas.width = Math.round(r.width * 2); canvas.height = Math.round(r.height * 2);
     ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = INK_BLUE;
-    if (keep) load(keep);
+    if (pend) load(pend.url, pend.done, true); else if (keep) load(keep);
   };
   const pos = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) * canvas.width / r.width, y: (e.clientY - r.top) * canvas.height / r.height }; };
   const dot = (p) => { ctx.beginPath(); ctx.arc(p.x, p.y, ctx.lineWidth, 0, Math.PI * 2); ctx.fillStyle = ctx.strokeStyle; ctx.fill(); dirty = true; };
@@ -1505,9 +1509,20 @@ function SigPad(canvas, onChange) {
   canvas.addEventListener("pointerleave", () => { if (follow && !drawing) lift(); });
   document.addEventListener("pointerdown", (e) => { if (follow && e.target !== canvas) penUp(); }, true);
   addEventListener("keydown", (e) => { if (e.key === "Escape") penUp(); });
-  function load(url, done) {
+  // fill: ocupa o quadro todo (fotos do próprio quadro: Desfazer, mudar de tamanho); fit: cabe inteira e centralizada
+  function load(url, done, fitIn) {
+    if (fitIn) { pend = { url, done }; if (!canvas.getBoundingClientRect().width) return; } // escondido: desenha quando aparecer (fit)
     const img = new Image();
-    img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); try { tintInk(ctx, canvas.width, canvas.height); } catch {} ctx.strokeStyle = INK_BLUE; dirty = true; done && done(); };
+    img.onload = () => {
+      if (fitIn) { if (!pend || pend.url !== url) return; pend = null; } // já desenhada, ou outra veio depois
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (fitIn) {
+        const k = Math.min(canvas.width * 0.94 / img.width, canvas.height * 0.86 / img.height), w = img.width * k, h = img.height * k;
+        ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+      } else ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      try { tintInk(ctx, canvas.width, canvas.height); } catch {}
+      ctx.strokeStyle = INK_BLUE; dirty = true; done && done();
+    };
     img.src = url;
   }
   undoBtn.onclick = () => {
@@ -1518,34 +1533,149 @@ function SigPad(canvas, onChange) {
     if (u) load(u, () => onChange && onChange()); else onChange && onChange();
   };
   const api = {
-    clear() { penUp(); if (dirty) snap(); ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; onChange && onChange(); },
-    // vai para o PDF num quadro de tamanho fixo: o traço é recortado e centralizado, e uma assinatura pequena
-    // (comum no touchpad) é ampliada até 2,5 vezes para ocupar o quadro
+    clear() { penUp(); pend = null; if (dirty) snap(); ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; onChange && onChange(); },
+    // só o traço, recortado justo: no PDF ele ocupa o espaço da assinatura sem deformar (sigImage), mesmo quando foi
+    // feito pequeno num canto (comum no touchpad)
     value() {
+      if (pend) return pend.url;
       if (!dirty) return "";
       try {
         const W = canvas.width, H = canvas.height, px = ctx.getImageData(0, 0, W, H).data;
         let x0 = W, y0 = H, x1 = -1, y1 = -1;
         for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) if (px[(y * W + x) * 4 + 3] > 20) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
         if (x1 < 0) return "";
-        const pad = Math.round(H * 0.06);
+        const pad = Math.round(Math.max(8, (y1 - y0) * 0.06));
         x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(W - 1, x1 + pad); y1 = Math.min(H - 1, y1 + pad);
-        const bw = x1 - x0 + 1, bh = y1 - y0 + 1, k = Math.min(W / bw, H / bh, 2.5);
-        const out = document.createElement("canvas"); out.width = W; out.height = H;
-        out.getContext("2d").drawImage(canvas, x0, y0, bw, bh, (W - bw * k) / 2, (H - bh * k) / 2, bw * k, bh * k);
+        const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+        const out = document.createElement("canvas"); out.width = bw; out.height = bh;
+        out.getContext("2d").drawImage(canvas, x0, y0, bw, bh, 0, 0, bw, bh);
         return out.toDataURL("image/png");
       } catch { return canvas.toDataURL("image/png"); }
     },
-    set(url) { penUp(); undo.length = 0; undoBtn.disabled = true; ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; if (url) load(url); },
+    set(url) { penUp(); pend = null; undo.length = 0; undoBtn.disabled = true; ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; if (url) load(url, null, true); },
+    // assinatura que veio de uma foto: entra no quadro inteira e centralizada, e o Desfazer volta ao que estava antes
+    photo(url, done) { penUp(); pend = null; snap(); ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; load(url, () => { onChange && onChange(); done && done(); }, true); },
     fit,
   };
   new ResizeObserver(fit).observe(canvas);
   return api;
 }
+// assinatura no PDF: cabe no espaço (w x h, em mm) sem deformar, centralizada e apoiada na linha de baixo
+function sigImage(doc, img, x, y, w, h) {
+  const pr = doc.getImageProperties(img), k = Math.min(w / pr.width, h / pr.height), iw = pr.width * k, ih = pr.height * k;
+  doc.addImage(img, "PNG", x + (w - iw) / 2, y + h - ih, iw, ih, undefined, "FAST");
+}
+/* Assinatura feita no papel e fotografada: vira só a tinta, com fundo transparente, recortada.
+   1) a foto é reduzida (no máximo 1600 px) e virada em tons de cinza;
+   2) o brilho do papel em cada região é o ponto mais claro de cada bloco (a tinta é escura), suavizado, então sombra e
+      luz desigual da foto não viram tinta;
+   3) é tinta o que fica bem mais escuro que o papel em volta (fora da folha, na mesa, nada vira tinta); pontinhos soltos
+      longe da assinatura (poeira) e manchas grandes que encostam na borda da foto são descartados;
+   4) recorta em volta do que sobrou. */
+async function sigFromPhoto(file) {
+  let src;
+  try { src = await createImageBitmap(file, { imageOrientation: "from-image" }); }
+  catch { src = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = URL.createObjectURL(file); }); }
+  const k0 = Math.min(1, 1600 / Math.max(src.width, src.height)), W = Math.max(1, Math.round(src.width * k0)), H = Math.max(1, Math.round(src.height * k0)), n = W * H;
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const cx = c.getContext("2d", { willReadFrequently: true }); cx.drawImage(src, 0, 0, W, H);
+  const d = cx.getImageData(0, 0, W, H).data, g = new Float32Array(n);
+  for (let i = 0; i < n; i++) g[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+  // 2) papel
+  const B = Math.max(8, Math.round(Math.max(W, H) / 40)), bw = Math.ceil(W / B), bh = Math.ceil(H / B);
+  let bm = new Float32Array(bw * bh);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const j = ((y / B) | 0) * bw + ((x / B) | 0); if (g[y * W + x] > bm[j]) bm[j] = g[y * W + x]; }
+  for (let pass = 0; pass < 2; pass++) {
+    const t = new Float32Array(bm.length);
+    for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) {
+      let s = 0, m = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const yy = by + dy, xx = bx + dx; if (yy >= 0 && yy < bh && xx >= 0 && xx < bw) { s += bm[yy * bw + xx]; m++; } }
+      t[by * bw + bx] = Math.max(bm[by * bw + bx] * 0.7, s / m); // vizinho escuro (mesa) não puxa demais o papel para baixo
+    }
+    bm = t;
+  }
+  const bgAt = (x, y) => {
+    const fx = Math.min(bw - 1, Math.max(0, (x + 0.5) / B - 0.5)), fy = Math.min(bh - 1, Math.max(0, (y + 0.5) / B - 0.5));
+    const x0 = fx | 0, y0 = fy | 0, x1 = Math.min(bw - 1, x0 + 1), y1 = Math.min(bh - 1, y0 + 1), ax = fx - x0, ay = fy - y0;
+    return (bm[y0 * bw + x0] * (1 - ax) + bm[y0 * bw + x1] * ax) * (1 - ay) + (bm[y1 * bw + x0] * (1 - ax) + bm[y1 * bw + x1] * ax) * ay;
+  };
+  // 3) tinta: quanto mais escuro que o papel em volta, mais forte (0 a 1). Onde o "papel" é bem mais escuro que o
+  //    papel da foto (mesa, chão, fora da folha) nada vira tinta.
+  const sorted = Float32Array.from(bm).sort(), paper = sorted[Math.floor(sorted.length * 0.9)], dark = Math.max(60, paper * 0.5);
+  const ink = new Float32Array(n), LO = 0.58, HI = 0.8;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x, bg = bgAt(x, y);
+    if (bg < dark) continue;
+    const v = g[i] / bg; ink[i] = v >= HI ? 0 : v <= LO ? 1 : (HI - v) / (HI - LO);
+  }
+  // pedaços ligados (8 vizinhos). Ficam os traços; saem manchas cheias que encostam na borda da foto (mesa, sombra,
+  // beirada do papel) e pontinhos soltos longe da assinatura (poeira). Pingo de i e acento perto dela ficam.
+  const lab = new Int32Array(n), stack = new Int32Array(n), keep = new Uint8Array(n), parts = [];
+  const minArea = Math.max(12, Math.round(n * 0.00003));
+  for (let i0 = 0, L = 0; i0 < n; i0++) {
+    if (lab[i0] || ink[i0] < 0.3) continue;
+    L++; let sp = 0, ax0 = W, ay0 = H, ax1 = -1, ay1 = -1; const members = [];
+    stack[sp++] = i0; lab[i0] = L;
+    while (sp) {
+      const i = stack[--sp], x = i % W, y = (i / W) | 0; members.push(i);
+      if (x < ax0) ax0 = x; if (x > ax1) ax1 = x; if (y < ay0) ay0 = y; if (y > ay1) ay1 = y;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+        const j = yy * W + xx; if (!lab[j] && ink[j] >= 0.3) { lab[j] = L; stack[sp++] = j; }
+      }
+    }
+    const area = members.length; if (area < 6) continue;
+    const boxW = ax1 - ax0 + 1, boxH = ay1 - ay0 + 1, edge = ax0 === 0 || ay0 === 0 || ax1 === W - 1 || ay1 === H - 1;
+    if (edge && (area / (boxW * boxH) > 0.2 || boxW > W * 0.9 || boxH > H * 0.9)) continue;
+    parts.push({ members, area, ax0, ay0, ax1, ay1 });
+  }
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (const c of parts) if (c.area >= minArea) { if (c.ax0 < x0) x0 = c.ax0; if (c.ay0 < y0) y0 = c.ay0; if (c.ax1 > x1) x1 = c.ax1; if (c.ay1 > y1) y1 = c.ay1; }
+  if (x1 < 0) return "";
+  // grossura do traço desta caneta: um pingo de i tem mais ou menos essa largura; poeira é bem menor
+  const big = new Uint8Array(n), runs = [];
+  for (const c of parts) if (c.area >= minArea) for (const i of c.members) big[i] = 1;
+  for (let y = y0; y <= y1; y++) for (let x = x0, r = 0; x <= x1 + 1; x++) { if (x <= x1 && big[y * W + x]) r++; else if (r) { runs.push(r); r = 0; } }
+  for (let x = x0; x <= x1; x++) for (let y = y0, r = 0; y <= y1 + 1; y++) { if (y <= y1 && big[y * W + x]) r++; else if (r) { runs.push(r); r = 0; } }
+  runs.sort((a, b) => a - b);
+  const sw = runs.length ? runs[Math.floor(runs.length * 0.3)] : 3, dotArea = Math.max(10, sw * sw * 0.6);
+  const near = Math.max(10, (y1 - y0) * 0.3), nx0 = x0 - near, ny0 = y0 - near, nx1 = x1 + near, ny1 = y1 + near;
+  for (const c of parts) {
+    if (c.area < minArea && (c.area < dotArea || c.ax1 < nx0 || c.ax0 > nx1 || c.ay1 < ny0 || c.ay0 > ny1)) continue;
+    for (const i of c.members) keep[i] = 1;
+    if (c.ax0 < x0) x0 = c.ax0; if (c.ay0 < y0) y0 = c.ay0; if (c.ax1 > x1) x1 = c.ax1; if (c.ay1 > y1) y1 = c.ay1;
+  }
+  // 4) recorte com folga; a borda suave da tinta (anti-serrilhado) em volta do que ficou também entra
+  const pad = Math.round(Math.max(6, (y1 - y0) * 0.06));
+  x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(W - 1, x1 + pad); y1 = Math.min(H - 1, y1 + pad);
+  const ow = x1 - x0 + 1, oh = y1 - y0 + 1, out = document.createElement("canvas"); out.width = ow; out.height = oh;
+  const ox = out.getContext("2d"), od = ox.createImageData(ow, oh);
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const i = y * W + x; let a = 0;
+    if (keep[i]) a = ink[i];
+    else if (ink[i] > 0 && ((x > 0 && keep[i - 1]) || (x < W - 1 && keep[i + 1]) || (y > 0 && keep[i - W]) || (y < H - 1 && keep[i + W]))) a = ink[i];
+    if (!a) continue;
+    const o = ((y - y0) * ow + (x - x0)) * 4; od.data[o + 3] = Math.round(a * 255); // tinta preta; o quadro pinta de azul
+  }
+  ox.putImageData(od, 0, 0);
+  return out.toDataURL("image/png");
+}
 const sigClient = SigPad($("sig-client"), () => { quote.clientSig = sigClient.value(); });
 const sigMe = SigPad($("sig-me"));
 $("sig-client-clear").onclick = () => sigClient.clear();
 $("sig-me-clear").onclick = () => sigMe.clear();
+$("sig-me-photo-btn").onclick = () => $("sig-me-photo").click();
+$("sig-me-photo").onchange = async (e) => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  toast("Lendo a foto…", 8000);
+  let url = "";
+  try { url = await sigFromPhoto(f); } catch { url = ""; }
+  if (!url) { toast("Não achei a assinatura na foto. Tire de perto, em papel branco, com boa luz e caneta escura.", 6000); return; }
+  sigMe.photo(url, () => {
+    $("sig-me").scrollIntoView({ block: "center", behavior: "smooth" });
+    toast("Pronto: a assinatura da foto está no quadro. Confira e toque em Salvar meus dados.", 6000);
+  });
+};
 
 /* ---------- Cálculo ---------- */
 const lineTotal = (it) => parseNum(it.qty) * parseNum(it.price);
@@ -2725,7 +2855,7 @@ function buildPdf(q) {
   doc.setFontSize(10); doc.text(`${profile.city || "Local"}, ${longDate(q.start)}.`, M, y - 14);
   const colW = (W - 2 * M - 16) / 2;
   const sigBlock = (x, img, name, docId, role) => {
-    if (img) { try { doc.addImage(img, "PNG", x + 6, y - 22, colW - 12, 20, undefined, "FAST"); } catch {} }
+    if (img) { try { sigImage(doc, img, x + 6, y - 22, colW - 12, 20); } catch {} }
     doc.setDrawColor(...INK); doc.setLineWidth(0.3); doc.line(x, y, x + colW, y);
     doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(...INK);
     doc.text(name || " ", x + colW / 2, y + 5, { align: "center" });
@@ -3051,7 +3181,10 @@ $("btn-save-profile").onclick = async () => {
   if (showErr("p-err", readCompany())) { $("company-card").scrollIntoView({ block: "start" }); return; }
   profile.obs = ownObs({ ...profile, obs: $("p-obs").value }); $("p-obs").value = profile.obs;
   profile.days = parseNum($("p-days").value) || 10; profile.bizDays = true; profile.next = parseNum($("p-next").value) || 1;
+  const oldSig = profile.signature;
   profile.signature = sigMe.value();
+  // o recibo que está sendo feito (ainda não salvo) passa a usar a assinatura nova
+  if (!receipt.id && (!receipt.mySig || receipt.mySig === oldSig)) { receipt.mySig = profile.signature; sigRMe.set(receipt.mySig); }
   try { await store.saveProfile(profile); renderBrand(); toast("Seus dados foram salvos"); }
   catch { toast("Não consegui salvar seus dados. Tente de novo."); }
 };
@@ -3142,7 +3275,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "67";
+const APP_VERSION = "68";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -3752,7 +3885,7 @@ function buildReceiptPdf(r) {
   y = Math.max(y + 38, 200);
   const colW = (W - 2 * M - 16) / 2;
   const sigBlock = (x, img, name, docId, role) => {
-    if (img) { try { doc.addImage(img, "PNG", x + 6, y - 22, colW - 12, 20, undefined, "FAST"); } catch {} }
+    if (img) { try { sigImage(doc, img, x + 6, y - 22, colW - 12, 20); } catch {} }
     doc.setDrawColor(...INK); doc.setLineWidth(0.3); doc.line(x, y, x + colW, y);
     doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(...INK);
     doc.text(name || " ", x + colW / 2, y + 5, { align: "center" });
@@ -4001,7 +4134,9 @@ renderEditor();
   const draft = local.get(DRAFT_KEY, null) || {};
   if (draft.quote && Array.isArray(draft.quote.items) && draft.quote.client && draftOk(draft.quote, quotes, quotesOk)) { quote = draft.quote; renderEditor(); }
   else if (quotes.length && quote.sample) newQuote();
-  receipt = draft.receipt && draft.receipt.payer && draftOk(draft.receipt, receipts, true) ? draft.receipt : blankReceipt(); renderReceipt();
+  receipt = draft.receipt && draft.receipt.payer && draftOk(draft.receipt, receipts, true) ? draft.receipt : blankReceipt();
+  if (!receipt.id && !receipt.mySig && profile.signature) receipt.mySig = profile.signature; // recibo novo começado antes de salvar a assinatura
+  renderReceipt();
   if (!profile.registered || !profile.pwHash) gate(signupDraft() ? "signup" : "welcome");
   else if (session.get()) enterApp();
   else gate("login");
