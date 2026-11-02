@@ -216,6 +216,11 @@ input.caps::placeholder { text-transform: none; }
 .msgbox { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; white-space: pre-wrap; font-size: 0.95rem; user-select: all; }
 textarea.msgbox { display: block; width: 100%; box-sizing: border-box; font: inherit; font-size: 0.95rem; line-height: 1.45; color: inherit; user-select: auto; resize: vertical; min-height: 5.5em; overflow: hidden; }
 .sh-msglbl { display: block; font-weight: 700; margin: 4px 0 6px; }
+.sh-msgstate { margin: 6px 0 0; font-size: 0.88rem; color: var(--muted); }
+.sh-msgstate.ok { color: #157A3D; font-weight: 700; }
+@media (prefers-color-scheme: dark) { .sh-msgstate.ok { color: #3CC777; } }
+:root[data-theme="dark"] .sh-msgstate.ok { color: #3CC777; }
+:root[data-theme="light"] .sh-msgstate.ok { color: #157A3D; }
 .logo-prev { max-height: 60px; max-width: 160px; }
 .qrbox { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .qrbox canvas { width: 110px; height: 110px; background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px; flex: none; }
@@ -895,7 +900,8 @@ body.pv-open { overflow: hidden; }
     </ol>
     <label class="sh-msglbl" for="sh-msg">Mensagem <span class="hint">(pode mudar antes de enviar)</span></label>
     <textarea class="msgbox" id="sh-msg" rows="4" lang="pt-BR" spellcheck="true" autocapitalize="sentences"></textarea>
-    <div class="row"><button class="btn small" id="sh-copy" type="button">Copiar mensagem</button><button class="btn small" id="sh-close" type="button">Fechar</button></div>
+    <p class="sh-msgstate" id="sh-msg-state" role="status" hidden></p>
+    <div class="row"><button class="btn small" id="sh-copy" type="button">Copiar mensagem</button><button class="btn small" id="sh-close" type="button">Fechar</button><button class="btn small" id="sh-msg-save" type="button">Salvar mensagem</button><button class="btn small" id="sh-msg-orig" type="button" hidden>Voltar ao texto original</button></div>
   </div>
 </div>
 <div class="sheet-bg" id="bio-ask" hidden>
@@ -2913,7 +2919,25 @@ const canShareFile = (file) => { try { return matchMedia("(pointer: coarse)").ma
 // notebook (Chrome no Windows): a janela Compartilhar do Windows também manda o arquivo para o WhatsApp do computador
 const canShareFilePc = (file) => { try { return !matchMedia("(pointer: coarse)").matches && shareAllowed() && !!navigator.share && !!navigator.canShare && navigator.canShare({ files: [file] }); } catch { return false; } };
 const shareWhy = (e) => !e ? "" : e.name === "NotAllowedError" ? "o celular só abre o compartilhamento logo depois de um toque" : "o celular respondeu " + e.name;
-async function sendDoc({ doc, name, who, phone, message }) {
+// Salvar mensagem: a mensagem mudada fica guardada no orçamento/recibo junto com a mensagem automática daquela hora (base).
+// Se depois os dados mudarem (valor, validade, nome...), a automática fica diferente da base e a salva é deixada de lado.
+async function keepMsg(rec, kind, waMsg) {
+  if (!rec) return true;
+  rec.waMsg = waMsg;
+  const open = kind === "r" ? receipt : quote, list = kind === "r" ? receipts : quotes;
+  if (open && open !== rec && open.id && open.id === rec.id) open.waMsg = waMsg;
+  const same = rec.id && list.find((x) => x.id === rec.id);
+  if (same && same !== rec) same.waMsg = waMsg;
+  if (!rec.id) return true;
+  try { await (kind === "r" ? store.saveReceipt(rec) : store.saveQuote(rec)); return true; } catch { return false; }
+}
+async function sendDoc({ doc, name, who, phone, message, rec, kind }) {
+  const auto = message;
+  let stale = false;
+  if (rec && rec.waMsg) {
+    if (rec.waMsg.base === auto && rec.waMsg.text) message = rec.waMsg.text;
+    else { stale = true; keepMsg(rec, kind, null); }
+  }
   const blob = doc.output("blob");
   const file = new File([blob], name, { type: "application/pdf" });
   const share = canShareFile(file);
@@ -2925,7 +2949,7 @@ async function sendDoc({ doc, name, who, phone, message }) {
   } else if (share) why = "o PDF demorou para ficar pronto";
   // 2) Mostra as opções: no celular, o botão Enviar o PDF (um toque novo abre o compartilhamento); senão salva o PDF e
   //    dá o atalho para a conversa (aí o PDF é anexado pelo clipe)
-  sending = { blob, name, file, message, num: "" };
+  sending = { blob, name, file, message, num: "", auto, rec, kind, saved: message, stale };
   const mine = isOwnPhone(phone), first = (who || "cliente").split(" ")[0];
   const num = mine ? "" : waNumber(phone);
   $("sh-own").hidden = !mine;
@@ -2950,6 +2974,7 @@ async function sendDoc({ doc, name, who, phone, message }) {
   $("sh-attach").textContent = pc
     ? "Pelo link, o WhatsApp abre só com a mensagem. Para o PDF ir junto: na conversa, clique no clipe, em Documento, e escolha o PDF na pasta Downloads. Ou arraste o PDF da lista de downloads do Chrome para dentro da conversa."
     : "No WhatsApp, toque no clipe, depois em Documento, e escolha o PDF salvo.";
+  msgState();
   $("sheet").hidden = false; openLayer("sheet"); growBox($("sh-msg"));
   if (share) { $("sh-saved").textContent = "Salve o PDF no celular."; return; }
   $("sh-saved").textContent = "Salvando o PDF…";
@@ -2980,11 +3005,38 @@ function waLinks() {
   if (sending && sending.num) $("sh-wa").href = `https://wa.me/${sending.num}?text=${text}`;
   $("sh-wa-any").href = `https://wa.me/?text=${text}`;
 }
-$("sh-msg").addEventListener("input", () => { waLinks(); growBox($("sh-msg")); });
+$("sh-msg").addEventListener("input", () => { waLinks(); growBox($("sh-msg")); msgState(); });
+// Salvar mensagem: confirma que o texto do quadro é o que vai nos botões e guarda para a próxima vez
+function msgState(done) {
+  const s = sending, v = $("sh-msg").value, dirty = !!s && v !== s.saved, mine = !!(s && s.rec && s.rec.waMsg);
+  $("sh-msg-save").className = dirty ? "btn small primary" : "btn small";
+  $("sh-msg-save").textContent = !dirty && (done === "ok" || mine) ? "Mensagem salva ✓" : "Salvar mensagem";
+  $("sh-msg-orig").hidden = !s || v === s.auto;
+  const st = $("sh-msg-state"), what = s && s.kind === "r" ? "do recibo" : "do orçamento";
+  st.textContent = dirty ? "Você mudou a mensagem. Toque em Salvar mensagem para guardar."
+    : done === "ok" ? "✓ Mensagem salva. É ela que vai no Enviar o PDF, no Abrir WhatsApp e no Copiar mensagem."
+    : done === "fail" ? "Não consegui guardar a mensagem, mas é ela que vai nos botões desta janela."
+    : s && s.stale ? `Os dados ${what} mudaram depois que você salvou a mensagem, então ela foi refeita.`
+    : mine ? "Esta é a mensagem que você salvou." : "";
+  st.className = "sh-msgstate" + (done === "ok" && !dirty ? " ok" : "");
+  st.hidden = !st.textContent;
+}
+$("sh-msg-save").onclick = async () => {
+  if (!sending) return;
+  if (!$("sh-msg").value.trim()) { $("sh-msg").value = sending.auto; waLinks(); growBox($("sh-msg")); } // vazio: volta ao texto original
+  const v = $("sh-msg").value;
+  const ok = await keepMsg(sending.rec, sending.kind, v === sending.auto ? null : { text: v, base: sending.auto });
+  sending.saved = v; sending.stale = false;
+  msgState(ok ? "ok" : "fail");
+};
+$("sh-msg-orig").onclick = () => {
+  if (!sending) return;
+  $("sh-msg").value = sending.auto; waLinks(); growBox($("sh-msg")); msgState();
+};
 const sendQuote = async (q) => {
   await prepLogo();
   const pq = { ...q, clientSig: await inkBlue(q.clientSig) }; // assinatura antiga em preto sai azul
-  return sendDoc({ doc: buildPdf(pq), name: fileName(q), who: q.client.name, phone: q.client.phone, message: clientMessage(q) });
+  return sendDoc({ doc: buildPdf(pq), name: fileName(q), who: q.client.name, phone: q.client.phone, message: clientMessage(q), rec: q, kind: "q" });
 };
 $("btn-pdf").onclick = async () => {
   if (!window.jspdf) { toast("O gerador de PDF não carregou. Verifique a internet e abra de novo."); return; }
@@ -3107,7 +3159,7 @@ function renderSaved() {
     el.querySelector('[data-a="view"]').onclick = () => viewPdf(q, () => sendQuote(q));
     el.querySelector('[data-a="copy"]').onclick = () => {
       const start = todayISO();
-      quote = { ...JSON.parse(JSON.stringify(q)), id: "", number: 0, start, valid: addBizDays(start, validDays()), clientSig: "", datesSet: false, from: q.id };
+      quote = { ...JSON.parse(JSON.stringify(q)), id: "", number: 0, start, valid: addBizDays(start, validDays()), clientSig: "", datesSet: false, from: q.id, waMsg: null };
       show("editor"); renderEditor(); toast("Cópia criada. Salve para gerar um novo número.");
     };
     const del = el.querySelector('[data-a="del"]');
@@ -3298,7 +3350,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "71";
+const APP_VERSION = "72";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -3933,7 +3985,7 @@ async function sendReceipt(r) {
   const name = `Recibo-${pad4(r.number)}-${(r.payer.name || "cliente").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
   await prepLogo();
   const pr = { ...r, mySig: await inkBlue(r.mySig), payerSig: await inkBlue(r.payerSig) }; // assinaturas antigas em preto saem azuis
-  return sendDoc({ doc: buildReceiptPdf(pr), name, who: r.payer.name, phone: r.payer.phone, message });
+  return sendDoc({ doc: buildReceiptPdf(pr), name, who: r.payer.name, phone: r.payer.phone, message, rec: r, kind: "r" });
 }
 
 function renderReceipts() {

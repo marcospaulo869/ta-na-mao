@@ -345,6 +345,16 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - A mudança vale só para esse envio. O próximo envio começa de novo com a mensagem pronta.
 - **No celular,** quando a tela de compartilhar abre direto, a mensagem pode ser mudada no próprio WhatsApp antes de enviar (ela aparece junto do PDF).
 
+## Atualização (02/11/2026): botão Salvar mensagem (versão 72)
+
+Marcos pediu um botão de salvar na janela "Enviar pelo WhatsApp", para confirmar que a mensagem editada é a que vai.
+- Ao lado de "Fechar" agora tem "Salvar mensagem". Quando a mensagem é mudada, o botão fica destacado e aparece "Você mudou a mensagem. Toque em Salvar mensagem para guardar."
+- Ao tocar em Salvar: "✓ Mensagem salva. É ela que vai no Enviar o PDF, no Abrir WhatsApp e no Copiar mensagem." e o botão vira "Mensagem salva ✓".
+- A mensagem salva fica guardada no orçamento (ou no recibo). Da próxima vez que ele tocar em Enviar PDF daquele orçamento (no editor ou nos Salvos), ela já aparece, com o aviso "Esta é a mensagem que você salvou". No celular, o compartilhamento direto também leva a mensagem salva.
+- Se depois os dados mudarem (valor, validade, nome do cliente...), a mensagem salva teria o valor antigo, então o app refaz a mensagem automática e avisa: "Os dados do orçamento mudaram depois que você salvou a mensagem, então ela foi refeita."
+- "Voltar ao texto original" aparece quando a mensagem está diferente da automática. Salvar com o quadro vazio também volta ao texto original. "Duplicar" não leva a mensagem salva para a cópia.
+- Os botões de envio sempre usam o texto que está no quadro, salvo ou não.
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.
