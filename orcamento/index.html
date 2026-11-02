@@ -198,7 +198,9 @@ input.caps::placeholder { text-transform: none; }
 .totals div { display: flex; justify-content: space-between; }
 .totals .grand { font-family: var(--font-display); font-size: 1.25rem; border-top: 1px solid var(--line); padding-top: 6px; margin-top: 4px; }
 .sig { display: grid; gap: 6px; }
-.sig canvas { width: 100%; height: 140px; background: #FFFFFF; border: 1px dashed var(--line); border-radius: 8px; touch-action: none; }
+.sig canvas { width: 100%; height: 140px; background: #FFFFFF; border: 1px dashed var(--line); border-radius: 8px; touch-action: none; cursor: crosshair; }
+.sig canvas.pen { border: 2px solid var(--accent); }
+.sig .sig-st { margin: 0; color: var(--accent); font-weight: 700; }
 .list { display: grid; gap: 8px; }
 .q { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
 .q .meta { font-size: 0.88rem; color: var(--muted); }
@@ -1431,7 +1433,10 @@ const inkBlue = (url) => new Promise((res) => {
 });
 function SigPad(canvas, onChange) {
   const ctx = canvas.getContext("2d");
-  let drawing = false, dirty = false, last = null;
+  // drawing: botão (ou dedo) apertado; follow: caneta ligada por um clique, segue o mouse/touchpad sem segurar
+  let drawing = false, follow = false, dirty = false, last = null, down = null;
+  const st = Object.assign(document.createElement("p"), { className: "hint sig-st", hidden: true });
+  st.setAttribute("role", "status"); canvas.after(st);
   const fit = () => {
     const r = canvas.getBoundingClientRect();
     if (!r.width) return;
@@ -1441,20 +1446,46 @@ function SigPad(canvas, onChange) {
     if (keep) load(keep, true);
   };
   const pos = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) * canvas.width / r.width, y: (e.clientY - r.top) * canvas.height / r.height }; };
-  canvas.addEventListener("pointerdown", (e) => { drawing = true; last = pos(e); canvas.setPointerCapture(e.pointerId); });
-  canvas.addEventListener("pointermove", (e) => {
-    if (!drawing) return; const p = pos(e);
-    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; dirty = true;
+  const dot = (p) => { ctx.beginPath(); ctx.arc(p.x, p.y, ctx.lineWidth, 0, Math.PI * 2); ctx.fillStyle = ctx.strokeStyle; ctx.fill(); dirty = true; };
+  const penOff = () => {
+    if (!follow) return;
+    follow = false; canvas.classList.remove("pen"); st.hidden = true;
+    onChange && onChange();
+  };
+  canvas.addEventListener("pointerdown", (e) => {
+    if (follow) { penOff(); return; } // o clique seguinte solta a caneta
+    drawing = true; last = pos(e); down = { x: e.clientX, y: e.clientY, type: e.pointerType, moved: false };
+    try { canvas.setPointerCapture(e.pointerId); } catch {}
   });
-  const end = () => { if (drawing) { drawing = false; onChange && onChange(); } };
-  canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
+  canvas.addEventListener("pointermove", (e) => {
+    if (!drawing && !follow) return; const p = pos(e);
+    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; dirty = true;
+    if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4) down.moved = true;
+  });
+  canvas.addEventListener("pointerup", () => {
+    if (!drawing) return;
+    drawing = false;
+    const tap = down && !down.moved, mouse = down && down.type === "mouse"; down = null;
+    if (tap) dot(last); // um toque sem arrastar deixa um ponto: dá para ver que o campo está ativo
+    // No notebook o touchpad quase nunca é usado segurando o clique: um clique sem arrastar liga a caneta,
+    // ela segue o ponteiro, e o próximo clique (ou sair do quadro) solta
+    if (tap && mouse) {
+      follow = true; canvas.classList.add("pen");
+      st.textContent = "Caneta ligada: mova para assinar. Clique de novo para soltar."; st.hidden = false;
+      return;
+    }
+    onChange && onChange();
+  });
+  canvas.addEventListener("pointercancel", () => { if (drawing) { drawing = false; down = null; onChange && onChange(); } });
+  canvas.addEventListener("pointerleave", penOff);
+  addEventListener("keydown", (e) => { if (e.key === "Escape") penOff(); });
   function load(url, silent) {
     const img = new Image();
     img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); try { tintInk(ctx, canvas.width, canvas.height); } catch {} ctx.strokeStyle = INK_BLUE; dirty = true; };
     img.src = url;
   }
   const api = {
-    clear() { ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; onChange && onChange(); },
+    clear() { penOff(); ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; onChange && onChange(); },
     value() { return dirty ? canvas.toDataURL("image/png") : ""; },
     set(url) { ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; if (url) load(url); },
     fit,
@@ -3062,7 +3093,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "65";
+const APP_VERSION = "66";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------

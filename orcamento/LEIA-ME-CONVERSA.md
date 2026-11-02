@@ -283,6 +283,15 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - **Abrir um orçamento dos Salvos** e depois voltar leva de volta aos Salvos. O mesmo vale entre Orçamento e Recibo.
 - Recarregar a página no meio mantém a tela e os passos. Depois de "Sair", a flechinha não abre o app sem a senha.
 
+## Atualização (02/11/2026): assinatura funciona com o touchpad do notebook (versão 66)
+
+- **Pedido do Marcos:** em Meus dados, o campo "Sua assinatura" não ativava para assinar (notebook, tema preto e dourado).
+- **O que vi:** o campo só riscava enquanto o botão do mouse estava apertado. Com o touchpad, que quase sempre é só tocado e arrastado sem segurar o clique, nada aparecia. Com o mouse apertado e no celular com o dedo, funcionava.
+- **Agora, no notebook:** um clique no quadro liga a caneta. A borda fica dourada e aparece "Caneta ligada: mova para assinar. Clique de novo para soltar." O traço segue o ponteiro sem precisar segurar. Para soltar: clicar de novo, sair do quadro com o ponteiro ou apertar Esc. Clicar e arrastar com o botão apertado continua funcionando como antes.
+- Um toque sem arrastar deixa um ponto, para mostrar que o campo está ativo. No celular, com o dedo, continua igual.
+- Vale para todos os quadros de assinatura: Meus dados, cliente no orçamento e as duas do recibo.
+- Lembrete: depois de assinar em Meus dados, toque em **Salvar meus dados** para a assinatura ir para os PDFs.
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.
