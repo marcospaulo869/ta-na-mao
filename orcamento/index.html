@@ -2833,13 +2833,16 @@ function buildPdf(q) {
     laborAndTotal("VALOR TOTAL");
     y -= 4;
   }
-  if (y > 270) { doc.addPage(); header(); y = 42; }
+  // A validade vai embaixo dos totais. Se não couber antes do rodapé, vai no alto da página do pré-contrato
+  // (nunca numa página só para ela).
+  const validHere = y + 4 <= 281;
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...MUT);
-  doc.text(`Orçamento válido até ${fmtDate(q.valid)}. Condições e assinaturas na página de observações.`, M, y + 4);
+  if (validHere) doc.text(`Orçamento válido até ${fmtDate(q.valid)}. Condições e assinaturas na página de observações.`, M, y + 4);
 
   // Página Obs / pré-contrato + assinaturas
   doc.addPage(); header();
   y = 42;
+  if (!validHere) { doc.text(`Orçamento válido até ${fmtDate(q.valid)}. Condições e assinaturas abaixo.`, M, y); y += 9; }
   doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(...ACC);
   doc.text("OBSERVAÇÕES E PRÉ-CONTRATO", M, y); y += 8;
   // texto longo (pré-contrato completo) usa letra um pouco menor e a página inteira; as assinaturas vão no fim
@@ -3275,7 +3278,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "68";
+const APP_VERSION = "69";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------

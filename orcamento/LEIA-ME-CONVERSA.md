@@ -319,6 +319,13 @@ Marcos disse que o botão "Ditar" não ouvia nada (nem com um toque, nem seguran
 - **No PDF:** a assinatura guardada agora é só o traço, recortado justo. O PDF a encaixa no espaço da assinatura sem esticar nem achatar, centralizada e apoiada na linha. Isso vale também para as assinaturas feitas no quadro.
 - **Recibo:** um recibo novo, ainda não salvo, passa a usar a assinatura nova assim que você salva Meus dados.
 
+## Atualização (02/11/2026): PDF sem página quase vazia (versão 69)
+
+- **Retorno do Marcos:** o PDF criou uma página desnecessária entre os totais e o pré-contrato, só com o cabeçalho e a linha "Orçamento válido até...".
+- **Causa:** quando os totais terminavam perto do fim da folha, essa linha pulava sozinha para uma página nova, e o pré-contrato começava em outra.
+- **Agora:** a linha fica embaixo do VALOR TOTAL sempre que cabe antes do rodapé. Se não couber, ela vai para o alto da página do pré-contrato ("Orçamento válido até ... Condições e assinaturas abaixo."). Nunca há uma página só para ela.
+- Conferido com 204 orçamentos de tamanhos diferentes (com e sem Comprar fora, com e sem desconto).
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.
