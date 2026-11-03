@@ -69,6 +69,7 @@ tr.wkrow .wkx{color:var(--ext);font-weight:600}
 tr.wkrow .wkx b{font-size:15px}
 tr.wkrow .mut{color:var(--mut);font-size:12px;font-weight:400}
 small.vl,.vl{color:var(--err)}
+small.nota{display:block;color:var(--mut);font-size:11.5px;line-height:1.35;margin-top:2px;max-width:340px;white-space:normal}
 .stp{font-weight:800;letter-spacing:.2px}.stp.ok{color:var(--pri)}.stp.no{color:var(--err)}
 #foot .wk div .stp{font-size:11.5px;display:inline-block;margin-top:2px}
 #foot .wk div small{display:block;color:var(--warn);font-size:11px}
@@ -238,7 +239,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10c';
-const APP_VERSAO='02/11/2026 · 1';
+const APP_VERSAO='03/11/2026 · 1';
 {const v=document.getElementById('ver');if(v)v.textContent='v '+APP_VERSAO}
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
@@ -332,7 +333,7 @@ function load(){
  S.emps.forEach(fixEmp);fixCfg()}
 function save(){try{if(CLOUD)localStorage.setItem(KEYC,JSON.stringify({sel:S.sel,ym:S.ym}));else localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 const emp=()=>S.emps.find(e=>e.id===S.sel);
-const DEF={nome:'Novo colaborador',funcao:'',tipo:'clt',salario:1621,base:220,metaSem:8,metaSab:4,capSemana:44,adicExtra:50,adicFer:100,
+const DEF={nome:'Novo colaborador',funcao:'',tipo:'clt',salario:1621,base:220,metaSem:8,metaSab:4,capSemana:44,adicExtra:50,adicFer:100,feriadoDobro:true,
  valorHora:10,jornada:8,pagaExtra:false,adm:'',dias:[1,2,3,4,5,6],autoFalta:true,verValores:true,vales:[],pagamentos:[],foto:'',cpf:'',rg:'',nascimento:'',estadoCivil:'',pis:'',ctps:'',telefone:'',emailPessoal:'',emergNome:'',emergTel:'',cep:'',rua:'',numero:'',complemento:'',bairro:'',cidade:'',uf:'',pix:'',banco:'',docs:[],aceite:'',deslig:'',motivo:'sem_justa',feriasGozadas:0,fgtsSaldo:'',mediaExtras:0};
 function fixEmp(e){for(const k in DEF)if(e[k]===undefined)e[k]=Array.isArray(DEF[k])?DEF[k].slice():DEF[k];return e}
 function newEmp(){return fixEmp({id:uuid(),salario:S.cfg.minimo,deslig:''})}
@@ -467,9 +468,10 @@ function calcMonth(e,ym,recs,today){
   else if(t==='folga'){x.st='Folga'}
   else if(t==='nt'){x.st='Não trabalhou'}
   else if(w>0){
-   if(clt&&(hol||wd===0)){
+   if(clt&&(hol||wd===0)||(!clt&&hol&&e.feriadoDobro!==false)){
     x.fer=w;T.fer+=w;x.vlr=(w/60)*hora*(1+e.adicFer/100);x.vf=x.vlr;W.vf+=x.vlr;T.vFer+=(w/60)*hora*e.adicFer/100;T.valHoras+=x.vlr;
     x.st=hol?'Feriado trabalhado: '+hol:'Domingo trabalhado';
+    x.nota=hol?`Feriado trabalhado: horas pagas em dobro (+${e.adicFer}%). Lei 605/49, art. 9º, e Súmula 146 do TST. Só não é devido se a empresa der outra folga (folga compensatória).`:`Domingo trabalhado: horas pagas em dobro (+${e.adicFer}%), salvo folga compensatória. Lei 605/49 e Súmula 146 do TST.`;
    }else{
     let nm,ex;
     if(clt){const capLeft=Math.max(0,e.capSemana*60-W.norm);nm=Math.min(w,meta,capLeft);ex=w-nm;W.norm+=nm}
@@ -598,7 +600,8 @@ function rEmp(){
   </div>
   <div style="margin-top:12px"><label>Dias liberados para trabalhar</label><div class="chips" id="dias">${ORD.map(d=>`<label class="${e.dias.includes(d)?'on':''}"><input type="checkbox" data-dia="${d}" ${e.dias.includes(d)?'checked':''}>${DN[d]}</label>`).join('')}</div></div>
   ${c?`<label class="ck"><input type="checkbox" id="f-af2" data-k="autoFalta" ${e.autoFalta!==false?'checked':''}>Dia liberado que já passou sem registro conta como falta</label>`:
-  `<label class="ck"><input type="checkbox" id="f-pe" data-k="pagaExtra" ${e.pagaExtra?'checked':''}>Pagar hora extra acima da jornada de referência (desmarcado: todas as horas valem o valor normal)</label>`}
+  `<label class="ck"><input type="checkbox" id="f-pe" data-k="pagaExtra" ${e.pagaExtra?'checked':''}>Pagar hora extra acima da jornada de referência (desmarcado: todas as horas valem o valor normal)</label>
+  <label class="ck"><input type="checkbox" id="f-fd" data-k="feriadoDobro" ${e.feriadoDobro!==false?'checked':''}>Pagar em dobro as horas trabalhadas em feriado (Lei 605/49, art. 9º, e Súmula 146 do TST). Desmarque só se a empresa deu outra folga no lugar.</label>`}
   <label class="ck"><input type="checkbox" id="f-vv" data-k="verValores" ${e.verValores!==false?'checked':''}>Colaborador pode ver os valores em R$ no celular</label>
   ${CLOUD?`<label class="ck"><input type="checkbox" id="f-sv" data-k="semVerificacao" ${e.semVerificacao?'checked':''}>Isento de verificação de local (ex.: trabalha sempre fora da empresa)</label>
   <div style="margin-top:10px"><label>Dias de trabalho externo liberados (sem precisar de aprovação)</label>
@@ -737,14 +740,14 @@ function rFolha(){
    tr.querySelector('.c-n').textContent=x.fer?'':(x.norm?hm(x.norm):'');
    tr.querySelector('.c-e').textContent=x.fer?hm(x.fer)+' (100%)':(x.ext?hm(x.ext):'');
    tr.querySelector('.c-v').innerHTML=(x.vlr!=null?brl(x.vlr):(x.falta?'− '+brl(x.desc):''))+(x.valesL||[]).map(v=>{const pg=v.pagId&&(e.pagamentos||[]).find(q=>q.id===v.pagId);return `<small class="vl">Vale − ${brl(+v.v||0)}${pg&&pg.file?` <button type="button" class="b lkv" data-vc="${esc(pg.id)}" title="Abrir o comprovante deste vale">Ver comprovante</button>`:''}</small>`}).join('');
-   tr.querySelector('.c-al').textContent=x.al.join(' · ')});
+   tr.querySelector('.c-al').innerHTML=esc(x.al.join(' · '))+(x.nota?`<small class="nota">ℹ ${esc(x.nota)}</small>`:'')});
   document.querySelectorAll('#tb tr.wkrow').forEach(tr=>{const W=R.weeks.find(w=>w.wk===tr.dataset.wk);
    tr.firstElementChild.innerHTML=W?`<div class="wkl"><span><b>Semana ${pad(W.ini)} a ${pad(W.fim)}</b> · ${W.dias} dia(s) trabalhado(s) · ${hm(W.min)}${W.ext?` <span class="ext">(${hm(W.ext)} de extras)</span>`:''}</span>${W.ve?`<span class="wkx">Valor das horas extras: <b>${brl(W.ve)}</b></span>`:''}${W.vf?`<span class="wkx">Domingo/feriado: <b>${brl(W.vf)}</b></span>`:''}</div><div class="wk2">${W.vale||W.ajuda?`Horas da semana: <b>${brl(W.val)}</b>${W.ajuda?` · Ajuda de custo: <b>+ ${brl(W.ajuda)}</b>`:''}${W.vale?` · Vale: <b class="vl">− ${brl(W.vale)}</b>`:''} · ${W.ajuda?'Total a receber':'Valor com desconto'}: <b>${brl(W.val+W.ajuda-W.vale)}</b>`:`Valor acumulado da semana: <b>${brl(W.val)}</b>`}${(()=>{const t=statusSemana(e,W.wk);return t?`<div style="margin-top:4px">${stHtml(t)}</div>`:''})()}${W.ve||W.vf?` <small class="mut">(horas normais ${brl(W.vn)}${W.ve?' + extras '+brl(W.ve):''}${W.vf?' + domingo/feriado '+brl(W.vf):''})</small>`:''}</div>`:''});
   const T=R.T;
   $('#sum').innerHTML=clt?`<div><span>Horas normais</span><b>${hm(T.norm)}</b></div><div><span>Horas extras</span><b class="ext">${hm(T.ext)}</b></div>${T.fer?`<div><span>Domingos e feriados</span><b>${hm(T.fer)}</b></div>`:''}
    <div><span>Faltas</span><b>${T.nFaltas}</b></div><div><span>Valor da hora</span><b>${brl(R.hora)}</b></div><div><span>Salário base</span><b>${brl(e.salario)}</b></div>
    <div><span>Descontos (faltas, DSR, atrasos)</span><b>${brl(T.dAtr+T.dFalta+T.dDsr+T.dAdm)}</b></div><div><span>Extras e adicionais</span><b>${brl(T.vExt+T.vFer)}</b></div>${T.vales?`<div><span>Vales</span><b>${brl(T.vales)}</b></div>`:''}`:
-   `<div><span>Dias trabalhados</span><b>${T.diasTrab}</b></div><div><span>Horas no mês</span><b>${hm(T.total)}</b></div><div><span>Valor da hora</span><b>${brl(R.hora)}</b></div><div><span>Horas extras</span><b class="ext">${hm(T.ext)}</b></div>${T.vales?`<div><span>Vales</span><b>${brl(T.vales)}</b></div>`:''}`;
+   `<div><span>Dias trabalhados</span><b>${T.diasTrab}</b></div><div><span>Horas no mês</span><b>${hm(T.total)}</b></div><div><span>Valor da hora</span><b>${brl(R.hora)}</b></div><div><span>Horas extras</span><b class="ext">${hm(T.ext)}</b></div>${T.fer?`<div><span>Feriados trabalhados (em dobro)</span><b>${hm(T.fer)}</b></div>`:''}${T.vales?`<div><span>Vales</span><b>${brl(T.vales)}</b></div>`:''}`;
   $('#alr').innerHTML=R.alerts.map(a=>`<div class="warn">${esc(a)}</div>`).join('')+
    (clt&&T.nDsr?`<div class="warn">Falta injustificada em ${T.nDsr} semana(s): perde o descanso semanal remunerado (Lei 605/49), desconto de 1/30 do salário por semana.</div>`:'')+
    (T.acima?`<div class="warn">Atenção: ${hm(T.acima)} trabalhadas acima da jornada de ${e.jornada}h estão sendo pagas pelo valor normal, porque a opção <b>"Pagar hora extra"</b> está desmarcada na ficha de ${esc(e.nome)} (aba Equipe).</div>`:'')+
