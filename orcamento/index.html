@@ -690,7 +690,8 @@ body.pv-open { overflow: hidden; }
       <p class="hint">Opcional. Use quando o cliente assinar no seu celular. Se ficar em branco, o PDF sai com a linha para ele assinar.</p>
       <div class="sig">
         <canvas id="sig-client" aria-label="Área para o cliente assinar"></canvas>
-        <div class="row"><button class="btn small" id="sig-client-clear">Limpar</button></div>
+        <div class="row"><button class="btn small" id="sig-client-clear">Limpar</button><button class="btn small" id="sig-client-photo-btn" type="button">Usar foto da assinatura</button></div>
+        <input type="file" id="sig-client-photo" accept="image/*" hidden>
       </div>
     </section>
 
@@ -774,12 +775,14 @@ body.pv-open { overflow: hidden; }
       <div class="sig">
         <label>Assinatura de quem recebeu</label>
         <canvas id="sig-r-me" aria-label="Assinatura de quem recebeu"></canvas>
-        <div class="row"><button class="btn small" id="sig-r-me-clear">Limpar</button><button class="btn small" id="sig-r-me-mine">Usar minha assinatura salva</button></div>
+        <div class="row"><button class="btn small" id="sig-r-me-clear">Limpar</button><button class="btn small" id="sig-r-me-mine">Usar minha assinatura salva</button><button class="btn small" id="sig-r-me-photo-btn" type="button">Usar foto da assinatura</button></div>
+        <input type="file" id="sig-r-me-photo" accept="image/*" hidden>
       </div>
       <div class="sig">
         <label>Assinatura de quem pagou (opcional)</label>
         <canvas id="sig-r-payer" aria-label="Assinatura de quem pagou"></canvas>
-        <div class="row"><button class="btn small" id="sig-r-payer-clear">Limpar</button></div>
+        <div class="row"><button class="btn small" id="sig-r-payer-clear">Limpar</button><button class="btn small" id="sig-r-payer-photo-btn" type="button">Usar foto da assinatura</button></div>
+        <input type="file" id="sig-r-payer-photo" accept="image/*" hidden>
       </div>
     </section>
   </div>
@@ -1714,6 +1717,19 @@ $("sig-me-photo").onchange = async (e) => {
     toast("Pronto: a assinatura da foto está no quadro. Confira e toque em Salvar meus dados.", 6000);
   });
 };
+// Mesma foto-assinatura (tira o fundo e deixa só a tinta) nos quadros do orçamento e do recibo; o quadro avisa o app pelo próprio onChange
+function bindSigPhoto(pad, id, msg) {
+  $(id + "-photo-btn").onclick = () => $(id + "-photo").click();
+  $(id + "-photo").onchange = async (e) => {
+    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    toast("Lendo a foto…", 8000);
+    let url = "";
+    try { url = await sigFromPhoto(f); } catch { url = ""; }
+    if (!url) { toast("Não achei a assinatura na foto. Tire de perto, em papel branco, com boa luz e caneta escura.", 6000); return; }
+    pad.photo(url, () => { $(id).scrollIntoView({ block: "center", behavior: "smooth" }); toast(msg, 6000); });
+  };
+}
+bindSigPhoto(sigClient, "sig-client", "Pronto: a assinatura da foto está no quadro. Confira e toque em Salvar.");
 
 /* ---------- Cálculo ---------- */
 const lineTotal = (it) => parseNum(it.qty) * parseNum(it.price);
@@ -3886,6 +3902,8 @@ const sigRPayer = SigPad($("sig-r-payer"), () => { receipt.payerSig = sigRPayer.
 $("sig-r-me-clear").onclick = () => sigRMe.clear();
 $("sig-r-me-mine").onclick = () => { receipt.mySig = profile.signature || ""; sigRMe.set(receipt.mySig); if (!profile.signature) toast("Você ainda não salvou sua assinatura em Meus dados"); };
 $("sig-r-payer-clear").onclick = () => sigRPayer.clear();
+bindSigPhoto(sigRMe, "sig-r-me", "Pronto: a assinatura da foto está no quadro. Confira e toque em Salvar.");
+bindSigPhoto(sigRPayer, "sig-r-payer", "Pronto: a assinatura da foto está no quadro. Confira e toque em Salvar.");
 const receivedFor = (quoteId, exceptId) => receipts.filter((r) => r.quoteId === quoteId && r.id !== exceptId).reduce((s, r) => s + parseNum(r.amount), 0);
 const pad4 = (n) => String(n || 0).padStart(4, "0");
 
