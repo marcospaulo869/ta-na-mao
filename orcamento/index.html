@@ -232,6 +232,13 @@ textarea.msgbox { display: block; width: 100%; box-sizing: border-box; font: inh
 @media (max-width: 400px) { .grid2.pair label { font-size: 0.76rem; letter-spacing: 0.02em; } }
 @media (max-width: 340px) { .grid2.pair label { font-size: 0.7rem; } }
 .labhint { margin-top: 6px; }
+/* Desconto sobre: três opções (mão de obra, material, os dois); a marcada usa a cor de destaque */
+.dtype { display: grid; gap: 6px; }
+.dtype-l { font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.dtypes { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 6px; }
+.dtbtn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 700 0.9rem/1.15 var(--font-body); border-radius: 10px; padding: 8px 6px; min-height: 44px; cursor: pointer; }
+.dtbtn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+@media (max-width: 400px) { .dtbtn { font-size: 0.82rem; } }
 #q-labor-auto { margin-top: 6px; }
 #sh-own { margin-bottom: 10px; }
 .gate { max-width: 560px; margin-inline: auto; padding-top: 16px; }
@@ -658,6 +665,15 @@ body.pv-open { overflow: hidden; }
         <div class="field"><label for="q-labor">Mão de obra (R$)</label><input id="q-labor" class="num" inputmode="decimal" placeholder="0"></div>
         <div class="field"><label for="q-discount">Desconto (%)</label><input id="q-discount" class="num" inputmode="decimal" placeholder="0"></div>
       </div>
+      <div class="dtype" role="group" aria-labelledby="q-disc-type-l">
+        <span class="dtype-l" id="q-disc-type-l">Desconto sobre</span>
+        <div class="dtypes" id="q-disc-type">
+          <button type="button" class="dtbtn" data-type="labor" aria-pressed="false">Mão de obra</button>
+          <button type="button" class="dtbtn" data-type="materials" aria-pressed="false">Material</button>
+          <button type="button" class="dtbtn" data-type="total" aria-pressed="true">Material + mão de obra</button>
+        </div>
+      </div>
+      <p class="hint labhint" id="q-disc-hint"></p>
       <p class="hint labhint" id="q-labor-hint"></p><button class="btn small" id="q-labor-auto" type="button" hidden>Igualar ao valor dos materiais</button>
       <div class="totals" id="totals"></div>
     </section>
@@ -1710,14 +1726,29 @@ const fmtPct = (n) => String(Math.round(n * 100) / 100).replace(".", ",");
 // (regra do Marcos, 06/10/2026: materiais vezes um).
 // Digitar um valor no campo deixa a mão de obra fixa; orçamentos antigos (sem laborAuto) guardam o valor que tinham.
 const LABOR_X = 1;
+// Sobre o que incide o desconto (q.discountType): "labor" = só a mão de obra, "materials" = só os materiais (sem o Comprar fora),
+// "total" = materiais + mão de obra (padrão; orçamentos sem o campo seguem assim).
+const DISC_TYPES = {
+  total: { name: "Material + mão de obra", of: "", short: "" },
+  labor: { name: "Mão de obra", of: "da mão de obra", short: "mão de obra" },
+  materials: { name: "Material", of: "dos materiais", short: "materiais" },
+};
+const discType = (q) => (DISC_TYPES[q.discountType] ? q.discountType : "total");
 const calc = (q) => {
   const items = q.items;
   const materials = items.reduce((s, it) => s + (it.out ? 0 : lineTotal(it)), 0);
   const outside = items.reduce((s, it) => s + (it.out ? lineTotal(it) : 0), 0);
   const labor = q.laborAuto ? cents((materials + outside) * LABOR_X) : parseNum(q.labor), pct = typeof q.discountPct === "number" ? clampPct(q.discountPct) : null;
-  const discount = pct != null ? cents((materials + labor) * pct / 100) : parseNum(q.discount);
+  const type = discType(q), base = type === "labor" ? labor : type === "materials" ? materials : materials + labor;
+  const discount = pct != null ? cents(base * pct / 100) : parseNum(q.discount);
   const subtotal = Math.max(0, materials + labor - discount);
-  return { materials, labor, discount, pct, outside, subtotal, hasOut: items.some((it) => it.out), total: subtotal + outside };
+  return { materials, labor, discount, pct, type, base, outside, subtotal, hasOut: items.some((it) => it.out), total: subtotal + outside };
+};
+// Texto do desconto nos totais e no PDF: "Desconto (50% da mão de obra)"; short = versão curta para a coluna estreita do PDF
+const discLabel = (t, short) => {
+  if (!t.pct) return "Desconto";
+  const d = DISC_TYPES[t.type];
+  return !d.of ? `Desconto (${fmtPct(t.pct)}%)` : short ? `Desc. ${d.short} (${fmtPct(t.pct)}%)` : `Desconto (${fmtPct(t.pct)}% ${d.of})`;
 };
 const fillVars = (text, q, t) => String(text || "")
   .replaceAll("{CLIENTE}", q.client.name || "o cliente")
@@ -2526,7 +2557,7 @@ function renderTotals() {
   const t = calc(quote);
   quote.items.forEach((it, i) => { const el = $(`it-t-${i}`); if (el) el.textContent = money(lineTotal(it)); });
   // ordem pedida pelo Marcos (06/10/2026): Materiais, Comprar fora, Total dos materiais, Mão de obra, Desconto, VALOR TOTAL
-  const disc = `<div><span>Desconto${t.pct ? ` (${fmtPct(t.pct)}%)` : ""}</span><span>− ${money(t.discount)}</span></div>`;
+  const disc = `<div><span>${discLabel(t)}</span><span>− ${money(t.discount)}</span></div>`;
   // conferência: soma dos marcados e a conta sem eles (mão de obra automática e desconto refeitos). Os totais do quadro de
   // baixo, o PDF e o orçamento salvo continuam com todos os itens; o Total da barra mostra a conta sem os marcados.
   const sel = pickedItems(), selOwn = sel.filter((it) => !it.out).reduce((s, it) => s + lineTotal(it), 0), selOut = sel.filter((it) => it.out).reduce((s, it) => s + lineTotal(it), 0);
@@ -2557,6 +2588,11 @@ function renderTotals() {
   if (quote.laborAuto) { quote.labor = t.labor; if (document.activeElement !== $("q-labor")) $("q-labor").value = t.labor ? t.labor.toFixed(2).replace(".", ",") : ""; }
   $("q-labor-hint").textContent = quote.laborAuto ? (t.hasOut ? "Mão de obra automática: igual ao valor dos materiais, com o Comprar fora. Digite outro valor se quiser mudar." : "Mão de obra automática: igual ao valor dos materiais. Digite outro valor se quiser mudar.") : "Mão de obra digitada por você.";
   $("q-labor-auto").hidden = !!quote.laborAuto;
+  const dt = discType(quote);
+  document.querySelectorAll("#q-disc-type button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.type === dt)));
+  $("q-disc-hint").textContent = t.pct
+    ? `Desconto de ${fmtPct(t.pct)}% sobre ${dt === "labor" ? "a mão de obra" : dt === "materials" ? "os materiais" : "os materiais e a mão de obra"} (${money(t.base)}) = ${money(t.discount)}.${dt !== "labor" && t.hasOut ? " O Comprar fora não entra no desconto." : ""}`
+    : "Escolha sobre o que o desconto incide e digite a porcentagem.";
 }
 function renderEditor() {
   fitSoon();
@@ -2624,6 +2660,18 @@ $("q-discount").oninput = (e) => {
   renderTotals();
 };
 $("q-discount").addEventListener("change", (e) => { e.target.value = discountField(quote); });
+// Tipo do desconto: mão de obra, material ou os dois. Orçamento antigo (desconto em R$) vira % antes de trocar, para o valor não mudar sozinho
+document.querySelectorAll("#q-disc-type button").forEach((b) => {
+  b.onclick = () => {
+    if (typeof quote.discountPct !== "number") {
+      const t = calc(quote);
+      quote.discountPct = t.base > 0 ? clampPct(t.discount / t.base * 100) : 0; quote.discount = 0;
+    }
+    quote.discountType = b.dataset.type;
+    $("q-discount").value = discountField(quote);
+    renderTotals();
+  };
+});
 $("q-obs").oninput = (e) => { quote.obs = e.target.value; };
 $("btn-obs-default").onclick = () => { quote.obs = profile.obs || DEFAULT_OBS; $("q-obs").value = quote.obs; };
 bindMic($("btn-add-voice"), () => {
@@ -2648,7 +2696,7 @@ const newQuote = () => {
   const start = todayISO();
   quote = { id: "", number: 0, start, valid: addBizDays(start, validDays()),
     client: { name: "", doc: "", phone: "", email: "", cep: "", street: "", number: "", comp: "", district: "", city: "", uf: "", address: "" },
-    items: [{ desc: "", un: "UN", qty: 1, price: 0 }], labor: 0, laborAuto: true, discount: 0, discountPct: 0, obs: profile.obs || DEFAULT_OBS, clientSig: "" };
+    items: [{ desc: "", un: "UN", qty: 1, price: 0 }], labor: 0, laborAuto: true, discount: 0, discountPct: 0, discountType: "total", obs: profile.obs || DEFAULT_OBS, clientSig: "" };
   renderEditor(); window.scrollTo(0, 0);
   refreshCatalog(true);
 };
@@ -2822,7 +2870,12 @@ function buildPdf(q) {
   const rule = () => { doc.setDrawColor(...LINE); doc.line(130, y - 3.5, W - M, y - 3.5); y += 1.5; };
   const laborAndTotal = (label) => {
     if (t.labor) row("Mão de obra", money(t.labor));
-    if (t.discount) row(t.pct ? `Desconto (${fmtPct(t.pct)}%)` : "Desconto", "- " + money(t.discount));
+    if (t.discount) {
+      const val = "- " + money(t.discount);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+      const lbl = discLabel(t); // a coluna dos totais é estreita: se o texto completo não couber ao lado do valor, usa o curto
+      row(doc.getTextWidth(lbl) + doc.getTextWidth(val) + 4 > W - M - 130 ? discLabel(t, true) : lbl, val);
+    }
     rule(); row(label, money(t.total), { big: true });
   };
   if (!outs.length) { row("Materiais", money(t.materials)); laborAndTotal("TOTAL"); }
