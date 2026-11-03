@@ -355,6 +355,15 @@ Marcos pediu um botão de salvar na janela "Enviar pelo WhatsApp", para confirma
 - "Voltar ao texto original" aparece quando a mensagem está diferente da automática. Salvar com o quadro vazio também volta ao texto original. "Duplicar" não leva a mensagem salva para a cópia.
 - Os botões de envio sempre usam o texto que está no quadro, salvo ou não.
 
+## Atualização (03/11/2026): botão Imprimir (versão 73)
+
+Marcos perguntou se dá para imprimir o PDF.
+- Antes já dava pelo arquivo: no notebook, Enviar PDF salva o PDF na pasta Downloads; abrindo o PDF no Chrome, Ctrl+P imprime.
+- Agora tem o botão **Imprimir** (com desenho de impressora) no cartão de cada orçamento salvo (depois do Ver PDF), no cartão de cada recibo salvo, e na barra de baixo do Ver PDF (Fechar, Imprimir, Enviar PDF).
+- Como funciona: o app desenha cada folha do PDF numa imagem nítida (uns 225 pontos por polegada, com o pdf.js) e abre a janela de imprimir do navegador. Só as folhas vão para o papel, uma por folha A4, sem a tela do app. No celular abre a tela de imprimir do Android (impressora ou Salvar como PDF).
+- O nome sugerido ao escolher "Salvar como PDF" é o nome do arquivo (ex.: Orcamento-0001-Rosangela). Depois de imprimir, o próximo toque na tela volta tudo ao normal.
+- Sem internet para o pdf.js: aparece "Não deu para preparar a impressão. Verifique a internet, ou use Enviar PDF e imprima o arquivo salvo." Dentro de outra página (ex.: no Claude), se a janela não abrir, o app avisa para abrir pelo site.
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.

@@ -312,9 +312,21 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .pv-pages.zoom canvas { width: 200%; max-width: 1520px; cursor: zoom-out; }
 .pv-msg { position: absolute; left: 0; right: 0; top: 40%; display: grid; justify-items: center; gap: 12px; padding: 0 24px; color: #FFFFFF; text-align: center; font-weight: 600; }
 .pv-bot { border-top: 1px solid var(--line); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
-.pv-bot .row { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+.pv-bot .row { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 10px; }
 .pv-bot .btn { justify-content: center; min-height: 48px; }
 body.pv-open { overflow: hidden; }
+.btn.prt { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn.prt svg { width: 18px; height: 18px; flex: none; }
+/* Imprimir: só as folhas do PDF (imagens em #print-pages) vão para o papel, uma por folha A4 */
+#print-pages { display: none; }
+@media print {
+  @page { size: A4; margin: 0; }
+  html, body { background: #FFFFFF !important; margin: 0 !important; padding: 0 !important; }
+  body.printing > :not(#print-pages) { display: none !important; }
+  body.printing #print-pages { display: block; }
+  #print-pages img { display: block; width: 210mm; height: 296.5mm; object-fit: contain; object-position: top center; break-after: page; page-break-after: always; }
+  #print-pages img:last-child { break-after: auto; page-break-after: auto; }
+}
 /* Recibo: porcentagem da entrada ou parcela (20%, 30%, 40%, 50% ou outra) */
 .pctrow { display: grid; gap: 6px; margin-top: 12px; }
 .pcts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(90px, 1.5fr); gap: 6px; }
@@ -916,7 +928,7 @@ body.pv-open { overflow: hidden; }
   <div class="pv-top"><strong id="pv-title">Ver PDF</strong><div class="hint">Assim o cliente vai receber. Toque na folha para aumentar ou diminuir.</div></div>
   <div class="pv-pages" id="pv-pages"></div>
   <div class="pv-msg" id="pv-msg" hidden><span id="pv-msg-t"></span><button class="btn" id="pv-dl" type="button" hidden>Baixar o PDF</button></div>
-  <div class="pv-bot"><div class="row"><button class="btn" id="pv-close" type="button">Fechar</button><button class="btn primary" id="pv-send" type="button">Enviar PDF</button></div></div>
+  <div class="pv-bot"><div class="row"><button class="btn" id="pv-close" type="button">Fechar</button><button class="btn prt" id="pv-print" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg><span>Imprimir</span></button><button class="btn primary" id="pv-send" type="button">Enviar PDF</button></div></div>
 </div>
 <div class="sheet-bg" id="bk-ask" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="bk-title">
@@ -929,6 +941,7 @@ body.pv-open { overflow: hidden; }
 </div>
 <input type="file" id="bk-file" accept=".txt,.json,.pdf,text/plain,application/json,application/pdf" multiple hidden>
 <div class="toast" id="toast" hidden></div>
+<div id="print-pages" aria-hidden="true"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -3107,6 +3120,64 @@ function closePv(fromBack) {
 $("pv-close").onclick = () => closePv();
 $("pv-send").onclick = () => { const go = pv && pv.onSend; closePv(); if (go) go(); };
 $("pv-dl").onclick = async () => { if (!pv || !pv.blob) return; const r = await savePdfFile(pv.blob, pv.name); toast(r === "saved" ? "PDF salvo" : "O PDF não foi salvo"); };
+$("pv-print").onclick = () => { if (!pv || !pv.blob) return toast("Espere a folha aparecer"); printPdf(pv.blob, pv.name); };
+
+/* ---------- Imprimir ---------- */
+// Cada folha do PDF vira uma imagem nítida (pdf.js) e vai para a impressão do navegador, uma por folha A4.
+// Funciona igual no notebook (janela Imprimir do Chrome) e no celular (tela de imprimir do Android).
+let printBusy = false, printUrls = [], printTitle = null;
+const inFrame = (() => { try { return window.top !== window; } catch { return true; } })();
+async function printPdf(blob, name) {
+  if (printBusy) return;
+  printBusy = true;
+  toast("Preparando a impressão…", 8000);
+  try {
+    const lib = await loadPdfjs();
+    const doc = await lib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()), isEvalSupported: false }).promise;
+    const box = $("print-pages");
+    box.textContent = ""; printUrls.forEach((u) => URL.revokeObjectURL(u)); printUrls = [];
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i), vp = page.getViewport({ scale: 3.125 }); // uns 225 pontos por polegada
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+      const ctx = cv.getContext("2d"); ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, cv.width, cv.height);
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      const png = await new Promise((ok) => cv.toBlob(ok, "image/png"));
+      cv.width = cv.height = 0;
+      const url = URL.createObjectURL(png); printUrls.push(url);
+      const img = new Image(); img.alt = `Página ${i} de ${doc.numPages}`; img.src = url;
+      await img.decode().catch(() => {});
+      box.appendChild(img);
+    }
+    doc.destroy();
+    $("toast").hidden = true;
+    if (printTitle === null) printTitle = document.title;
+    if (name) document.title = name.replace(/\.pdf$/i, ""); // nome sugerido se escolher "Salvar como PDF"
+    document.body.classList.add("printing");
+    const t0 = Date.now();
+    window.print();
+    // dentro de outra página (ex.: no Claude) o navegador pode não abrir a impressão
+    if (inFrame && Date.now() - t0 < 400) toast("A janela de imprimir não abriu aqui. Abra o app pelo site no Chrome, ou use Enviar PDF e imprima o arquivo salvo.", 7000);
+  } catch {
+    toast("Não deu para preparar a impressão. Verifique a internet, ou use Enviar PDF e imprima o arquivo salvo.", 6000);
+  } finally { printBusy = false; }
+}
+// depois de imprimir, o próximo toque na tela volta tudo ao normal (no celular a tela de imprimir abre por cima e lê a página depois)
+addEventListener("pointerdown", () => {
+  if (!document.body.classList.contains("printing")) return;
+  document.body.classList.remove("printing");
+  if (printTitle !== null) { document.title = printTitle; printTitle = null; }
+}, true);
+async function printQuote(q) {
+  if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet.");
+  await prepLogo();
+  printPdf(buildPdf({ ...q, clientSig: await inkBlue(q.clientSig) }).output("blob"), fileName(q));
+}
+async function printReceipt(r) {
+  if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet.");
+  await prepLogo();
+  printPdf(buildReceiptPdf({ ...r, mySig: await inkBlue(r.mySig), payerSig: await inkBlue(r.payerSig) }).output("blob"), receiptFileName(r));
+}
 // toque na folha: aumenta (o ponto tocado fica embaixo do dedo) ou volta ao tamanho da tela
 $("pv-pages").onclick = (e) => {
   const cv = e.target.closest("canvas"); if (!cv) return;
@@ -3151,12 +3222,14 @@ function renderSaved() {
         <button class="btn small" data-a="copy">Duplicar</button>
         <button class="btn small danger" data-a="del">Excluir</button>
         <button class="btn small view" data-a="view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Ver PDF</span></button>
+        <button class="btn small prt" data-a="print"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg><span>Imprimir</span></button>
       </div>`;
     el.querySelector("strong").textContent = q.client.name || "Sem nome";
     el.querySelector('[data-a="open"]').onclick = () => { quote = JSON.parse(JSON.stringify(q)); show("editor"); renderEditor(); };
     el.querySelector('[data-a="rec"]').onclick = () => receiptFromQuote(q);
     el.querySelector('[data-a="send"]').onclick = () => { if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet."); sendQuote(q); };
     el.querySelector('[data-a="view"]').onclick = () => viewPdf(q, () => sendQuote(q));
+    el.querySelector('[data-a="print"]').onclick = () => printQuote(q);
     el.querySelector('[data-a="copy"]').onclick = () => {
       const start = todayISO();
       quote = { ...JSON.parse(JSON.stringify(q)), id: "", number: 0, start, valid: addBizDays(start, validDays()), clientSig: "", datesSet: false, from: q.id, waMsg: null };
@@ -3350,7 +3423,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "72";
+const APP_VERSION = "73";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -3979,10 +4052,11 @@ $("btn-r-pdf").onclick = async () => {
   await saveReceipt(true);
   await sendReceipt(receipt);
 };
+const receiptFileName = (r) => `Recibo-${pad4(r.number)}-${(r.payer.name || "cliente").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
 async function sendReceipt(r) {
   const first = (r.payer.name || "").split(" ")[0];
   const message = `Olá${first ? " " + first : ""}! Segue o recibo nº ${pad4(r.number)} do pagamento de ${money(parseNum(r.amount))} recebido em ${fmtDate(r.date)}. Obrigado pela confiança!${bizName(profile) ? "\n" + bizName(profile) : ""}`;
-  const name = `Recibo-${pad4(r.number)}-${(r.payer.name || "cliente").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
+  const name = receiptFileName(r);
   await prepLogo();
   const pr = { ...r, mySig: await inkBlue(r.mySig), payerSig: await inkBlue(r.payerSig) }; // assinaturas antigas em preto saem azuis
   return sendDoc({ doc: buildReceiptPdf(pr), name, who: r.payer.name, phone: r.payer.phone, message, rec: r, kind: "r" });
@@ -4003,10 +4077,12 @@ function renderReceipts() {
         <button class="btn small wa" data-a="send">Enviar recibo</button>
         <button class="btn small" data-a="open">Abrir</button>
         <button class="btn small danger" data-a="del">Excluir</button>
+        <button class="btn small prt" data-a="print"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg><span>Imprimir</span></button>
       </div>`;
     el.querySelector("strong").textContent = r.payer.name || "Sem nome";
     el.querySelector('[data-a="open"]').onclick = () => { receipt = JSON.parse(JSON.stringify(r)); show("receipt"); renderReceipt(); };
     el.querySelector('[data-a="send"]').onclick = () => { if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet."); sendReceipt(r); };
+    el.querySelector('[data-a="print"]').onclick = () => printReceipt(r);
     const del = el.querySelector('[data-a="del"]');
     del.onclick = async () => {
       if (del.dataset.confirm !== "1") { del.dataset.confirm = "1"; del.textContent = "Toque de novo para excluir"; return; }
