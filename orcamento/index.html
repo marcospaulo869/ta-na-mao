@@ -232,6 +232,27 @@ textarea.msgbox { display: block; width: 100%; box-sizing: border-box; font: inh
 @media (max-width: 400px) { .grid2.pair label { font-size: 0.76rem; letter-spacing: 0.02em; } }
 @media (max-width: 340px) { .grid2.pair label { font-size: 0.7rem; } }
 .labhint { margin-top: 6px; }
+/* Pesquisa no Obs / Pré-contrato: as palavras achadas ganham fundo colorido (camada atrás do texto do quadro) */
+.obs-head { display: flex; align-items: center; justify-content: space-between; gap: 8px 14px; flex-wrap: wrap; }
+.obs-head h2 { margin-block: 0; }
+.obs-find { flex: 1 1 220px; max-width: 380px; display: flex; align-items: center; gap: 2px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); padding: 0 4px 0 10px; min-height: 44px; }
+.obs-find:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+.obs-find > svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
+.obs-find input { flex: 1 1 auto; border: 0; background: transparent; padding: 8px 6px; min-width: 0; }
+.obs-find input:focus-visible { outline: none; }
+.obs-n { font-size: 0.82rem; font-weight: 600; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; padding-inline: 2px; }
+.obs-n.none { color: var(--danger); }
+.obs-nav { flex: none; width: 34px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--ink); cursor: pointer; padding: 0; }
+.obs-nav:hover { background: var(--accent-soft); }
+.obs-nav svg { width: 20px; height: 20px; }
+.obs-wrap { position: relative; isolation: isolate; border-radius: 8px; background: var(--bg); } /* isolate: o texto não passa por cima da barra de baixo */
+.obs-wrap textarea { position: relative; z-index: 1; display: block; background: transparent; }
+.obs-hl { position: absolute; z-index: 0; overflow: hidden; white-space: pre-wrap; overflow-wrap: break-word; color: transparent; pointer-events: none; user-select: none; }
+.obs-hl mark { color: transparent; background: #FFE27A; border-radius: 3px; }
+.obs-hl mark.cur { background: #FF9A3D; box-shadow: 0 0 0 2px #FF9A3D; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .obs-hl mark { background: #6E5400; } :root:not([data-theme="light"]) .obs-hl mark.cur { background: #B8480F; box-shadow: 0 0 0 2px #B8480F; } }
+:root[data-theme="dark"] .obs-hl mark { background: #6E5400; }
+:root[data-theme="dark"] .obs-hl mark.cur { background: #B8480F; box-shadow: 0 0 0 2px #B8480F; }
 /* Desconto sobre: três opções (mão de obra, material, os dois); a marcada usa a cor de destaque */
 .dtype { display: grid; gap: 6px; }
 .dtype-l { font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
@@ -679,9 +700,18 @@ body.pv-open { overflow: hidden; }
     </section>
 
     <section class="card">
-      <h2>Obs / Pré-contrato</h2>
+      <div class="obs-head">
+        <h2>Obs / Pré-contrato</h2>
+        <div class="obs-find" role="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="obs-q" type="search" placeholder="Pesquisar no contrato" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Pesquisar palavra ou frase no contrato">
+          <span class="obs-n" id="obs-n" aria-live="polite"></span>
+          <button class="obs-nav" id="obs-prev" type="button" aria-label="Anterior" title="Anterior" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
+          <button class="obs-nav" id="obs-next" type="button" aria-label="Próxima" title="Próxima" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+      </div>
       <p class="hint">Vai na última página do PDF, antes das assinaturas. Os campos {CLIENTE}, {DOCUMENTO}, {ENDERECO}, {TOTAL}, {VALIDADE} e {EMPRESA} são trocados pelos dados do orçamento.</p>
-      <textarea id="q-obs" lang="pt-BR" spellcheck="true" autocorrect="on" autocapitalize="sentences"></textarea>
+      <div class="obs-wrap"><div class="obs-hl" id="obs-hl" aria-hidden="true"></div><textarea id="q-obs" lang="pt-BR" spellcheck="true" autocorrect="on" autocapitalize="sentences"></textarea></div>
       <div class="row"><button class="btn small" id="btn-obs-default">Usar meu texto padrão</button></div>
     </section>
 
@@ -2627,7 +2657,7 @@ function renderEditor() {
   }
   $("q-labor").value = numIn(quote.labor); $("q-discount").value = discountField(quote);
   if (!quote.sample && quote.obs && quote.obs.trim() === DEFAULT_OBS && isMadeiraForte(profile)) quote.obs = profile.obs; // orçamento ainda com o texto genérico
-  $("q-obs").value = quote.obs;
+  $("q-obs").value = quote.obs; if (obsFind) obsFind.refresh();
   sigClient.set(quote.clientSig);
   renderItems(); renderTotals();
 }
@@ -2689,7 +2719,81 @@ document.querySelectorAll("#q-disc-type button").forEach((b) => {
   };
 });
 $("q-obs").oninput = (e) => { quote.obs = e.target.value; };
-$("btn-obs-default").onclick = () => { quote.obs = profile.obs || DEFAULT_OBS; $("q-obs").value = quote.obs; };
+$("btn-obs-default").onclick = () => { quote.obs = profile.obs || DEFAULT_OBS; $("q-obs").value = quote.obs; obsFind.refresh(); };
+// Pesquisa no contrato: acha a palavra ou frase (sem ligar para maiúsculas, acentos ou quebra de linha), rola até ela e pinta o fundo.
+// O quadro de texto não pinta pedaços do texto, então uma camada atrás dele (obs-hl) repete o texto invisível com as marcas.
+var obsFind = (() => { // var: o renderEditor pode rodar antes desta linha
+  const ta = $("q-obs"), hl = $("obs-hl"), qi = $("obs-q"), n = $("obs-n");
+  let hits = [], cur = -1;
+  const foldCh = (c) => { const f = c.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); return f.length === 1 ? f : c; };
+  const fold = (t) => { let o = ""; for (let i = 0; i < t.length; i++) o += foldCh(t[i]); return o; };
+  const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  function geom() {
+    const cs = getComputedStyle(ta);
+    Object.assign(hl.style, {
+      top: ta.offsetTop + ta.clientTop + "px", left: ta.offsetLeft + ta.clientLeft + "px", width: ta.clientWidth + "px", height: ta.clientHeight + "px",
+      paddingTop: cs.paddingTop, paddingRight: cs.paddingRight, paddingBottom: cs.paddingBottom, paddingLeft: cs.paddingLeft,
+      fontFamily: cs.fontFamily, fontSize: cs.fontSize, fontWeight: cs.fontWeight, fontStyle: cs.fontStyle, lineHeight: cs.lineHeight,
+      letterSpacing: cs.letterSpacing, wordSpacing: cs.wordSpacing, tabSize: cs.tabSize, textTransform: cs.textTransform,
+    });
+    hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft;
+  }
+  function paint(go) {
+    const text = ta.value;
+    hl.textContent = "";
+    const q = qi.value.trim();
+    $("obs-prev").hidden = $("obs-next").hidden = hits.length < 2;
+    n.className = "obs-n" + (q.length >= 2 && !hits.length ? " none" : "");
+    n.textContent = q.length < 2 ? "" : hits.length ? `${cur + 1} de ${hits.length}` : "Não achei";
+    if (!hits.length) return;
+    let pos = 0;
+    hits.forEach(([a, b], i) => {
+      if (a > pos) hl.appendChild(document.createTextNode(text.slice(pos, a)));
+      const mk = document.createElement("mark"); mk.textContent = text.slice(a, b);
+      if (i === cur) mk.className = "cur";
+      hl.appendChild(mk); pos = b;
+    });
+    hl.appendChild(document.createTextNode(text.slice(pos) + "\u200b"));
+    geom();
+    if (go) show();
+  }
+  // deixa a marcação atual visível: primeiro dentro do quadro (a um terço da altura), depois na tela, rolando o mínimo
+  function show() {
+    const mk = hl.querySelector("mark.cur"); if (!mk) return;
+    ta.scrollTop = Math.max(0, mk.offsetTop - ta.clientHeight / 3); hl.scrollTop = ta.scrollTop;
+    const r = mk.getBoundingClientRect(), vv = window.visualViewport;
+    let top = vv ? vv.offsetTop : 0, bottom = vv ? vv.offsetTop + vv.height : innerHeight;
+    const nav = document.querySelector(".subnav"), bar = $("bar");
+    if (nav) { const nr = nav.getBoundingClientRect(); if (nr.bottom > top && nr.top <= top + 1) top = nr.bottom; }
+    if (bar && !bar.hidden) { const br = bar.getBoundingClientRect(); if (br.top < bottom) bottom = br.top; }
+    const pad = 40;
+    if (r.bottom > bottom - pad) scrollBy({ top: r.bottom - (bottom - pad), behavior: "smooth" });
+    else if (r.top < top + pad) scrollBy({ top: r.top - (top + pad), behavior: "smooth" });
+  }
+  function search(go, keep) {
+    const q = qi.value.trim(), old = hits[cur];
+    hits = [];
+    if (q.length >= 2) {
+      const re = new RegExp(fold(q).split(/\s+/).map(esc).join("\\s+"), "g"), ft = fold(ta.value);
+      let m;
+      while ((m = re.exec(ft))) { if (!m[0].length) { re.lastIndex++; continue; } hits.push([m.index, m.index + m[0].length]); }
+    }
+    cur = !hits.length ? -1 : keep && old ? Math.max(0, hits.findIndex(([a]) => a >= old[0])) : 0;
+    paint(go);
+  }
+  const step = (d) => { if (!hits.length) return; cur = (cur + d + hits.length) % hits.length; paint(true); };
+  qi.addEventListener("input", () => search(true));
+  qi.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); if (!hits.length) search(true); else step(e.shiftKey ? -1 : 1); }
+    else if (e.key === "Escape" && qi.value) { e.preventDefault(); qi.value = ""; search(false); }
+  });
+  $("obs-next").onclick = () => step(1);
+  $("obs-prev").onclick = () => step(-1);
+  ta.addEventListener("input", () => { if (qi.value.trim()) search(false, true); });
+  ta.addEventListener("scroll", () => { hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; });
+  if (window.ResizeObserver) new ResizeObserver(() => { if (hits.length) geom(); }).observe(ta);
+  return { refresh: () => search(false, true) };
+})();
 bindMic($("btn-add-voice"), () => {
   const last = quote.items[quote.items.length - 1];
   if (!last || last.desc.trim() || parseNum(last.price)) quote.items.push({ desc: "", un: "UN", qty: 1, price: 0 });
@@ -3492,7 +3596,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "73";
+const APP_VERSION = "74";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------

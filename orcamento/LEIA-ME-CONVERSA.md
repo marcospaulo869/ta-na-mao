@@ -364,6 +364,16 @@ Marcos perguntou se dá para imprimir o PDF.
 - O nome sugerido ao escolher "Salvar como PDF" é o nome do arquivo (ex.: Orcamento-0001-Rosangela). Depois de imprimir, o próximo toque na tela volta tudo ao normal.
 - Sem internet para o pdf.js: aparece "Não deu para preparar a impressão. Verifique a internet, ou use Enviar PDF e imprima o arquivo salvo." Dentro de outra página (ex.: no Claude), se a janela não abrir, o app avisa para abrir pelo site.
 
+## Atualização (04/11/2026): pesquisa no Obs / Pré-contrato (versão 74)
+
+Marcos pediu um campo de pesquisa ao lado do título "Obs / Pré-contrato", para achar palavras ou frases no contrato (ex.: "prazo de entrega").
+- Ao lado do título tem o campo "Pesquisar no contrato" (com lupa). No celular ele fica logo abaixo do título.
+- Enquanto digita, o app acha a palavra ou frase, rola o quadro do contrato e a página até ela ficar visível, e pinta o fundo: a atual em laranja, as outras em amarelo (no tema escuro, laranja escuro e dourado).
+- Mostra "1 de 2" e as setas para a anterior e a próxima. Enter vai para a próxima (Shift+Enter para a anterior), Esc limpa. "Não achei" quando não existe.
+- Não liga para maiúsculas, acentos ("orcamento" acha "ORÇAMENTO") nem para quebra de linha no meio da frase. Precisa de pelo menos 2 letras.
+- A pesquisa não muda o texto. Se o contrato for editado com a pesquisa ativa, as marcas acompanham.
+- As versões de 03/11 feitas pelo Marcos em outra conversa (desconto por tipo: mão de obra, material ou os dois; foto da assinatura também no cliente e no recibo) continuam valendo; elas ficaram com o número 73.
+
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.
