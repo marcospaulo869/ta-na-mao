@@ -69,7 +69,9 @@ tr.wkrow .wkx{color:var(--ext);font-weight:600}
 tr.wkrow .wkx b{font-size:15px}
 tr.wkrow .mut{color:var(--mut);font-size:12px;font-weight:400}
 small.vl,.vl{color:var(--err)}
-small.nota{display:block;color:var(--mut);font-size:11.5px;line-height:1.35;margin-top:2px;max-width:340px;white-space:normal}
+#tb td.l{max-width:240px}
+small.nota{display:block;color:var(--mut);font-size:11.5px;line-height:1.35;margin:2px 0 4px;max-width:330px;white-space:normal;font-weight:400}
+small.nota:empty{display:none}
 .stp{font-weight:800;letter-spacing:.2px}.stp.ok{color:var(--pri)}.stp.no{color:var(--err)}
 #foot .wk div .stp{font-size:11.5px;display:inline-block;margin-top:2px}
 #foot .wk div small{display:block;color:var(--warn);font-size:11px}
@@ -80,7 +82,7 @@ tr.wkrow .wk2{font-size:15px;margin-top:2px}
 tr.wkrow .wk2 b{color:var(--pri);font-size:17px}
 tr.today td:first-child{box-shadow:inset 3px 0 0 var(--pri)}
 .ext{color:var(--ext);font-weight:700}
-.al{font-size:12px;color:var(--warn);white-space:normal;text-align:left;min-width:150px}
+.al{font-size:12px;color:var(--warn);white-space:normal;text-align:left;min-width:100px}
 .note{font-size:12.5px;color:var(--mut);margin:8px 0}
 .warn{background:var(--warnbg);color:var(--warn);border-radius:8px;padding:8px 10px;margin:8px 0;font-size:13px}
 .info{background:var(--pri2);border-radius:8px;padding:8px 10px;margin:8px 0;font-size:13px}
@@ -135,6 +137,8 @@ tr.pisca{animation:pisca 1.4s ease-out}
  td[data-l]::before{content:attr(data-l);display:block;font-size:11px;color:var(--mut);font-weight:600}
  td.l,td.sel,td.al{grid-column:1/-1}
  td.l{font-weight:700}
+ #tb td.l{max-width:none}
+ small.nota{max-width:none}
  button.clr{min-height:32px;font-size:13px;margin:0 0 0 8px}
  tbody tr.wkrow{display:block;padding:0;border:0;background:none;margin-bottom:10px}
  tbody tr.wkrow td{display:block;border:1px solid var(--pri);border-radius:10px;padding:10px 12px}
@@ -239,7 +243,7 @@ async function copy(txt,inp){try{await navigator.clipboard.writeText(txt);toast(
 
 /* ===== aviso de privacidade (LGPD) ===== */
 const POL_VERSAO='2026-10c';
-const APP_VERSAO='03/11/2026 · 1';
+const APP_VERSAO='05/11/2026 · 1';
 {const v=document.getElementById('ver');if(v)v.textContent='v '+APP_VERSAO}
 function politicaHtml(em){em=em||{};const f=(v,ph)=>v?esc(v):`<i>[${ph}]</i>`;
  return `<div class="privtxt"><h2>Aviso de privacidade</h2><p><small>Versão ${POL_VERSAO}</small></p>
@@ -724,7 +728,7 @@ function rFolha(){
  const [Y,M]=ym.split('-').map(Number),rec=(S.rec[e.id]=S.rec[e.id]||{}),td=todayS(),MR=()=>((S.rec[e.id]=S.rec[e.id]||{})[ym]=S.rec[e.id][ym]||{});
  let rows='';
  for(let d=1;d<=dim(Y,M);d++){const wd=new Date(Date.UTC(Y,M-1,d)).getUTCDay(),r=MR()[d]||{},ds=ym+'-'+pad(d);
-  rows+=`<tr data-d="${d}" class="${ds===td?'today':''}"><td class="l">${pad(d)} ${DN[wd]}<small class="st"></small><button type="button" class="b clr" data-clr title="Apagar todos os horários deste dia" aria-label="Limpar o dia ${d}">Limpar</button></td>`+
+  rows+=`<tr data-d="${d}" class="${ds===td?'today':''}"><td class="l">${pad(d)} ${DN[wd]}<small class="st"></small><small class="nota"></small><button type="button" class="b clr" data-clr title="Apagar todos os horários deste dia" aria-label="Limpar o dia ${d}">Limpar</button></td>`+
   (clt?`<td class="sel" data-l="Situação"><select data-f="t" aria-label="Situação do dia ${d}">${opts.map(o=>`<option value="${o[0]}" ${(r.t||'')===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></td>`:'')+
   [['a','Entrada manhã'],['b','Saída manhã'],['c','Entrada tarde'],['d','Saída tarde']].map(([f,l])=>`<td data-l="${l}"><input type="time" data-f="${f}" aria-label="${l} dia ${d}" value="${r[f]||''}"></td>`).join('')+
   `<td class="c-tot" data-l="Total"></td><td class="c-n" data-l="Normais"></td><td class="c-e ext" data-l="Extras"></td><td class="c-v" data-l="Valor do dia"></td><td class="al c-al"></td></tr>`;
@@ -740,7 +744,8 @@ function rFolha(){
    tr.querySelector('.c-n').textContent=x.fer?'':(x.norm?hm(x.norm):'');
    tr.querySelector('.c-e').textContent=x.fer?hm(x.fer)+' (100%)':(x.ext?hm(x.ext):'');
    tr.querySelector('.c-v').innerHTML=(x.vlr!=null?brl(x.vlr):(x.falta?'− '+brl(x.desc):''))+(x.valesL||[]).map(v=>{const pg=v.pagId&&(e.pagamentos||[]).find(q=>q.id===v.pagId);return `<small class="vl">Vale − ${brl(+v.v||0)}${pg&&pg.file?` <button type="button" class="b lkv" data-vc="${esc(pg.id)}" title="Abrir o comprovante deste vale">Ver comprovante</button>`:''}</small>`}).join('');
-   tr.querySelector('.c-al').innerHTML=esc(x.al.join(' · '))+(x.nota?`<small class="nota">ℹ ${esc(x.nota)}</small>`:'')});
+   tr.querySelector('.nota').textContent=x.nota?'ℹ '+x.nota:'';
+   tr.querySelector('.c-al').textContent=x.al.join(' · ')});
   document.querySelectorAll('#tb tr.wkrow').forEach(tr=>{const W=R.weeks.find(w=>w.wk===tr.dataset.wk);
    tr.firstElementChild.innerHTML=W?`<div class="wkl"><span><b>Semana ${pad(W.ini)} a ${pad(W.fim)}</b> · ${W.dias} dia(s) trabalhado(s) · ${hm(W.min)}${W.ext?` <span class="ext">(${hm(W.ext)} de extras)</span>`:''}</span>${W.ve?`<span class="wkx">Valor das horas extras: <b>${brl(W.ve)}</b></span>`:''}${W.vf?`<span class="wkx">Domingo/feriado: <b>${brl(W.vf)}</b></span>`:''}</div><div class="wk2">${W.vale||W.ajuda?`Horas da semana: <b>${brl(W.val)}</b>${W.ajuda?` · Ajuda de custo: <b>+ ${brl(W.ajuda)}</b>`:''}${W.vale?` · Vale: <b class="vl">− ${brl(W.vale)}</b>`:''} · ${W.ajuda?'Total a receber':'Valor com desconto'}: <b>${brl(W.val+W.ajuda-W.vale)}</b>`:`Valor acumulado da semana: <b>${brl(W.val)}</b>`}${(()=>{const t=statusSemana(e,W.wk);return t?`<div style="margin-top:4px">${stHtml(t)}</div>`:''})()}${W.ve||W.vf?` <small class="mut">(horas normais ${brl(W.vn)}${W.ve?' + extras '+brl(W.ve):''}${W.vf?' + domingo/feriado '+brl(W.vf):''})</small>`:''}</div>`:''});
   const T=R.T;
