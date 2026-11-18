@@ -74,6 +74,7 @@ input, textarea, select { touch-action: manipulation; font: 400 1rem var(--font-
 textarea { min-height: 220px; resize: vertical; line-height: 1.5; }
 textarea.full { min-height: 0; resize: none; line-height: 1.4; background: var(--accent-soft); }
 h3.sub { font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 4px; }
+.brd { position: relative; } .brd > input[type=text] { width: 100%; box-sizing: border-box; padding-right: 40px; } .brd-cal { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--ink); cursor: pointer; } .brd-cal:hover { background: var(--accent-soft); } .brd-real { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
 .addr { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
 .addr .s2 { grid-column: span 2; } .addr .s3 { grid-column: span 3; } .addr .s4 { grid-column: span 4; } .addr .s6 { grid-column: span 6; }
 #c-uf, #p-uf { text-transform: uppercase; }
@@ -2733,6 +2734,39 @@ function renderEditor() {
   sigClient.set(quote.clientSig);
   renderItems(); renderTotals();
 }
+/* Datas sempre em dd/mm/aaaa. O campo de data do navegador mostra no formato do navegador (mm/dd/aaaa no SketchUp e em navegadores em inglês).
+   Aqui o campo que a pessoa vê é de texto (com máscara e botão de calendário); o campo de data de verdade fica escondido e continua
+   guardando a data em ISO (aaaa-mm-dd), então o resto do app não muda. */
+function brDate(id) {
+  const real = $(id); if (!real || real.dataset.br) return;
+  real.dataset.br = "1";
+  const wrap = document.createElement("div"); wrap.className = "brd";
+  const txt = document.createElement("input"); txt.type = "text"; txt.inputMode = "numeric"; txt.autocomplete = "off"; txt.placeholder = "dd/mm/aaaa"; txt.maxLength = 10;
+  txt.setAttribute("aria-label", (real.labels && real.labels[0] ? real.labels[0].textContent : "Data") + " (dia/mês/ano)");
+  const cal = document.createElement("button"); cal.type = "button"; cal.className = "brd-cal"; cal.title = "Escolher no calendário"; cal.setAttribute("aria-label", "Abrir o calendário");
+  cal.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>';
+  real.before(wrap); wrap.append(txt, cal, real);
+  real.classList.add("brd-real"); real.tabIndex = -1; real.setAttribute("aria-hidden", "true");
+  const show = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ""); txt.value = m ? `${m[3]}/${m[2]}/${m[1]}` : ""; };
+  const desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+  Object.defineProperty(real, "value", { get() { return desc.get.call(real); }, set(v) { desc.set.call(real, v); show(desc.get.call(real)); }, configurable: true });
+  const iso = (t) => {
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t); if (!m) return "";
+    const d = new Date(+m[3], +m[2] - 1, +m[1]); // 31/02 e parecidas não valem
+    return d.getFullYear() === +m[3] && d.getMonth() === +m[2] - 1 && d.getDate() === +m[1] && +m[3] >= 2000 ? `${m[3]}-${m[2]}-${m[1]}` : "";
+  };
+  txt.addEventListener("input", () => {
+    const d = txt.value.replace(/\D/g, "").slice(0, 8);
+    txt.value = d.length > 4 ? `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}` : d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
+    const v = iso(txt.value);
+    if (v && v !== real.value) { desc.set.call(real, v); real.dispatchEvent(new Event("change", { bubbles: true })); }
+  });
+  txt.addEventListener("blur", () => show(real.value)); // incompleta ou inválida: volta para a data que valia
+  real.addEventListener("change", () => show(real.value)); // veio do calendário
+  cal.onclick = () => { try { real.showPicker(); } catch { real.focus(); real.click(); } };
+  show(real.value);
+}
+for (const id of ["q-start", "q-valid", "r-date"]) brDate(id);
 $("q-start").onchange = () => {
   if (!$("q-start").value) { $("q-start").value = quote.start; return; }
   const oldDays = quote.valid > quote.start ? bizDaysBetween(quote.start, quote.valid) : 0;
