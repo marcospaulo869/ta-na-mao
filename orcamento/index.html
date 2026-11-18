@@ -3168,7 +3168,11 @@ function buildPdf(q) {
     fs -= 0.5; lh = fs * 0.46 + 0.1;
   }
   for (const ln of lines) {
-    if (y > 272) { doc.addPage(); header(); y = 42; }
+    if (y > 272) {
+      doc.addPage(); header(); y = 42;
+      // o cabeçalho muda a letra: volta para a do texto (sem isso a página nova saía com letra maior que a usada para quebrar as linhas e passava da margem)
+      doc.setFont("helvetica", "normal"); doc.setFontSize(fs); doc.setTextColor(...INK);
+    }
     doc.text(ln, M, y); y += lh;
   }
   if (y + SIG_H - 14 > 282) { doc.addPage(); header(); y = 42; } // não coube nem diminuindo: assinaturas na página de baixo
