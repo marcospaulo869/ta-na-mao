@@ -2883,8 +2883,16 @@ function pdfDoc(title, num) {
     const l2 = [profile.phone, profile.email, igHandle(profile) && "@" + igHandle(profile)].filter(Boolean).join("  |  ");
     const addr = composeAddress(profile) || profile.address;
     const maxW = W - M - x - (mtx ? 62 : 42);
-    let iy = 20.5;
-    for (const l of [l1, l2, addr]) if (l) { doc.text(doc.splitTextToSize(l, maxW)[0], x, iy); iy += 3.8; }
+    // Linhas longas quebram para a de baixo (antes só a 1ª linha era escrita e o fim do telefone/e-mail/endereço sumia).
+    // Se passar de 4 linhas, a letra diminui até caber acima do traço do cabeçalho.
+    let iy = 20.5, fs = 8.5, step = 3.8, lines = [];
+    for (;;) {
+      doc.setFontSize(fs);
+      lines = [l1, l2, addr].filter(Boolean).flatMap((l) => doc.splitTextToSize(l, maxW));
+      if (lines.length <= 4 || fs <= 6.5) break;
+      fs -= 0.5; step = fs * 0.43 + 0.15;
+    }
+    for (const l of lines.slice(0, 5)) { doc.text(l, x, iy); iy += step; }
     let rx = W - M;
     if (mtx) {
       const size = 21, cell = size / mtx.length, qx = W - M - size, qy = 10.5;
