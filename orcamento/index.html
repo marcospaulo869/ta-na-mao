@@ -3121,15 +3121,25 @@ function buildPdf(q) {
   doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(...ACC);
   doc.text("OBSERVAÇÕES E PRÉ-CONTRATO", M, y); y += 8;
   // texto longo (pré-contrato completo) usa letra um pouco menor e a página inteira; as assinaturas vão no fim
-  const obsText = fillVars(q.obs, q, t), long = obsText.length > 2500, fs = long ? 9 : 10, lh = long ? 4.3 : 5;
-  doc.setFont("helvetica", "normal"); doc.setFontSize(fs); doc.setTextColor(...INK);
-  const lines = doc.splitTextToSize(obsText, W - 2 * M);
+  const obsText = fillVars(q.obs, q, t), long = obsText.length > 2500;
+  // A letra diminui um pouco até o texto E as assinaturas caberem juntos nesta página (antes, umas poucas linhas
+  // que passavam do limite iam sozinhas para uma página inteira só com as assinaturas).
+  const SIG_H = 36; // data + assinatura + nome/CPF, abaixo do fim do texto
+  let fs = long ? 9 : 10, lh = long ? 4.3 : 5, lines = [];
+  doc.setFont("helvetica", "normal"); doc.setTextColor(...INK);
+  for (;;) {
+    doc.setFontSize(fs);
+    lines = doc.splitTextToSize(obsText, W - 2 * M);
+    if (y + lines.length * lh + SIG_H <= 282 || fs <= 7.5) break;
+    fs -= 0.5; lh = fs * 0.46 + 0.1;
+  }
   for (const ln of lines) {
-    if (y > (long ? 272 : 225)) { doc.addPage(); header(); y = 42; }
+    if (y > 272) { doc.addPage(); header(); y = 42; }
     doc.text(ln, M, y); y += lh;
   }
-  if (y > 222) { doc.addPage(); header(); y = 42; }
-  y = Math.max(y + 10, 225);
+  if (y + SIG_H - 14 > 282) { doc.addPage(); header(); y = 42; } // não coube nem diminuindo: assinaturas na página de baixo
+  y = Math.max(y + 22, 225);
+  if (y > 270) y = 270;
   doc.setFontSize(10); doc.text(`${profile.city || "Local"}, ${longDate(q.start)}.`, M, y - 14);
   const colW = (W - 2 * M - 16) / 2;
   const sigBlock = (x, img, name, docId, role) => {
