@@ -436,3 +436,10 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
   - No PDF: "Total dos materiais comprados fora" e "Falta pagar dos materiais comprados fora". "Fazer recibo do saldo dos comprados fora (R$ ...)".
   - O "A receber" da tela inicial soma o que falta da mão de obra e o que falta dos comprados fora.
 - Tocar no botão num recibo salvo cria um recibo novo (o salvo fica como foi enviado), como nas outras mudanças de valor.
+
+## Atualização (23/11/2026): os três botões sempre funcionam (versão 79)
+
+- **Retorno do Marcos:** ao tocar em "Materiais comprados fora" num orçamento sem itens "Comprar fora", o app recusava ("Este orçamento não tem itens Comprar fora"). Ele: "eu é que decido qual botão vou usar, não o sistema".
+- **Agora** os três botões (Só a mão de obra, Materiais comprados fora, Valor total) sempre mudam o recibo, sem mensagem de bloqueio, mesmo se o orçamento não estiver mais nos Salvos.
+- Com **Materiais comprados fora** aparece o campo **Valor dos materiais comprados fora (R$)**. Ele vem com a soma dos itens "Comprar fora" (ou vazio, se não houver) e aceita qualquer valor digitado. O quadro, o tipo (Pagamento total, Entrada 50%...), o texto, o PDF, o saldo do próximo recibo e o "A receber" usam o valor do campo.
+- Um recibo salvo continua protegido: mudar esse valor cria um recibo novo.

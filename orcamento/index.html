@@ -804,6 +804,7 @@ body.pv-open { overflow: hidden; }
           <button type="button" class="pct" data-base="labor">Só a mão de obra</button><button type="button" class="pct" data-base="outside">Materiais comprados fora</button><button type="button" class="pct" data-base="total">Valor total</button>
         </div>
         <p class="hint" id="r-base-hint"></p>
+        <div class="field" id="r-basev-f" hidden><label for="r-basev">Valor dos materiais comprados fora (R$)</label><input id="r-basev" class="num" inputmode="decimal" placeholder="0,00"><p class="hint">Vem da soma dos itens "Comprar fora" do orçamento. Pode digitar outro valor: as contas usam o que estiver aqui.</p></div>
       </div>
       <div class="grid2">
         <div class="field"><label for="r-date">Data do pagamento</label><input type="date" id="r-date"></div>
@@ -3794,7 +3795,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "78";
+const APP_VERSION = "79";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -4255,7 +4256,7 @@ function renderReceiptAmount() {
   renderReceiptBase();
   // saldo para o próximo recibo: o valor de agora do orçamento menos tudo o que já foi recebido dele
   const q = quotes.find((x) => x.id === receipt.quoteId);
-  const nowT = q ? quoteBase(q, baseOf(receipt)) : receipt.quoteTotal;
+  const nowT = q && !receipt.baseTyped ? quoteBase(q, baseOf(receipt)) : receipt.quoteTotal;
   const rest = cents(nowT - receivedFor(receipt.quoteId, receipt.id, baseOf(receipt)) - parseNum(receipt.amount));
   $("r-next").hidden = !(receipt.id && receipt.quoteId && rest > 0.004);
   if (!$("r-next").hidden) $("r-next").textContent = `Fazer recibo do saldo${bt(receipt).next} (${money(rest)})`;
@@ -4272,10 +4273,10 @@ function renderReceiptDemo() {
     + row("me", "Este recibo", d.v, pctOf(d.v, d.T))
     + row("", "Total pago", d.paid, pctOf(d.paid, d.T))
     + row("left", "Falta pagar", d.left, pctOf(d.left, d.T))
-    + `</table>${lab && receipt.quoteFull ? `<div class="dn">Total do orçamento ${money(receipt.quoteFull)}. O material o cliente paga direto na loja.</div>` : baseOf(receipt) === "outside" ? `<div class="dn">Só os itens "Comprar fora" do orçamento. A mão de obra tem conta separada.</div>` : ""}`
+    + `</table>${lab && receipt.quoteFull ? `<div class="dn">Total do orçamento ${money(receipt.quoteFull)}. O material o cliente paga direto na loja.</div>` : baseOf(receipt) === "outside" ? `<div class="dn">Materiais que você comprou para o cliente. A mão de obra tem conta separada.</div>` : ""}`
     + (d.paid > d.T + 0.004 ? `<div class="dn">Este recibo passa ${money(cents(d.paid - d.T))} do total.</div>` : "");
   // o orçamento mudou depois (ex.: o cliente pediu mais coisas): mostra o valor novo e deixa atualizar este recibo
-  const q = quotes.find((x) => x.id === receipt.quoteId), nowT = q ? quoteBase(q, baseOf(receipt)) : d.T;
+  const q = quotes.find((x) => x.id === receipt.quoteId), nowT = q && !receipt.baseTyped ? quoteBase(q, baseOf(receipt)) : d.T;
   if (q && Math.abs(nowT - d.T) > 0.004) {
     const c = document.createElement("div"); c.className = "dchg";
     c.innerHTML = `<span>O orçamento mudou depois: ${bt(receipt).chg} agora é ${money(nowT)}.</span><button class="btn small" type="button">Usar o valor novo neste recibo</button>`;
@@ -4316,25 +4317,35 @@ $("r-serv").oninput = (e) => { receipt.serv = e.target.value; renderReceiptDesc(
 function renderReceiptBase() {
   const on = !!receipt.quoteId; $("r-baserow").hidden = !on;
   if (!on) return;
+  $("r-basev-f").hidden = baseOf(receipt) !== "outside";
+  if (document.activeElement !== $("r-basev")) $("r-basev").value = receipt.quoteTotal > 0 ? numIn(receipt.quoteTotal) : "";
   for (const b of document.querySelectorAll("#r-baserow [data-base]")) b.setAttribute("aria-pressed", String(b.dataset.base === baseOf(receipt)));
   $("r-base-hint").textContent = baseOf(receipt) === "labor"
     ? `O material o cliente paga direto na loja. Entrada, parcelas e saldo saem só da mão de obra (${money(receipt.quoteTotal)}).`
     : baseOf(receipt) === "outside"
-    ? `Os materiais que você comprou para o cliente (itens "Comprar fora" do orçamento, ${money(receipt.quoteTotal)}). Este recibo tem conta separada da mão de obra.`
+    ? `Os materiais que você comprou para o cliente (${money(receipt.quoteTotal)}). Este recibo tem conta separada da mão de obra.`
     : `Entrada, parcelas e saldo saem do valor total do orçamento (${money(receipt.quoteTotal)}), material e mão de obra.`;
 }
 for (const b of document.querySelectorAll("#r-baserow [data-base]")) b.onclick = () => {
   const base = b.dataset.base, q = quotes.find((x) => x.id === receipt.quoteId);
   if (base === baseOf(receipt)) return;
-  if (!q) { toast("O orçamento deste recibo não está mais nos Salvos"); return; }
+  // quem escolhe o botão é o Marcos (23/11/2026): os três sempre funcionam. Sem valor no orçamento (ex.: nenhum item
+  // "Comprar fora"), o recibo fica com valor 0 e o campo "Valor dos materiais comprados fora" deixa digitar.
   forkReceipt();
-  const T = quoteBase(q, base);
-  if (!(T > 0)) { toast(base === "labor" ? "Este orçamento não tem valor de mão de obra" : base === "outside" ? 'Este orçamento não tem itens "Comprar fora"' : "Este orçamento está sem valor"); return; }
-  receipt.base = base; receipt.quoteTotal = T; receipt.quoteFull = calc(q).total; receipt.descAuto = true;
+  const T = q ? quoteBase(q, base) : base === "outside" ? 0 : receipt.quoteTotal;
+  receipt.base = base; receipt.quoteTotal = T; receipt.baseTyped = false; if (q) receipt.quoteFull = calc(q).total; receipt.descAuto = true;
+  if (!(T > 0)) { receipt.amount = 0; receipt.pct = 0; $("r-amount").value = numIn(0); }
   // comprados fora: o primeiro recibo já vem com o valor todo; depois, com o que falta
   if (base === "outside" && !receipt.id) { receipt.kind = paidBefore(receipt) > 0.004 ? "saldo" : "total"; receipt.pct = 0; receipt.autoKind = false; $("r-kind").value = receipt.kind; }
-  applyReceiptKind();
-  toast(base === "labor" ? "Recibo calculado só sobre a mão de obra" : base === "outside" ? "Recibo dos materiais comprados fora" : "Recibo calculado sobre o valor total");
+  if (T > 0) applyReceiptKind(); else renderReceiptAmount();
+  if (base === "outside" && !(T > 0)) { toast("Digite o valor dos materiais comprados fora", 4000); setTimeout(() => $("r-basev").focus(), 50); }
+  else toast(base === "labor" ? "Recibo calculado só sobre a mão de obra" : base === "outside" ? "Recibo dos materiais comprados fora" : "Recibo calculado sobre o valor total");
+};
+$("r-basev").oninput = (e) => {
+  const typed = e.target.value;
+  forkReceipt();
+  receipt.quoteTotal = cents(parseNum(typed)); receipt.baseTyped = true; receipt.descAuto = true;
+  if (receipt.quoteTotal > 0) applyReceiptKind(); else renderReceiptAmount();
 };
 $("r-desc-auto").onclick = () => { receipt.descAuto = true; renderReceiptDesc(); toast("Texto automático de volta"); };
 
@@ -4554,7 +4565,8 @@ function forkReceipt() {
     quoteId: o.quoteId || "", quoteNumber: o.quoteNumber || 0, quoteTotal: o.quoteTotal || 0, quoteFull: o.quoteFull || 0,
     kind: o.quoteId ? "saldo" : o.kind, pct: 0, descAuto: true, from: o.number || 0, autoKind: !!o.quoteId };
   const q = quotes.find((x) => x.id === o.quoteId);
-  if (q) { const T = quoteBase(q, receipt.base); if (T > 0) { receipt.quoteTotal = T; receipt.quoteFull = calc(q).total; } } // valor de agora do orçamento
+  receipt.baseTyped = !!o.baseTyped;
+  if (q && !o.baseTyped) { const T = quoteBase(q, receipt.base); if (T > 0) { receipt.quoteTotal = T; receipt.quoteFull = calc(q).total; } } // valor de agora do orçamento
   if (receipt.quoteId) receipt.amount = rLeft();
   else receipt.amount = parseNum(o.amount);
   renderReceipt();
@@ -4859,7 +4871,8 @@ function renderHome() {
     if (last && baseOf(last) === "total") left = Math.max(0, calc(q).total - sum(rs)); // recibos sobre o valor total: conta tudo junto
     else {
       if (last) left += Math.max(0, quoteBase(q, "labor") - sum(main)); // falta só da mão de obra
-      if (out.length) left += Math.max(0, quoteBase(q, "outside") - sum(out)); // e dos materiais comprados fora
+      const lo = [...out].sort((a, b) => (b.updated || "").localeCompare(a.updated || ""))[0];
+      if (lo) left += Math.max(0, (lo.baseTyped ? parseNum(lo.quoteTotal) : quoteBase(q, "outside")) - sum(out)); // e dos materiais comprados fora
     }
     return s + left;
   }, 0);
