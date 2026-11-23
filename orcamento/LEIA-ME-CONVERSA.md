@@ -389,3 +389,16 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
   - No PDF, a tabela do recibo mostra "Mão de obra do orçamento", "Recebido antes deste recibo", "Este recibo" e "Falta receber da mão de obra".
   - **Valor total** continua disponível num toque para quem vende material e mão de obra juntos. Recibos antigos continuam como eram (valor total) até tocar em "Só a mão de obra", que refaz o valor e o texto.
 - **Texto repetido corrigido:** o campo virou "Fabricação de (só o nome do móvel)", ex.: "conjunto de cozinha". Se for colada uma frase inteira (ex.: "Referente a primeira parcela do valor da mão de obra de fabricação conjunto de cozinha..."), o texto usa só o que vem depois de "fabricação" e aparece embaixo do campo o que entrou no texto.
+
+## Atualização (23/11/2026): comprovante do pagamento no recibo (versão 76)
+
+- **Pedido do Marcos:** um lugar no recibo para guardar o comprovante (print do Pix, foto ou PDF).
+- **Agora,** no fim do quadro Pagamento do recibo tem **Comprovante do pagamento** com o botão **Anexar comprovante** (aceita foto, print ou PDF).
+  - Depois de anexar aparece a miniatura (ou "PDF"), o nome, o tamanho e a data, com **Ver comprovante**, **Trocar comprovante** e **Remover** (toque duas vezes para remover).
+  - Num recibo já salvo, o comprovante fica guardado na hora. Num recibo novo, é só tocar em Salvar.
+  - Na lista de recibos salvos, o cartão de quem tem comprovante ganha o botão **Comprovante**.
+  - **Ver comprovante** abre a imagem ou o PDF em tela cheia (toque para aumentar). O botão "Enviar ou salvar" manda o arquivo pelo WhatsApp ou salva no aparelho.
+  - Fotos são reduzidas (no máximo 1800 pontos no lado maior), para não encher a memória do navegador. Arquivo de até 8 MB.
+  - O comprovante **não vai** no PDF do recibo do cliente. É só para o Marcos guardar.
+  - Fica guardado neste aparelho e vai junto na **cópia de segurança** (e volta ao restaurar). Ao excluir o recibo, o comprovante sai junto.
+- **50% mais fácil de ver:** quando o valor da entrada ou parcela foi digitado à mão, a linha embaixo das porcentagens agora diz, por exemplo: "Valor digitado: 48,5% da mão de obra. Para usar 50% (R$ 2.482,14), toque em 50%." (caso do recibo 0004).
