@@ -376,6 +376,18 @@ body.pv-open { overflow: hidden; }
 .btn.orc svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
 .bases { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .baserow { margin-top: 0; margin-bottom: 8px; }
+/* Comprovante do pagamento no recibo */
+.proof-box { display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: center; }
+.proof-thumb { width: 72px; height: 72px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 0; overflow: hidden; cursor: zoom-in; display: grid; place-items: center; }
+.proof-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.proof-thumb img[hidden] { display: none; }
+.proof-pdf { font: 800 0.95rem var(--font-body); color: var(--warm); }
+.proof-info { display: grid; gap: 2px; min-width: 0; }
+.proof-info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proof-btns { gap: 8px; flex-wrap: wrap; }
+.proof-btns .btn.rec svg { width: 18px; height: 18px; }
+.pv-pages img.proof-full { display: block; max-width: 100%; height: auto; margin: 0 auto; background: #FFFFFF; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); }
+.pill.has-proof { background: var(--accent-soft); color: var(--ink); }
 #r-next { justify-self: start; margin-top: -4px; margin-bottom: 8px; }
 .subnav .rec, .subnav .orc { margin-left: auto; align-self: stretch; border-radius: 999px; padding-inline: 14px; } /* mesma altura e formato das abas */
 /* no celular não cabe ao lado das abas: o botão do topo vai para a linha do "Meus dados" e a barra de baixo fica em duas linhas */
@@ -475,6 +487,20 @@ body.pv-open { overflow: hidden; }
 .amount-big { font: 700 1.6rem var(--font-display); font-variant-numeric: tabular-nums; }
 .extenso { color: var(--muted); font-size: 0.95rem; font-style: italic; }
 .linkinfo { background: var(--accent-soft); color: var(--accent); border-radius: 8px; padding: 8px 12px; font-size: 0.92rem; font-weight: 600; }
+/* Demonstrativo do recibo: total, já pago, este recibo, total pago e falta pagar (pedido do Marcos, 23/11/2026) */
+.demo { color: var(--ink); padding: 10px 12px; }
+.fork-note { margin: -2px 0 10px; padding: 8px 12px; border-radius: 8px; border: 1px dashed var(--warm); color: var(--ink); font-size: 0.9rem; font-weight: 600; }
+.demo .dh { color: var(--accent); font-weight: 800; margin-bottom: 6px; }
+.demo table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.demo td { padding: 4px 0; border-top: 1px solid var(--line); vertical-align: baseline; }
+.demo tr:first-child td { border-top: 0; }
+.demo td.v { text-align: right; white-space: nowrap; font-weight: 700; padding-left: 8px; }
+.demo td.p { text-align: right; white-space: nowrap; color: var(--muted); font-weight: 600; width: 4.5em; padding-left: 6px; }
+.demo tr.me td { color: var(--warm); }
+.demo tr.left td { font-weight: 800; font-size: 1.02rem; }
+.demo tr.left td.v { color: var(--accent); }
+.demo .dn { color: var(--muted); font-weight: 500; font-size: 0.85rem; margin-top: 6px; }
+.demo .dchg { margin-top: 8px; display: grid; gap: 6px; justify-items: start; color: var(--ink); font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .action { transition: none; } .action:hover { transform: none; } }
 /* Celular estreito: as três abas (Orçamento, Salvos, Materiais) cabem na mesma linha do "Início" */
 @media (max-width: 440px) { .tabs button { padding: 6px 7px; font-size: 0.82rem; } .subnav { column-gap: 6px; } }
@@ -766,7 +792,8 @@ body.pv-open { overflow: hidden; }
       <div class="row" style="justify-content:space-between">
         <h2 id="r-title">Novo recibo</h2>
       </div>
-      <p class="linkinfo" id="r-link" hidden></p>
+      <p class="fork-note" id="r-fork-note" hidden></p>
+      <div class="linkinfo demo" id="r-link" hidden></div>
       <button class="btn small warm" id="r-next" type="button" hidden>Fazer recibo do saldo</button>
       <div class="pctrow baserow" id="r-baserow" hidden>
         <label>Este recibo é sobre</label>
@@ -814,6 +841,19 @@ body.pv-open { overflow: hidden; }
       <div class="field"><label for="r-serv">Fabricação de (só o nome do móvel)</label><input id="r-serv" autocomplete="off" autocapitalize="none" autocorrect="on" spellcheck="true" placeholder="Ex.: conjunto de cozinha"><p class="hint" id="r-serv-hint" hidden></p></div>
       <div class="field"><label for="r-desc">Referente a</label><textarea id="r-desc" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true" style="min-height:90px" placeholder="Ex.: entrada do serviço de marcenaria da cozinha planejada"></textarea>
         <p class="hint" id="r-desc-hint">O texto se ajusta sozinho ao tipo, à porcentagem e ao valor.</p><button class="btn small" id="r-desc-auto" type="button" hidden>Voltar ao texto automático</button></div>
+      <div class="field proof"><label>Comprovante do pagamento</label>
+        <p class="hint" id="r-proof-none">Guarde aqui o print do Pix, a foto ou o PDF do comprovante. Fica só com você, não vai no recibo do cliente.</p>
+        <div class="proof-box" id="r-proof-box" hidden>
+          <button type="button" class="proof-thumb" id="r-proof-view" aria-label="Ver o comprovante"><img id="r-proof-img" alt=""><span class="proof-pdf" id="r-proof-pdf" hidden>PDF</span></button>
+          <div class="proof-info"><strong id="r-proof-name"></strong><span class="hint" id="r-proof-meta"></span></div>
+        </div>
+        <div class="row proof-btns">
+          <button class="btn small rec" id="r-proof-add" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.1l-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg><span id="r-proof-add-t">Anexar comprovante</span></button>
+          <button class="btn small" id="r-proof-open" type="button" hidden>Ver comprovante</button>
+          <button class="btn small danger" id="r-proof-del" type="button" hidden>Remover</button>
+        </div>
+        <input type="file" id="r-proof-file" accept="image/*,application/pdf,.pdf" hidden>
+      </div>
     </section>
     <section class="card">
       <h2>Assinaturas</h2>
@@ -990,7 +1030,7 @@ body.pv-open { overflow: hidden; }
   </div>
 </div>
 <div class="pv" id="pv" hidden role="dialog" aria-modal="true" aria-labelledby="pv-title">
-  <div class="pv-top"><strong id="pv-title">Ver PDF</strong><div class="hint">Assim o cliente vai receber. Toque na folha para aumentar ou diminuir.</div></div>
+  <div class="pv-top"><strong id="pv-title">Ver PDF</strong><div class="hint" id="pv-hint">Assim o cliente vai receber. Toque na folha para aumentar ou diminuir.</div></div>
   <div class="pv-pages" id="pv-pages"></div>
   <div class="pv-msg" id="pv-msg" hidden><span id="pv-msg-t"></span><button class="btn" id="pv-dl" type="button" hidden>Baixar o PDF</button></div>
   <div class="pv-bot"><div class="row"><button class="btn" id="pv-close" type="button">Fechar</button><button class="btn prt" id="pv-print" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg><span>Imprimir</span></button><button class="btn primary" id="pv-send" type="button">Enviar PDF</button></div></div>
@@ -1263,6 +1303,7 @@ const store = {
     local.set("orc.receipts", local.get("orc.receipts", []).filter((x) => x.id !== id));
   },
   async resetAll() {
+    try { await proofDb.clear(); } catch {} // comprovantes dos recibos
     if (this.mode === "db") {
       for (const col of [this.quotesCol, this.receiptsCol]) {
         const snap = await col.get();
@@ -3386,11 +3427,41 @@ const loadPdfjs = () => pdfjsReady || (pdfjsReady = (async () => {
   return window.pdfjsLib;
 })().catch((e) => { pdfjsReady = null; throw e; }));
 let pvToken = 0, pv = null;
+// A mesma janela mostra o PDF do orçamento e o comprovante de um recibo; os textos e botões mudam com o que está aberto
+const PV_HINT = "Assim o cliente vai receber. Toque na folha para aumentar ou diminuir.";
+function pvMode(proof, isImg) {
+  $("pv-hint").textContent = proof ? "Comprovante do pagamento. Toque para aumentar ou diminuir." : PV_HINT;
+  $("pv-send").textContent = proof ? "Enviar ou salvar" : "Enviar PDF";
+  $("pv-print").hidden = !!(proof && isImg);
+  $("pv-dl").textContent = proof ? "Baixar o arquivo" : "Baixar o PDF";
+}
+// Mostra as folhas de um PDF (blob) na janela, como imagens nítidas
+async function pvRenderPdf(blob, my) {
+  const box = $("pv-pages");
+  const lib = await loadPdfjs().catch(() => null);
+  if (my !== pvToken) return;
+  if (!lib) return pvMsg("Não deu para mostrar a folha aqui. Verifique a internet ou baixe o arquivo.", true);
+  const doc = await lib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()), isEvalSupported: false }).promise;
+  const dpr = window.devicePixelRatio || 1, cssW = Math.min(box.clientWidth - 24, 760) || 360;
+  for (let i = 1; i <= doc.numPages && my === pvToken; i++) {
+    const page = await doc.getPage(i), w1 = page.getViewport({ scale: 1 }).width;
+    const vp = page.getViewport({ scale: Math.min(1600, Math.max(900, cssW * dpr * 1.6)) / w1 });
+    const cv = document.createElement("canvas");
+    cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+    cv.setAttribute("aria-label", `Página ${i} de ${doc.numPages}`);
+    await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise;
+    if (my !== pvToken) break;
+    box.appendChild(cv);
+    if (i === 1) pvMsg("");
+  }
+  doc.destroy();
+}
 const pvMsg = (text, dl) => { $("pv-msg").hidden = !text; $("pv-msg-t").textContent = text || ""; $("pv-dl").hidden = !dl; };
 async function viewPdf(q, onSend) {
   if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet.");
   const my = ++pvToken;
   pv = { blob: null, name: fileName(q), onSend };
+  pvMode(false);
   $("pv-title").textContent = `Orçamento nº ${String(q.number).padStart(4, "0")}${q.client.name ? " · " + q.client.name : ""}`;
   const box = $("pv-pages"); box.textContent = ""; box.classList.remove("zoom"); box.scrollTop = 0;
   pvMsg("Montando o PDF…");
@@ -3401,23 +3472,7 @@ async function viewPdf(q, onSend) {
     const blob = buildPdf({ ...q, clientSig: await inkBlue(q.clientSig) }).output("blob");
     if (my !== pvToken) return;
     pv.blob = blob;
-    const lib = await loadPdfjs().catch(() => null);
-    if (my !== pvToken) return;
-    if (!lib) return pvMsg("Não deu para mostrar a folha aqui. Verifique a internet ou baixe o PDF.", true);
-    const doc = await lib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()), isEvalSupported: false }).promise;
-    const dpr = window.devicePixelRatio || 1, cssW = Math.min(box.clientWidth - 24, 760) || 360;
-    for (let i = 1; i <= doc.numPages && my === pvToken; i++) {
-      const page = await doc.getPage(i), w1 = page.getViewport({ scale: 1 }).width;
-      const vp = page.getViewport({ scale: Math.min(1600, Math.max(900, cssW * dpr * 1.6)) / w1 });
-      const cv = document.createElement("canvas");
-      cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
-      cv.setAttribute("aria-label", `Página ${i} de ${doc.numPages}`);
-      await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise;
-      if (my !== pvToken) break;
-      box.appendChild(cv);
-      if (i === 1) pvMsg("");
-    }
-    doc.destroy();
+    await pvRenderPdf(blob, my);
   } catch (e) {
     if (my === pvToken) pvMsg("Não deu para mostrar a folha aqui." + (pv.blob ? " Baixe o PDF para ver." : ""), !!pv.blob);
   }
@@ -3429,7 +3484,7 @@ function closePv(fromBack) {
 }
 $("pv-close").onclick = () => closePv();
 $("pv-send").onclick = () => { const go = pv && pv.onSend; closePv(); if (go) go(); };
-$("pv-dl").onclick = async () => { if (!pv || !pv.blob) return; const r = await savePdfFile(pv.blob, pv.name); toast(r === "saved" ? "PDF salvo" : "O PDF não foi salvo"); };
+$("pv-dl").onclick = async () => { if (!pv || !pv.blob) return; const r = await savePdfFile(pv.blob, pv.name); toast(r === "saved" ? "Arquivo salvo" : "O arquivo não foi salvo"); };
 $("pv-print").onclick = () => { if (!pv || !pv.blob) return toast("Espere a folha aparecer"); printPdf(pv.blob, pv.name); };
 
 /* ---------- Imprimir ---------- */
@@ -3490,7 +3545,7 @@ async function printReceipt(r) {
 }
 // toque na folha: aumenta (o ponto tocado fica embaixo do dedo) ou volta ao tamanho da tela
 $("pv-pages").onclick = (e) => {
-  const cv = e.target.closest("canvas"); if (!cv) return;
+  const cv = e.target.closest("canvas, img.proof-full"); if (!cv) return;
   const box = $("pv-pages"), r = cv.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
   box.classList.toggle("zoom");
   const r2 = cv.getBoundingClientRect();
@@ -3733,7 +3788,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "75";
+const APP_VERSION = "76";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -3756,7 +3811,7 @@ function renderBackup() {
 }
 async function makeBackup() {
   const data = { app: BK_APP, v: 1, made: new Date().toISOString(), profile, quotes, receipts, catalog: { items: catalog.items },
-    draft: { quote: quote && !quote.sample ? quote : null, receipt } };
+    draft: { quote: quote && !quote.sample ? quote : null, receipt }, proofs: await proofsForBackup() };
   const name = `copia-de-seguranca-orcamento-${todayISO()}.txt`;
   const blob = new Blob([JSON.stringify(data)], { type: "text/plain" });
   const file = new File([blob], name, { type: "text/plain" });
@@ -3984,6 +4039,7 @@ async function restoreBackup(d) {
   const rs = d.receipts.filter((r) => r && r.id && r.payer && typeof r.payer === "object");
   for (const q of qs) if (newer(quotes, q)) await store.saveQuote(q);
   for (const r of rs) if (newer(receipts, r)) await store.saveReceipt(r);
+  await restoreProofs(d.proofs); // comprovantes dos recibos
   // a numeração continua depois do maior número dos dois aparelhos
   const top = (list) => list.reduce((m, x) => Math.max(m, appNumber(x.number)), 0);
   p.next = Math.max(parseNum(p.next) || 1, fresh ? 1 : parseNum(profile.next) || 1, top([...quotes, ...qs]) + 1);
@@ -4136,7 +4192,7 @@ function extenso(v) {
 let receipts = [];
 const KIND = { total: "Pagamento total", entrada: "Entrada", parcela: "Parcela", saldo: "Saldo final" };
 const kindLabel = (r) => (KIND[r.kind] || "") + (r.pct && (r.kind === "entrada" || r.kind === "parcela") ? ` (${fmtPct(r.pct)}%)` : "");
-const blankReceipt = () => ({ id: "", number: 0, date: todayISO(), kind: "total", pct: 0, serv: "", descAuto: true, payer: { name: "", doc: "", phone: "", email: "" }, amount: 0, method: "Pix", desc: "", quoteId: "", quoteNumber: 0, quoteTotal: 0, quoteFull: 0, base: "total", mySig: profile.signature || "", payerSig: "" });
+const blankReceipt = () => ({ id: "", number: 0, date: todayISO(), kind: "total", pct: 0, serv: "", descAuto: true, payer: { name: "", doc: "", phone: "", email: "" }, amount: 0, method: "Pix", desc: "", quoteId: "", quoteNumber: 0, quoteTotal: 0, quoteFull: 0, base: "total", proof: null, mySig: profile.signature || "", payerSig: "" });
 let receipt = blankReceipt();
 const sigRMe = SigPad($("sig-r-me"), () => { receipt.mySig = sigRMe.value(); });
 const sigRPayer = SigPad($("sig-r-payer"), () => { receipt.payerSig = sigRPayer.value(); });
@@ -4145,6 +4201,11 @@ $("sig-r-me-mine").onclick = () => { receipt.mySig = profile.signature || ""; si
 $("sig-r-payer-clear").onclick = () => sigRPayer.clear();
 bindSigPhoto(sigRMe, "sig-r-me", "Pronto: a assinatura da foto está no quadro. Confira e toque em Salvar.");
 bindSigPhoto(sigRPayer, "sig-r-payer", "Pronto: a assinatura da foto está no quadro. Confira e toque em Salvar.");
+// Pago antes deste recibo: os outros recibos do mesmo orçamento com número menor (num recibo novo, todos os outros)
+const paidBefore = (r) => receipts.filter((x) => x.quoteId === r.quoteId && x.id !== r.id && (!r.number || (x.number || 0) < r.number)).reduce((s, x) => s + parseNum(x.amount), 0);
+const pctOf = (v, T) => (T > 0 ? `${fmtPct(Math.round(v / T * 1000) / 10)}%` : "");
+// Números do demonstrativo (tela e PDF)
+const receiptDemo = (r) => { const T = parseNum(r.quoteTotal), before = cents(paidBefore(r)), v = parseNum(r.amount), paid = cents(before + v); return { T, before, v, paid, left: cents(Math.max(0, T - paid)) }; };
 const receivedFor = (quoteId, exceptId) => receipts.filter((r) => r.quoteId === quoteId && r.id !== exceptId).reduce((s, r) => s + parseNum(r.amount), 0);
 const pad4 = (n) => String(n || 0).padStart(4, "0");
 // Recibo só da mão de obra (pedido do Marcos, 23/11/2026): o cliente paga o material direto na loja e o Marcos recebe só a
@@ -4172,18 +4233,42 @@ function renderReceiptAmount() {
   $("r-amount-show").textContent = money(v);
   $("r-extenso").textContent = v ? "(" + extenso(v) + ")" : "";
   $("rbar-total").textContent = money(v);
-  if (receipt.quoteId) {
-    const before = receivedFor(receipt.quoteId, receipt.id), left = receipt.quoteTotal - before - v;
-    $("r-link").textContent = isLabor(receipt)
-      ? `Orçamento nº ${pad4(receipt.quoteNumber)}: mão de obra ${money(receipt.quoteTotal)}${receipt.quoteFull ? ` (total do orçamento ${money(receipt.quoteFull)}; o material o cliente paga direto na loja)` : ""}. Já recebido ${money(before)}. Falta receber da mão de obra depois deste recibo: ${money(Math.max(0, left))}.`
-      : `Orçamento nº ${pad4(receipt.quoteNumber)}: total ${money(receipt.quoteTotal)}, já recebido ${money(before)}, saldo depois deste recibo ${money(Math.max(0, left))}.`;
-  }
+  if (receipt.quoteId) renderReceiptDemo();
   $("r-link").hidden = !receipt.quoteId;
   renderReceiptBase();
-  $("r-next").hidden = !(receipt.id && receipt.quoteId && receipt.quoteTotal - receivedFor(receipt.quoteId, receipt.id) - parseNum(receipt.amount) > 0.004);
-  if (!$("r-next").hidden) $("r-next").textContent = `Fazer recibo do saldo${isLabor(receipt) ? " da mão de obra" : ""} (${money(receipt.quoteTotal - receivedFor(receipt.quoteId, receipt.id) - parseNum(receipt.amount))})`;
+  // saldo para o próximo recibo: o valor de agora do orçamento menos tudo o que já foi recebido dele
+  const q = quotes.find((x) => x.id === receipt.quoteId);
+  const nowT = q ? quoteBase(q, isLabor(receipt) ? "labor" : "total") : receipt.quoteTotal;
+  const rest = cents(nowT - receivedFor(receipt.quoteId, receipt.id) - parseNum(receipt.amount));
+  $("r-next").hidden = !(receipt.id && receipt.quoteId && rest > 0.004);
+  if (!$("r-next").hidden) $("r-next").textContent = `Fazer recibo do saldo${isLabor(receipt) ? " da mão de obra" : ""} (${money(rest)})`;
   renderReceiptPct();
   renderReceiptDesc();
+}
+// Quadro que se refaz a cada número digitado: quanto é o total, quanto já foi pago (antes e com este recibo) e quanto falta
+function renderReceiptDemo() {
+  const d = receiptDemo(receipt), lab = isLabor(receipt), box = $("r-link");
+  const row = (cls, label, v, pct) => `<tr class="${cls}"><td>${label}</td><td class="v">${money(v)}</td><td class="p">${pct}</td></tr>`;
+  box.innerHTML = `<div class="dh">Orçamento nº ${pad4(receipt.quoteNumber)}${lab ? " · mão de obra" : ""}</div><table>`
+    + row("", lab ? "Total da mão de obra" : "Valor total do orçamento", d.T, "100%")
+    + row("", "Já pago antes", d.before, pctOf(d.before, d.T))
+    + row("me", "Este recibo", d.v, pctOf(d.v, d.T))
+    + row("", "Total pago", d.paid, pctOf(d.paid, d.T))
+    + row("left", "Falta pagar", d.left, pctOf(d.left, d.T))
+    + `</table>${lab && receipt.quoteFull ? `<div class="dn">Total do orçamento ${money(receipt.quoteFull)}. O material o cliente paga direto na loja.</div>` : ""}`
+    + (d.paid > d.T + 0.004 ? `<div class="dn">Este recibo passa ${money(cents(d.paid - d.T))} do total.</div>` : "");
+  // o orçamento mudou depois (ex.: o cliente pediu mais coisas): mostra o valor novo e deixa atualizar este recibo
+  const q = quotes.find((x) => x.id === receipt.quoteId), nowT = q ? quoteBase(q, lab ? "labor" : "total") : d.T;
+  if (q && Math.abs(nowT - d.T) > 0.004) {
+    const c = document.createElement("div"); c.className = "dchg";
+    c.innerHTML = `<span>O orçamento mudou depois: ${lab ? "a mão de obra" : "o valor total"} agora é ${money(nowT)}.</span><button class="btn small" type="button">Usar o valor novo neste recibo</button>`;
+    c.querySelector("button").onclick = () => {
+      receipt.quoteTotal = nowT; receipt.quoteFull = calc(q).total;
+      if (rUsesPct() && parseNum(receipt.pct)) applyReceiptKind(); else renderReceiptAmount();
+      toast("Recibo atualizado com o valor novo do orçamento");
+    };
+    box.appendChild(c);
+  }
 }
 // Texto do "Referente a" (pedido do Marcos, 06/10/2026): fica pronto e se ajusta sozinho ao tipo, à porcentagem e aos valores;
 // ex.: "Entrada de 50% (R$ 5.366,63) do valor total de R$ 10.733,26 do serviço de mão de obra de fabricação de móveis da cozinha
@@ -4222,6 +4307,7 @@ for (const b of document.querySelectorAll("#r-baserow [data-base]")) b.onclick =
   const base = b.dataset.base, q = quotes.find((x) => x.id === receipt.quoteId);
   if (base === (isLabor(receipt) ? "labor" : "total")) return;
   if (!q) { toast("O orçamento deste recibo não está mais nos Salvos"); return; }
+  forkReceipt();
   const T = quoteBase(q, base);
   if (!(T > 0)) { toast(base === "labor" ? "Este orçamento não tem valor de mão de obra" : "Este orçamento está sem valor"); return; }
   receipt.base = base; receipt.quoteTotal = T; receipt.quoteFull = calc(q).total; receipt.descAuto = true;
@@ -4234,7 +4320,7 @@ $("r-desc-auto").onclick = () => { receipt.descAuto = true; renderReceiptDesc();
 // Pagamento total e Saldo final = o que falta receber; Entrada e Parcela = a porcentagem escolhida do valor total
 // do orçamento (50% se nenhuma foi escolhida), sem passar do que falta receber. O valor continua podendo ser digitado.
 const R_PCTS = [...document.querySelectorAll("#r-pctrow [data-pct]")].map((b) => +b.dataset.pct);
-const rLeft = () => Math.max(0, cents(receipt.quoteTotal - receivedFor(receipt.quoteId, receipt.id)));
+const rLeft = () => Math.max(0, cents(receipt.quoteTotal - paidBefore(receipt)));
 const rUsesPct = () => !!receipt.quoteId && receipt.quoteTotal > 0 && (receipt.kind === "entrada" || receipt.kind === "parcela");
 function applyReceiptKind() {
   if (!receipt.quoteId || !(receipt.quoteTotal > 0)) return;
@@ -4256,26 +4342,198 @@ function renderReceiptPct() {
   if (document.activeElement !== $("r-pct")) $("r-pct").value = pct && !R_PCTS.includes(pct) ? fmtPct(pct) : "";
   $("r-pct-res").textContent = pct
     ? `${fmtPct(pct)}% de ${money(receipt.quoteTotal)}${isLabor(receipt) ? " (mão de obra)" : ""} = ${money(v)}${v < cents(receipt.quoteTotal * pct / 100) ? " (o que falta receber)" : ""}`
-    : `Valor digitado: ${fmtPct(Math.round(v / receipt.quoteTotal * 1000) / 10)}% ${isLabor(receipt) ? "da mão de obra" : "do valor do orçamento"}.`;
+    : `Valor digitado: ${fmtPct(Math.round(v / receipt.quoteTotal * 1000) / 10)}% ${isLabor(receipt) ? "da mão de obra" : "do valor do orçamento"}. Para usar 50% (${money(Math.min(cents(receipt.quoteTotal / 2), rLeft() || cents(receipt.quoteTotal / 2)))}), toque em 50%.`;
 }
-for (const b of document.querySelectorAll("#r-pctrow [data-pct]")) b.onclick = () => { receipt.pct = +b.dataset.pct; $("r-pct").value = ""; applyReceiptKind(); };
-$("r-pct").oninput = (e) => { const p = parseNum(e.target.value); if (p > 0 && p <= 100) { receipt.pct = p; applyReceiptKind(); } };
+for (const b of document.querySelectorAll("#r-pctrow [data-pct]")) b.onclick = () => { const k = receipt.kind; if (forkReceipt()) { receipt.kind = k; receipt.autoKind = false; $("r-kind").value = k; } receipt.pct = +b.dataset.pct; $("r-pct").value = ""; applyReceiptKind(); };
+$("r-pct").oninput = (e) => { const p = parseNum(e.target.value); if (p > 0 && p <= 100) { const k = receipt.kind; if (forkReceipt()) { receipt.kind = k; receipt.autoKind = false; $("r-kind").value = k; } receipt.pct = p; applyReceiptKind(); } };
 $("r-pct").addEventListener("change", () => renderReceiptPct());
+/* ---------- Comprovante do pagamento (pedido do Marcos, 23/11/2026) ----------
+   O arquivo (foto/print reduzido para JPEG ou o PDF como veio) fica no IndexedDB deste aparelho, separado da lista de recibos, para não
+   encher o espaço do navegador (os recibos ficam no localStorage, que é pequeno). No recibo fica só receipt.proof = { id, name, type, size, at }.
+   Entra na cópia de segurança (campo proofs) e volta ao restaurar. Não vai no PDF do recibo. */
+const PROOF_MAX = 8 * 1024 * 1024;
+const proofDb = (() => {
+  let p = null;
+  const open = () => p || (p = new Promise((ok, bad) => {
+    try { const rq = indexedDB.open("orc-arquivos", 1); rq.onupgradeneeded = () => rq.result.createObjectStore("comprovantes"); rq.onsuccess = () => ok(rq.result); rq.onerror = () => bad(rq.error); }
+    catch (e) { bad(e); }
+  }).catch((e) => { p = null; throw e; }));
+  const run = async (mode, fn) => { const db = await open(); return new Promise((ok, bad) => { const tx = db.transaction("comprovantes", mode), st = tx.objectStore("comprovantes"); const rq = fn(st); tx.oncomplete = () => ok(rq && rq.result); tx.onerror = () => bad(tx.error); tx.onabort = () => bad(tx.error); }); };
+  return {
+    get: (id) => run("readonly", (st) => st.get(id)),
+    put: (id, v) => run("readwrite", (st) => st.put(v, id)),
+    del: (id) => run("readwrite", (st) => st.delete(id)),
+    keys: () => run("readonly", (st) => st.getAllKeys()),
+    clear: () => run("readwrite", (st) => st.clear()),
+  };
+})();
+const kb = (n) => (n >= 1048576 ? `${String(Math.round(n / 104857.6) / 10).replace(".", ",")} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+// Foto ou print: no máximo 1800 px no lado maior, JPEG 0,8 (dá para ler o comprovante e fica com uns 150 a 400 KB)
+async function shrinkProof(f) {
+  const url = URL.createObjectURL(f);
+  try {
+    const img = new Image(); img.src = url; await img.decode();
+    const k = Math.min(1, 1800 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    const ctx = c.getContext("2d"); ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+    const b = await new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.8));
+    return b && b.size < f.size ? b : f;
+  } finally { URL.revokeObjectURL(url); }
+}
+const proofExt = (p) => (/pdf/.test(p.type) ? "pdf" : "jpg");
+const proofFileName = (r) => `Comprovante-recibo-${pad4(r.number)}${r.payer && r.payer.name ? "-" + r.payer.name.split(" ")[0] : ""}.${proofExt(r.proof)}`.normalize("NFKD").replace(/\p{M}/gu, "").replace(/[^\w.-]+/g, "-");
+let proofThumbUrl = "";
+async function renderProof() {
+  const p = receipt.proof;
+  $("r-proof-box").hidden = !p; $("r-proof-none").hidden = !!p;
+  $("r-proof-open").hidden = !p; $("r-proof-del").hidden = !p;
+  $("r-proof-add-t").textContent = p ? "Trocar comprovante" : "Anexar comprovante";
+  if (proofThumbUrl) { URL.revokeObjectURL(proofThumbUrl); proofThumbUrl = ""; }
+  if (!p) return;
+  const isPdf = /pdf/.test(p.type);
+  $("r-proof-name").textContent = isPdf ? "Comprovante em PDF" : "Foto do comprovante";
+  $("r-proof-meta").textContent = `${p.name || ""}${p.name ? " · " : ""}${kb(p.size || 0)}${p.at ? " · anexado em " + fmtDate(p.at.slice(0, 10)) : ""}`;
+  $("r-proof-pdf").hidden = !isPdf; $("r-proof-img").hidden = isPdf; $("r-proof-img").removeAttribute("src");
+  if (isPdf) return;
+  const want = p.id, f = await proofDb.get(p.id).catch(() => null);
+  if (!receipt.proof || receipt.proof.id !== want) return;
+  if (!f || !f.blob) { $("r-proof-meta").textContent = "O arquivo não está neste aparelho. Ele volta ao restaurar a cópia de segurança do aparelho onde foi anexado."; return; }
+  proofThumbUrl = URL.createObjectURL(f.blob); $("r-proof-img").src = proofThumbUrl;
+}
+$("r-proof-add").onclick = () => $("r-proof-file").click();
+$("r-proof-file").onchange = async (e) => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const isPdf = /\.pdf$/i.test(f.name || "") || f.type === "application/pdf", isImg = /^image\//.test(f.type);
+  if (!isPdf && !isImg) return toast("Escolha uma foto, um print ou um PDF do comprovante");
+  toast("Guardando o comprovante…", 8000);
+  let blob = f;
+  if (isImg) { try { blob = await shrinkProof(f); } catch { blob = f; } }
+  if (blob.size > PROOF_MAX) return toast("Arquivo muito grande (mais de 8 MB). Mande um print do comprovante.", 6000);
+  const old = receipt.proof, id = "cp-" + uid();
+  try { await proofDb.put(id, { blob, type: isPdf ? "application/pdf" : blob.type || "image/jpeg", name: f.name || "" }); }
+  catch { return toast("Não consegui guardar o comprovante neste navegador. Tente de novo.", 6000); }
+  receipt.proof = { id, name: (f.name || "").slice(0, 80), type: isPdf ? "application/pdf" : blob.type || "image/jpeg", size: blob.size, at: new Date().toISOString() };
+  if (old && old.id && !receipts.some((x) => x.id !== receipt.id && x.proof && x.proof.id === old.id)) proofDb.del(old.id).catch(() => {});
+  renderProof();
+  if (receipt.id) { await saveReceipt(true); toast("Comprovante guardado no recibo"); }
+  else toast("Comprovante anexado. Toque em Salvar para guardar o recibo com ele.", 5000);
+};
+let proofDelAt = 0;
+$("r-proof-del").onclick = async () => {
+  if (Date.now() - proofDelAt > 4000) { proofDelAt = Date.now(); toast("Toque de novo em Remover para tirar o comprovante"); return; }
+  proofDelAt = 0;
+  const old = receipt.proof; receipt.proof = null; renderProof();
+  if (receipt.id) await saveReceipt(true);
+  if (old && old.id) proofDb.del(old.id).catch(() => {});
+  toast("Comprovante removido");
+};
+async function viewProof(r) {
+  if (!r.proof) return;
+  const f = await proofDb.get(r.proof.id).catch(() => null);
+  if (!f || !f.blob) return toast("O arquivo do comprovante não está neste aparelho. Restaure a cópia de segurança do aparelho onde ele foi anexado.", 6000);
+  const my = ++pvToken, isPdf = /pdf/.test(f.type || r.proof.type), name = proofFileName(r);
+  pv = { blob: f.blob, name, onSend: () => shareProof(f.blob, name, f.type || r.proof.type) };
+  pvMode(true, !isPdf);
+  $("pv-title").textContent = `Comprovante · ${r.number ? "Recibo nº " + pad4(r.number) : "Recibo novo"}${r.payer && r.payer.name ? " · " + r.payer.name : ""}`;
+  const box = $("pv-pages"); box.textContent = ""; box.classList.remove("zoom"); box.scrollTop = 0;
+  $("pv").hidden = false; document.body.classList.add("pv-open"); openLayer("pv");
+  if (!isPdf) {
+    pvMsg("");
+    const img = document.createElement("img"); img.className = "proof-full"; img.alt = "Comprovante do pagamento";
+    const url = URL.createObjectURL(f.blob); img.onload = () => setTimeout(() => URL.revokeObjectURL(url), 1000); img.src = url;
+    box.appendChild(img); return;
+  }
+  pvMsg("Abrindo o PDF…");
+  try { await pvRenderPdf(f.blob, my); } catch { if (my === pvToken) pvMsg("Não deu para mostrar o PDF aqui. Baixe o arquivo para ver.", true); }
+}
+async function shareProof(blob, name, type) {
+  const file = new File([blob], name, { type: type || blob.type });
+  if (canShareFile(file) || canShareFilePc(file)) { try { await navigator.share({ files: [file], title: name }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
+  const r = await savePdfFile(blob, name); toast(r === "saved" ? "Comprovante salvo no aparelho" : "O comprovante não foi salvo");
+}
+$("r-proof-view").onclick = () => viewProof(receipt);
+$("r-proof-open").onclick = () => viewProof(receipt);
+// Arquivos que nenhum recibo (salvo ou na tela) usa mais são apagados ao abrir o app
+async function cleanProofs() {
+  const used = new Set([...receipts, receipt].map((r) => r && r.proof && r.proof.id).filter(Boolean));
+  try { for (const k of await proofDb.keys()) if (!used.has(k)) await proofDb.del(k); } catch {}
+}
+// Cópia de segurança: os arquivos vão junto, em base64
+const blobToB64 = (b) => new Promise((ok, bad) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(",")[1] || ""); fr.onerror = () => bad(fr.error); fr.readAsDataURL(b); });
+async function proofsForBackup() {
+  const out = {};
+  for (const r of [...receipts, receipt]) {
+    if (!r || !r.proof || out[r.proof.id]) continue;
+    const f = await proofDb.get(r.proof.id).catch(() => null);
+    if (f && f.blob) out[r.proof.id] = { type: f.type || r.proof.type, name: f.name || "", data: await blobToB64(f.blob) };
+  }
+  return out;
+}
+async function restoreProofs(map) {
+  if (!map || typeof map !== "object") return 0;
+  let n = 0;
+  for (const [id, v] of Object.entries(map)) {
+    if (!/^cp-[\w-]+$/.test(id) || !v || typeof v.data !== "string") continue;
+    if (await proofDb.get(id).catch(() => null)) continue;
+    try {
+      const bin = atob(v.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      const type = /^application\/pdf$|^image\/(jpeg|png|webp|gif)$/.test(v.type) ? v.type : "image/jpeg";
+      await proofDb.put(id, { blob: new Blob([u8], { type }), type, name: String(v.name || "").slice(0, 80) }); n++;
+    } catch {}
+  }
+  return n;
+}
+
+/* Recibo salvo não se muda por engano (pedido do Marcos, 23/11/2026): ao abrir um recibo já salvo (já enviado) e mexer no valor,
+   no tipo, na porcentagem ou na base, o app faz um recibo NOVO para o mesmo cliente (nome, CPF, telefone, e-mail, orçamento,
+   "Fabricação de", forma de pagamento) com o número seguinte, e o recibo aberto fica como foi enviado. O recibo novo já vem com
+   o que falta pagar quando é de um orçamento. Mudar nome, texto ou assinatura continua corrigindo o próprio recibo. */
+function forkReceipt() {
+  if (!receipt.id) return false;
+  const o = receipt;
+  receipt = { ...blankReceipt(), payer: { ...o.payer }, method: o.method, serv: o.serv || "", base: o.base || "total",
+    quoteId: o.quoteId || "", quoteNumber: o.quoteNumber || 0, quoteTotal: o.quoteTotal || 0, quoteFull: o.quoteFull || 0,
+    kind: o.quoteId ? "saldo" : o.kind, pct: 0, descAuto: true, from: o.number || 0, autoKind: !!o.quoteId };
+  const q = quotes.find((x) => x.id === o.quoteId);
+  if (q) { const T = quoteBase(q, receipt.base); if (T > 0) { receipt.quoteTotal = T; receipt.quoteFull = calc(q).total; } } // valor de agora do orçamento
+  if (receipt.quoteId) receipt.amount = rLeft();
+  else receipt.amount = parseNum(o.amount);
+  renderReceipt();
+  toast(`Recibo novo para ${receipt.payer.name || "o mesmo cliente"}. O recibo nº ${pad4(o.number)} continua salvo como foi enviado.`, 6000);
+  return true;
+}
+function renderForkNote() {
+  const n = $("r-fork-note");
+  n.hidden = !(receipt.id || receipt.from);
+  n.textContent = receipt.id
+    ? "Este recibo já foi salvo. Se mudar o valor, o tipo ou a porcentagem, o app faz um recibo novo para o mesmo cliente, e este fica como foi enviado."
+    : `Recibo novo, feito a partir do recibo nº ${pad4(receipt.from)} (que continua salvo como foi enviado). Confira o valor e toque em Salvar.`;
+}
 function renderReceipt() {
   fitSoon();
+  renderForkNote();
   $("r-title").textContent = receipt.number ? `Recibo nº ${pad4(receipt.number)}` : "Novo recibo";
   $("r-date").value = receipt.date; $("r-kind").value = receipt.kind; $("r-method").value = receipt.method;
   for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).value = receipt.payer[k] || "";
   markOwnPhone("r-phone");
-  $("r-amount").value = numIn(receipt.amount); $("r-desc").value = receipt.desc; $("r-serv").value = receipt.serv || "";
+  if (document.activeElement !== $("r-amount")) $("r-amount").value = numIn(receipt.amount);
+  $("r-desc").value = receipt.desc; $("r-serv").value = receipt.serv || "";
   sigRMe.set(receipt.mySig); sigRPayer.set(receipt.payerSig);
   renderReceiptAmount();
+  renderProof();
 }
 $("r-date").onchange = (e) => { receipt.date = e.target.value; };
-$("r-kind").onchange = (e) => { receipt.kind = e.target.value; applyReceiptKind(); renderReceiptDesc(); };
+$("r-kind").onchange = (e) => { const k = e.target.value; forkReceipt(); receipt.kind = k; receipt.autoKind = false; $("r-kind").value = k; applyReceiptKind(); renderReceiptDesc(); };
 $("r-method").onchange = (e) => { receipt.method = e.target.value; };
 for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).oninput = (e) => { receipt.payer[k] = e.target.value; if (k === "phone") markOwnPhone("r-phone"); };
-$("r-amount").oninput = (e) => { receipt.amount = parseNum(e.target.value); receipt.pct = 0; renderReceiptAmount(); }; // valor digitado: sem porcentagem
+$("r-amount").oninput = (e) => {
+  const typed = e.target.value;
+  forkReceipt();
+  receipt.amount = parseNum(typed); receipt.pct = 0; // valor digitado: sem porcentagem
+  // recibo novo feito de um recibo salvo: menos do que falta = Parcela, o que falta todo = Saldo final (até escolher o tipo à mão)
+  if (receipt.autoKind && receipt.quoteId) { receipt.kind = receipt.amount < rLeft() - 0.004 ? "parcela" : "saldo"; $("r-kind").value = receipt.kind; }
+  renderReceiptAmount();
+};
 $("r-desc").oninput = (e) => { receipt.desc = e.target.value; receipt.descAuto = false; $("r-desc-hint").hidden = true; $("r-desc-auto").hidden = false; }; // mudou à mão: para de se ajustar
 const newReceipt = () => { receipt = blankReceipt(); renderReceipt(); window.scrollTo(0, 0); };
 const receiptDraft = () => !receipt.id && !!(receipt.payer.name.trim() || parseNum(receipt.amount) > 0);
@@ -4378,16 +4636,16 @@ function buildReceiptPdf(r) {
   doc.setFontSize(11.5);
   for (const ln of doc.splitTextToSize(body, W - 2 * M)) { doc.text(ln, M, y); y += 6.2; }
   if (r.quoteId) {
-    const before = receivedFor(r.quoteId, r.id), left = Math.max(0, r.quoteTotal - before - v);
+    const d = receiptDemo(r), P = (n) => (d.T > 0 ? `${money(n)} (${pctOf(n, d.T)})` : money(n));
     y += 4;
     doc.autoTable({
       startY: y, margin: { left: M, right: M },
       head: [[`Orçamento nº ${pad4(r.quoteNumber)}`, "Valor"]],
-      body: isLabor(r)
-        ? [["Mão de obra do orçamento", money(r.quoteTotal)], ["Recebido antes deste recibo", money(before)], ["Este recibo", money(v)], ["Falta receber da mão de obra", money(left)]]
-        : [["Total do orçamento", money(r.quoteTotal)], ["Recebido antes deste recibo", money(before)], ["Este recibo", money(v)], ["Saldo a receber", money(left)]],
+      body: [[isLabor(r) ? "Total da mão de obra" : "Valor total do orçamento", money(d.T)], ["Já pago antes deste recibo", P(d.before)], ["Este recibo", P(d.v)],
+        ["Total pago até agora", P(d.paid)], [isLabor(r) ? "Falta pagar da mão de obra" : "Falta pagar", P(d.left)]],
       styles: { font: "helvetica", fontSize: 9.5, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
-      headStyles: { fillColor: HEAD, textColor: HEADTXT }, columnStyles: { 1: { halign: "right", cellWidth: 45 } },
+      headStyles: { fillColor: HEAD, textColor: HEADTXT }, columnStyles: { 1: { halign: "right", cellWidth: 58 } },
+      didParseCell: (c) => { if (c.section === "body" && c.row.index === 4) c.cell.styles.fontStyle = "bold"; },
     });
     y = doc.lastAutoTable.finalY + 8;
   }
@@ -4440,6 +4698,7 @@ function renderReceipts() {
       <div class="row" style="grid-column:1/-1">
         <button class="btn small wa" data-a="send">Enviar recibo</button>
         <button class="btn small" data-a="open">Abrir</button>
+        ${r.proof ? '<button class="btn small" data-a="proof">Comprovante</button>' : ""}
         <button class="btn small danger" data-a="del">Excluir</button>
         <button class="btn small prt" data-a="print"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg><span>Imprimir</span></button>
       </div>`;
@@ -4447,10 +4706,12 @@ function renderReceipts() {
     el.querySelector('[data-a="open"]').onclick = () => { receipt = JSON.parse(JSON.stringify(r)); show("receipt"); renderReceipt(); };
     el.querySelector('[data-a="send"]').onclick = () => { if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet."); sendReceipt(r); };
     el.querySelector('[data-a="print"]').onclick = () => printReceipt(r);
+    if (r.proof) el.querySelector('[data-a="proof"]').onclick = () => viewProof(r);
     const del = el.querySelector('[data-a="del"]');
     del.onclick = async () => {
       if (del.dataset.confirm !== "1") { del.dataset.confirm = "1"; del.textContent = "Toque de novo para excluir"; return; }
       await store.deleteReceipt(r.id).catch(() => {});
+      if (r.proof && r.proof.id && !(receipt.proof && receipt.proof.id === r.proof.id && receipt.id !== r.id)) proofDb.del(r.proof.id).catch(() => {});
       receipts = receipts.filter((x) => x.id !== r.id); renderReceipts(); toast("Excluído");
     };
     box.appendChild(el);
@@ -4648,7 +4909,8 @@ renderEditor();
   if (!profile.bizDays) { if (!parseNum(profile.days) || parseNum(profile.days) === 15) profile.days = 10; profile.bizDays = true; } // validade passou a ser em dias úteis (padrão 10)
   applyBrand(); prepLogo();
   quotes = await store.listQuotes().then((r) => { quotesOk = true; return r; }).catch(() => []);
-  receipts = await store.listReceipts().catch(() => []);
+  let receiptsOk = false;
+  receipts = await store.listReceipts().then((r) => { receiptsOk = true; return r; }).catch(() => []);
   await refreshCatalog(true);
   const draft = local.get(DRAFT_KEY, null) || {};
   if (draft.quote && Array.isArray(draft.quote.items) && draft.quote.client && draftOk(draft.quote, quotes, quotesOk)) { quote = draft.quote; renderEditor(); }
@@ -4656,6 +4918,7 @@ renderEditor();
   receipt = draft.receipt && draft.receipt.payer && draftOk(draft.receipt, receipts, true) ? draft.receipt : blankReceipt();
   if (!receipt.id && !receipt.mySig && profile.signature) receipt.mySig = profile.signature; // recibo novo começado antes de salvar a assinatura
   renderReceipt();
+  if (receiptsOk) setTimeout(cleanProofs, 3000);
   if (!profile.registered || !profile.pwHash) gate(signupDraft() ? "signup" : "welcome");
   else if (session.get()) enterApp();
   else gate("login");

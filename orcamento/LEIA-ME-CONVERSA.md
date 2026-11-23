@@ -389,3 +389,29 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
   - No PDF, a tabela do recibo mostra "Mão de obra do orçamento", "Recebido antes deste recibo", "Este recibo" e "Falta receber da mão de obra".
   - **Valor total** continua disponível num toque para quem vende material e mão de obra juntos. Recibos antigos continuam como eram (valor total) até tocar em "Só a mão de obra", que refaz o valor e o texto.
 - **Texto repetido corrigido:** o campo virou "Fabricação de (só o nome do móvel)", ex.: "conjunto de cozinha". Se for colada uma frase inteira (ex.: "Referente a primeira parcela do valor da mão de obra de fabricação conjunto de cozinha..."), o texto usa só o que vem depois de "fabricação" e aparece embaixo do campo o que entrou no texto.
+
+## Atualização (23/11/2026): comprovante do pagamento no recibo (versão 76)
+
+- **Pedido do Marcos:** um lugar no recibo para guardar o comprovante (print do Pix, foto ou PDF).
+- **Agora,** no fim do quadro Pagamento do recibo tem **Comprovante do pagamento** com o botão **Anexar comprovante** (aceita foto, print ou PDF).
+  - Depois de anexar aparece a miniatura (ou "PDF"), o nome, o tamanho e a data, com **Ver comprovante**, **Trocar comprovante** e **Remover** (toque duas vezes para remover).
+  - Num recibo já salvo, o comprovante fica guardado na hora. Num recibo novo, é só tocar em Salvar.
+  - Na lista de recibos salvos, o cartão de quem tem comprovante ganha o botão **Comprovante**.
+  - **Ver comprovante** abre a imagem ou o PDF em tela cheia (toque para aumentar). O botão "Enviar ou salvar" manda o arquivo pelo WhatsApp ou salva no aparelho.
+  - Fotos são reduzidas (no máximo 1800 pontos no lado maior), para não encher a memória do navegador. Arquivo de até 8 MB.
+  - O comprovante **não vai** no PDF do recibo do cliente. É só para o Marcos guardar.
+  - Fica guardado neste aparelho e vai junto na **cópia de segurança** (e volta ao restaurar). Ao excluir o recibo, o comprovante sai junto.
+- **50% mais fácil de ver:** quando o valor da entrada ou parcela foi digitado à mão, a linha embaixo das porcentagens agora diz, por exemplo: "Valor digitado: 48,5% da mão de obra. Para usar 50% (R$ 2.482,14), toque em 50%." (caso do recibo 0004).
+
+## Atualização (23/11/2026): demonstrativo do que falta pagar e recibo novo a partir de um salvo (também versão 76)
+
+- **Pedido do Marcos:** quando o cliente pede mais coisas, o orçamento aumenta e a entrada já paga não dá mais 50%. Ele quer ver, ao digitar o valor, quanto é o total, quanto já foi pago e quanto falta, e que o próximo recibo já venha com o que falta.
+- **Demonstrativo na tela:** no alto de todo recibo ligado a um orçamento aparece um quadro que muda a cada número digitado: **Total da mão de obra** (100%), **Já pago antes**, **Este recibo**, **Total pago** e **Falta pagar**, cada um com a porcentagem (ex.: 2.407,49 = 48,5%; falta 2.556,79 = 51,5%).
+  - "Já pago antes" conta só os recibos de número menor; abrir um recibo antigo mostra a conta como era naquele dia.
+  - Se o orçamento mudou depois do recibo (o cliente pediu mais coisas), o quadro avisa "O orçamento mudou depois: a mão de obra agora é R$ ..." com o botão **Usar o valor novo neste recibo**.
+  - "Fazer recibo do saldo" usa o valor de agora do orçamento.
+- **No PDF do recibo:** a tabela mostra Total da mão de obra, Já pago antes deste recibo, Este recibo, Total pago até agora e **Falta pagar da mão de obra** (em negrito), com as porcentagens.
+- **Recibo salvo não muda por engano:** ao abrir um recibo já salvo aparece "Este recibo já foi salvo. Se mudar o valor, o tipo ou a porcentagem, o app faz um recibo novo para o mesmo cliente, e este fica como foi enviado."
+  - Mexer no valor, no tipo, na porcentagem ou em "Só a mão de obra / Valor total" cria na hora um **recibo novo** com o mesmo cliente (nome, CPF, telefone, e-mail), o mesmo orçamento, o "Fabricação de" e a forma de pagamento, e já com o que falta pagar. O aviso muda para "Recibo novo, feito a partir do recibo nº 0004 (que continua salvo como foi enviado). Confira o valor e toque em Salvar." Ao salvar, ele ganha o número seguinte.
+  - Digitando um valor menor que o que falta, o tipo vira Parcela; o que falta todo, Saldo final (até escolher o tipo à mão).
+  - Corrigir nome, CPF, texto ou assinatura continua mudando o próprio recibo.
