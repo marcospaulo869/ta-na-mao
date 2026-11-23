@@ -424,3 +424,15 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
   - **Arrastar:** arraste a imagem (ou o PDF) da conversa do WhatsApp até o quadro "Comprovante do pagamento"; o quadro fica com borda tracejada enquanto arrasta.
   - Embaixo dos botões aparece essa explicação curta.
 - **No celular:** a explicação diz para salvar a imagem no WhatsApp (⋮ → Salvar) e escolher na galeria, pasta WhatsApp Images. (Mandar direto do WhatsApp para o app pelo "Compartilhar" do celular fica para depois, se ele quiser.)
+
+## Atualização (23/11/2026): recibo dos materiais comprados fora (versão 78)
+
+- **Pedido do Marcos:** um terceiro botão ao lado de "Só a mão de obra" e "Valor total": **Materiais comprados fora**.
+- **Para que serve:** os itens "Comprar fora" do orçamento são materiais que o Marcos compra para o cliente, e o cliente paga a ele. Agora dá para fazer o recibo só desse valor.
+- **Como fica:** "Este recibo é sobre: Só a mão de obra | Materiais comprados fora | Valor total".
+  - Base = soma dos itens "Comprar fora" do orçamento. O primeiro recibo vem como Pagamento total (o valor todo); se já houver recibo dos comprados fora, vem o que falta (Saldo final). Também dá para fazer Entrada/Parcela com porcentagem.
+  - Conta separada: o quadro mostra "Total dos materiais comprados fora", já pago, este recibo, total pago e falta pagar só desses recibos. Os recibos da mão de obra não entram nessa conta, e os dos comprados fora não diminuem o saldo da mão de obra.
+  - "Referente a": "Pagamento de 100% do valor dos materiais comprados fora de R$ 1.000,00, para a fabricação de conjunto de cozinha (orçamento nº 0001)."
+  - No PDF: "Total dos materiais comprados fora" e "Falta pagar dos materiais comprados fora". "Fazer recibo do saldo dos comprados fora (R$ ...)".
+  - O "A receber" da tela inicial soma o que falta da mão de obra e o que falta dos comprados fora.
+- Tocar no botão num recibo salvo cria um recibo novo (o salvo fica como foi enviado), como nas outras mudanças de valor.
