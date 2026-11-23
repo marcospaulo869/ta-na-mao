@@ -415,3 +415,12 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
   - Mexer no valor, no tipo, na porcentagem ou em "Só a mão de obra / Valor total" cria na hora um **recibo novo** com o mesmo cliente (nome, CPF, telefone, e-mail), o mesmo orçamento, o "Fabricação de" e a forma de pagamento, e já com o que falta pagar. O aviso muda para "Recibo novo, feito a partir do recibo nº 0004 (que continua salvo como foi enviado). Confira o valor e toque em Salvar." Ao salvar, ele ganha o número seguinte.
   - Digitando um valor menor que o que falta, o tipo vira Parcela; o que falta todo, Saldo final (até escolher o tipo à mão).
   - Corrigir nome, CPF, texto ou assinatura continua mudando o próprio recibo.
+
+## Atualização (23/11/2026): comprovante direto do WhatsApp no notebook (versão 77)
+
+- **Problema do Marcos:** no notebook, Anexar comprovante abre as pastas do computador, mas o comprovante está dentro da conversa do WhatsApp.
+- **Agora, no notebook:**
+  - **Colar:** no WhatsApp (site ou aplicativo), clique com o botão direito na imagem, escolha **Copiar imagem** e, no recibo, toque em **Colar comprovante** ou aperte **Ctrl+V** em qualquer lugar do recibo. Colar texto num campo continua normal.
+  - **Arrastar:** arraste a imagem (ou o PDF) da conversa do WhatsApp até o quadro "Comprovante do pagamento"; o quadro fica com borda tracejada enquanto arrasta.
+  - Embaixo dos botões aparece essa explicação curta.
+- **No celular:** a explicação diz para salvar a imagem no WhatsApp (⋮ → Salvar) e escolher na galeria, pasta WhatsApp Images. (Mandar direto do WhatsApp para o app pelo "Compartilhar" do celular fica para depois, se ele quiser.)
