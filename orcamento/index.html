@@ -3795,7 +3795,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "79";
+const APP_VERSION = "80";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -4215,7 +4215,7 @@ const sameGroup = (r, x) => baseOf(r) === "total" || (baseOf(x) === "outside") =
 const paidBefore = (r) => receipts.filter((x) => x.quoteId === r.quoteId && x.id !== r.id && (!r.number || (x.number || 0) < r.number) && sameGroup(r, x)).reduce((s, x) => s + parseNum(x.amount), 0);
 const pctOf = (v, T) => (T > 0 ? `${fmtPct(Math.round(v / T * 1000) / 10)}%` : "");
 // Números do demonstrativo (tela e PDF)
-const receiptDemo = (r) => { const T = parseNum(r.quoteTotal), before = cents(paidBefore(r)), v = parseNum(r.amount), paid = cents(before + v); return { T, before, v, paid, left: cents(Math.max(0, T - paid)) }; };
+const receiptDemo = (r) => { const T = parseNum(r.quoteTotal), before = cents(paidBefore(r)), v = parseNum(r.amount), paid = cents(before + v); return { T, before, v, paid, saldo: cents(Math.max(0, T - before)), left: cents(Math.max(0, T - paid)) }; };
 const receivedFor = (quoteId, exceptId, base) => receipts.filter((r) => r.quoteId === quoteId && r.id !== exceptId && (!base || sameGroup({ base }, r))).reduce((s, r) => s + parseNum(r.amount), 0);
 const pad4 = (n) => String(n || 0).padStart(4, "0");
 // Recibo só da mão de obra (pedido do Marcos, 23/11/2026): o cliente paga o material direto na loja e o Marcos recebe só a
@@ -4226,9 +4226,9 @@ const isLabor = (r) => r.base === "labor";
 // base do recibo: "labor" (só a mão de obra), "outside" (materiais comprados fora: o Marcos compra e o cliente paga a ele) ou "total"
 const baseOf = (r) => (r && (r.base === "labor" || r.base === "outside") ? r.base : "total");
 const BASE_TXT = {
-  labor: { head: " · mão de obra", total: "Total da mão de obra", left: "Falta pagar da mão de obra", of: "da mão de obra", pctl: "Porcentagem da mão de obra", next: " da mão de obra", chg: "a mão de obra" },
-  outside: { head: " · materiais comprados fora", total: "Total dos materiais comprados fora", left: "Falta pagar dos materiais comprados fora", of: "dos materiais comprados fora", pctl: "Porcentagem dos materiais comprados fora", next: " dos comprados fora", chg: "o valor dos materiais comprados fora" },
-  total: { head: "", total: "Valor total do orçamento", left: "Falta pagar", of: "do valor do orçamento", pctl: "Porcentagem do orçamento", next: "", chg: "o valor total" },
+  labor: { head: " · mão de obra", total: "Total da mão de obra", left: "Saldo a receber da mão de obra", of: "da mão de obra", pctl: "Porcentagem da mão de obra", next: " da mão de obra", chg: "a mão de obra" },
+  outside: { head: " · materiais comprados fora", total: "Total dos materiais comprados fora", left: "Saldo a receber dos materiais comprados fora", of: "dos materiais comprados fora", pctl: "Porcentagem dos materiais comprados fora", next: " dos comprados fora", chg: "o valor dos materiais comprados fora" },
+  total: { head: "", total: "Valor total do orçamento", left: "Saldo a receber", of: "do valor do orçamento", pctl: "Porcentagem do orçamento", next: "", chg: "o valor total" },
 };
 const bt = (r) => BASE_TXT[baseOf(r)];
 // Mão de obra depois do desconto: desconto só na mão de obra sai inteiro dela; desconto no material não mexe nela;
@@ -4270,9 +4270,10 @@ function renderReceiptDemo() {
   box.innerHTML = `<div class="dh">Orçamento nº ${pad4(receipt.quoteNumber)}${bt(receipt).head}</div><table>`
     + row("", bt(receipt).total, d.T, "100%")
     + row("", "Já pago antes", d.before, pctOf(d.before, d.T))
+    + row("left", "Saldo a receber", d.saldo, pctOf(d.saldo, d.T)) // pedido do Marcos (23/11/2026): o que falta, antes deste recibo
     + row("me", "Este recibo", d.v, pctOf(d.v, d.T))
     + row("", "Total pago", d.paid, pctOf(d.paid, d.T))
-    + row("left", "Falta pagar", d.left, pctOf(d.left, d.T))
+    + row("", "Saldo depois deste recibo", d.left, pctOf(d.left, d.T))
     + `</table>${lab && receipt.quoteFull ? `<div class="dn">Total do orçamento ${money(receipt.quoteFull)}. O material o cliente paga direto na loja.</div>` : baseOf(receipt) === "outside" ? `<div class="dn">Materiais que você comprou para o cliente. A mão de obra tem conta separada.</div>` : ""}`
     + (d.paid > d.T + 0.004 ? `<div class="dn">Este recibo passa ${money(cents(d.paid - d.T))} do total.</div>` : "");
   // o orçamento mudou depois (ex.: o cliente pediu mais coisas): mostra o valor novo e deixa atualizar este recibo
@@ -4712,11 +4713,11 @@ function buildReceiptPdf(r) {
     doc.autoTable({
       startY: y, margin: { left: M, right: M },
       head: [[`Orçamento nº ${pad4(r.quoteNumber)}`, "Valor"]],
-      body: [[bt(r).total, money(d.T)], ["Já pago antes deste recibo", P(d.before)], ["Este recibo", P(d.v)],
-        ["Total pago até agora", P(d.paid)], [bt(r).left, P(d.left)]],
+      body: [[bt(r).total, money(d.T)], ["Já pago antes deste recibo", P(d.before)], [bt(r).left, P(d.saldo)], ["Este recibo", P(d.v)],
+        ["Total pago até agora", P(d.paid)], ["Saldo depois deste recibo", P(d.left)]],
       styles: { font: "helvetica", fontSize: 9.5, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
       headStyles: { fillColor: HEAD, textColor: HEADTXT }, columnStyles: { 1: { halign: "right", cellWidth: 58 } },
-      didParseCell: (c) => { if (c.section === "body" && c.row.index === 4) c.cell.styles.fontStyle = "bold"; },
+      didParseCell: (c) => { if (c.section === "body" && c.row.index === 2) c.cell.styles.fontStyle = "bold"; },
     });
     y = doc.lastAutoTable.finalY + 8;
   }

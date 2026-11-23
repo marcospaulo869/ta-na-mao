@@ -443,3 +443,9 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
 - **Agora** os três botões (Só a mão de obra, Materiais comprados fora, Valor total) sempre mudam o recibo, sem mensagem de bloqueio, mesmo se o orçamento não estiver mais nos Salvos.
 - Com **Materiais comprados fora** aparece o campo **Valor dos materiais comprados fora (R$)**. Ele vem com a soma dos itens "Comprar fora" (ou vazio, se não houver) e aceita qualquer valor digitado. O quadro, o tipo (Pagamento total, Entrada 50%...), o texto, o PDF, o saldo do próximo recibo e o "A receber" usam o valor do campo.
 - Um recibo salvo continua protegido: mudar esse valor cria um recibo novo.
+
+## Atualização (23/11/2026): "Saldo a receber" no quadro do recibo (versão 80)
+
+- **Pedido do Marcos (print com a linha marcada):** trocar "Falta pagar" por **Saldo a receber**, com o valor que falta na mesma linha. No print, num recibo de saldo final, a linha mostrava R$ 0,00 (o que sobra depois do recibo), e ele queria ver o valor que faltava.
+- **Agora o quadro (tela e PDF) fica:** Total da mão de obra → Já pago antes → **Saldo a receber** (em destaque: o que faltava antes deste recibo, ex.: R$ 2.556,79 = 51,5%) → Este recibo → Total pago → Saldo depois deste recibo (ex.: R$ 0,00).
+- No PDF: "Saldo a receber da mão de obra" (ou "dos materiais comprados fora", ou só "Saldo a receber") em negrito.
