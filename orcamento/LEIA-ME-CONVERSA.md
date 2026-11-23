@@ -377,3 +377,15 @@ Marcos pediu um campo de pesquisa ao lado do título "Obs / Pré-contrato", para
 ## Próximos passos
 
 Veja "O que falta" no Panorama, no começo deste arquivo.
+
+## Atualização (23/11/2026): recibo só da mão de obra (versão 75)
+
+- **Pedido do Marcos:** o cliente paga o material direto na loja. O Marcos recebe só a mão de obra (que é igual ao valor do material). Dessa mão de obra, 50% na entrada e 50% na entrega. O recibo estava calculando a porcentagem sobre o valor total (material + mão de obra), e o texto falava do "valor total".
+- **Agora,** todo recibo feito a partir de um orçamento tem no alto "Este recibo é sobre: **Só a mão de obra** | Valor total". Começa em **Só a mão de obra**.
+  - A base é a mão de obra do orçamento, já com o desconto que cair sobre ela (desconto só na mão de obra sai inteiro dela; desconto em material + mão de obra sai de cada um na proporção; desconto só no material não mexe nela).
+  - O primeiro recibo já vem como **Entrada de 50% da mão de obra** (ex.: orçamento de R$ 9.928,56, mão de obra R$ 4.964,28, entrada R$ 2.482,14). Os botões 20/30/40/50% e "Outra" valem sobre a mão de obra ("Porcentagem da mão de obra").
+  - "Fazer recibo do saldo da mão de obra (R$ ...)" e o Saldo final contam só o que falta da mão de obra. O "A receber" da tela inicial também.
+  - O "Referente a" fica assim: "Entrada de 50% (R$ 2.482,14) do valor da mão de obra de R$ 4.964,28 da fabricação de conjunto de cozinha (orçamento nº 0004)." Não fala mais do valor total.
+  - No PDF, a tabela do recibo mostra "Mão de obra do orçamento", "Recebido antes deste recibo", "Este recibo" e "Falta receber da mão de obra".
+  - **Valor total** continua disponível num toque para quem vende material e mão de obra juntos. Recibos antigos continuam como eram (valor total) até tocar em "Só a mão de obra", que refaz o valor e o texto.
+- **Texto repetido corrigido:** o campo virou "Fabricação de (só o nome do móvel)", ex.: "conjunto de cozinha". Se for colada uma frase inteira (ex.: "Referente a primeira parcela do valor da mão de obra de fabricação conjunto de cozinha..."), o texto usa só o que vem depois de "fabricação" e aparece embaixo do campo o que entrou no texto.
