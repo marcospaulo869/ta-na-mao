@@ -374,6 +374,8 @@ body.pv-open { overflow: hidden; }
 /* e o botão "Orçamento" no recibo, com a cor do Orçamento, para ir e voltar entre os dois */
 .btn.orc { display: inline-flex; align-items: center; gap: 6px; border-color: var(--accent); background: var(--accent-soft); color: var(--ink); font-weight: 700; }
 .btn.orc svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
+.bases { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.baserow { margin-top: 0; margin-bottom: 8px; }
 #r-next { justify-self: start; margin-top: -4px; margin-bottom: 8px; }
 .subnav .rec, .subnav .orc { margin-left: auto; align-self: stretch; border-radius: 999px; padding-inline: 14px; } /* mesma altura e formato das abas */
 /* no celular não cabe ao lado das abas: o botão do topo vai para a linha do "Meus dados" e a barra de baixo fica em duas linhas */
@@ -766,6 +768,13 @@ body.pv-open { overflow: hidden; }
       </div>
       <p class="linkinfo" id="r-link" hidden></p>
       <button class="btn small warm" id="r-next" type="button" hidden>Fazer recibo do saldo</button>
+      <div class="pctrow baserow" id="r-baserow" hidden>
+        <label>Este recibo é sobre</label>
+        <div class="bases" role="group" aria-label="Este recibo é sobre">
+          <button type="button" class="pct" data-base="labor">Só a mão de obra</button><button type="button" class="pct" data-base="total">Valor total</button>
+        </div>
+        <p class="hint" id="r-base-hint"></p>
+      </div>
       <div class="grid2">
         <div class="field"><label for="r-date">Data do pagamento</label><input type="date" id="r-date"></div>
         <div class="field"><label for="r-kind">Tipo</label><select id="r-kind">
@@ -776,7 +785,7 @@ body.pv-open { overflow: hidden; }
         </select></div>
       </div>
       <div class="pctrow" id="r-pctrow" hidden>
-        <label for="r-pct">Porcentagem do orçamento</label>
+        <label for="r-pct" id="r-pct-label">Porcentagem do orçamento</label>
         <div class="pcts" role="group" aria-label="Porcentagem">
           <button type="button" class="pct" data-pct="20">20%</button><button type="button" class="pct" data-pct="30">30%</button><button type="button" class="pct" data-pct="40">40%</button><button type="button" class="pct" data-pct="50">50%</button>
           <span class="pctin"><input id="r-pct" class="num" inputmode="decimal" placeholder="Outra" aria-label="Outra porcentagem"><span aria-hidden="true">%</span></span>
@@ -802,7 +811,7 @@ body.pv-open { overflow: hidden; }
         </select></div>
       </div>
       <div><div class="amount-big" id="r-amount-show">R$ 0,00</div><div class="extenso" id="r-extenso"></div></div>
-      <div class="field"><label for="r-serv">Mão de obra de fabricação de</label><input id="r-serv" autocomplete="off" autocapitalize="none" autocorrect="on" spellcheck="true" placeholder="Ex.: móveis planejados da cozinha"></div>
+      <div class="field"><label for="r-serv">Fabricação de (só o nome do móvel)</label><input id="r-serv" autocomplete="off" autocapitalize="none" autocorrect="on" spellcheck="true" placeholder="Ex.: conjunto de cozinha"><p class="hint" id="r-serv-hint" hidden></p></div>
       <div class="field"><label for="r-desc">Referente a</label><textarea id="r-desc" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true" style="min-height:90px" placeholder="Ex.: entrada do serviço de marcenaria da cozinha planejada"></textarea>
         <p class="hint" id="r-desc-hint">O texto se ajusta sozinho ao tipo, à porcentagem e ao valor.</p><button class="btn small" id="r-desc-auto" type="button" hidden>Voltar ao texto automático</button></div>
     </section>
@@ -3724,7 +3733,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "74";
+const APP_VERSION = "75";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -4127,7 +4136,7 @@ function extenso(v) {
 let receipts = [];
 const KIND = { total: "Pagamento total", entrada: "Entrada", parcela: "Parcela", saldo: "Saldo final" };
 const kindLabel = (r) => (KIND[r.kind] || "") + (r.pct && (r.kind === "entrada" || r.kind === "parcela") ? ` (${fmtPct(r.pct)}%)` : "");
-const blankReceipt = () => ({ id: "", number: 0, date: todayISO(), kind: "total", pct: 0, serv: "", descAuto: true, payer: { name: "", doc: "", phone: "", email: "" }, amount: 0, method: "Pix", desc: "", quoteId: "", quoteNumber: 0, quoteTotal: 0, mySig: profile.signature || "", payerSig: "" });
+const blankReceipt = () => ({ id: "", number: 0, date: todayISO(), kind: "total", pct: 0, serv: "", descAuto: true, payer: { name: "", doc: "", phone: "", email: "" }, amount: 0, method: "Pix", desc: "", quoteId: "", quoteNumber: 0, quoteTotal: 0, quoteFull: 0, base: "total", mySig: profile.signature || "", payerSig: "" });
 let receipt = blankReceipt();
 const sigRMe = SigPad($("sig-r-me"), () => { receipt.mySig = sigRMe.value(); });
 const sigRPayer = SigPad($("sig-r-payer"), () => { receipt.payerSig = sigRPayer.value(); });
@@ -4138,6 +4147,25 @@ bindSigPhoto(sigRMe, "sig-r-me", "Pronto: a assinatura da foto está no quadro. 
 bindSigPhoto(sigRPayer, "sig-r-payer", "Pronto: a assinatura da foto está no quadro. Confira e toque em Salvar.");
 const receivedFor = (quoteId, exceptId) => receipts.filter((r) => r.quoteId === quoteId && r.id !== exceptId).reduce((s, r) => s + parseNum(r.amount), 0);
 const pad4 = (n) => String(n || 0).padStart(4, "0");
+// Recibo só da mão de obra (pedido do Marcos, 23/11/2026): o cliente paga o material direto na loja e o Marcos recebe só a
+// mão de obra; dela, 50% na entrada e 50% na entrega. receipt.base = "labor" (padrão dos recibos novos feitos de um orçamento)
+// ou "total" (recibos antigos, sem o campo, seguem como eram). receipt.quoteTotal guarda o valor sobre o qual o recibo é
+// calculado (mão de obra ou total) e receipt.quoteFull o valor total do orçamento.
+const isLabor = (r) => r.base === "labor";
+// Mão de obra depois do desconto: desconto só na mão de obra sai inteiro dela; desconto no material não mexe nela;
+// desconto no material + mão de obra sai de cada um na proporção do valor.
+const laborNet = (t) => cents(Math.max(0, t.type === "labor" ? t.labor - t.discount : t.type === "materials" ? t.labor
+  : t.materials + t.labor > 0 ? t.labor - t.discount * t.labor / (t.materials + t.labor) : t.labor));
+const quoteBase = (q, base) => (base === "labor" ? laborNet(calc(q)) : calc(q).total);
+// O campo "Fabricação de" deve ter só o nome do móvel. Se vier uma frase inteira ("Referente a primeira parcela do valor da
+// mão de obra de fabricação conjunto de cozinha..."), fica só o que vem depois de "fabricação (de)", para o texto não repetir.
+const cleanServ = (s) => {
+  let t = String(s || "").trim().replace(/\.$/, "");
+  const m = t.match(/fabrica[çc][ãa]o\s+(?:(?:das|dos|de|do|da)\s+)?/i);
+  if (m) t = t.slice(m.index + m[0].length);
+  else t = t.replace(/^referente\s+(?:aos|às|ao|à|a)\s+/i, "").replace(/^(?:(?:o|do)\s+)?(?:servi[çc]o\s+de\s+)?m[ãa]o\s+de\s+obra\s+(?:(?:das|dos|de|do|da)\s+)?/i, "");
+  return t.trim().replace(/\.$/, "");
+};
 
 function renderReceiptAmount() {
   const v = parseNum(receipt.amount);
@@ -4146,11 +4174,14 @@ function renderReceiptAmount() {
   $("rbar-total").textContent = money(v);
   if (receipt.quoteId) {
     const before = receivedFor(receipt.quoteId, receipt.id), left = receipt.quoteTotal - before - v;
-    $("r-link").textContent = `Orçamento nº ${pad4(receipt.quoteNumber)}: total ${money(receipt.quoteTotal)}, já recebido ${money(before)}, saldo depois deste recibo ${money(Math.max(0, left))}.`;
+    $("r-link").textContent = isLabor(receipt)
+      ? `Orçamento nº ${pad4(receipt.quoteNumber)}: mão de obra ${money(receipt.quoteTotal)}${receipt.quoteFull ? ` (total do orçamento ${money(receipt.quoteFull)}; o material o cliente paga direto na loja)` : ""}. Já recebido ${money(before)}. Falta receber da mão de obra depois deste recibo: ${money(Math.max(0, left))}.`
+      : `Orçamento nº ${pad4(receipt.quoteNumber)}: total ${money(receipt.quoteTotal)}, já recebido ${money(before)}, saldo depois deste recibo ${money(Math.max(0, left))}.`;
   }
   $("r-link").hidden = !receipt.quoteId;
+  renderReceiptBase();
   $("r-next").hidden = !(receipt.id && receipt.quoteId && receipt.quoteTotal - receivedFor(receipt.quoteId, receipt.id) - parseNum(receipt.amount) > 0.004);
-  if (!$("r-next").hidden) $("r-next").textContent = `Fazer recibo do saldo (${money(receipt.quoteTotal - receivedFor(receipt.quoteId, receipt.id) - parseNum(receipt.amount))})`;
+  if (!$("r-next").hidden) $("r-next").textContent = `Fazer recibo do saldo${isLabor(receipt) ? " da mão de obra" : ""} (${money(receipt.quoteTotal - receivedFor(receipt.quoteId, receipt.id) - parseNum(receipt.amount))})`;
   renderReceiptPct();
   renderReceiptDesc();
 }
@@ -4161,8 +4192,11 @@ const LEAD = { total: "Pagamento", entrada: "Entrada", parcela: "Parcela", saldo
 function receiptAutoDesc(r) {
   const v = parseNum(r.amount), T = r.quoteId ? parseNum(r.quoteTotal) : 0;
   if (!(v > 0)) return "";
-  const serv = (r.serv || "").trim().replace(/\.$/, "") || "________", lead = LEAD[r.kind] || "Pagamento";
+  const serv = cleanServ(r.serv) || "________", lead = LEAD[r.kind] || "Pagamento";
   const pct = T > 0 ? (parseNum(r.pct) && (r.kind === "entrada" || r.kind === "parcela") && cents(T * parseNum(r.pct) / 100) === v ? parseNum(r.pct) : Math.round(v / T * 10000) / 100) : 0;
+  const num = r.quoteNumber ? ` (orçamento nº ${pad4(r.quoteNumber)})` : "";
+  // ex.: "Entrada de 50% (R$ 2.482,14) do valor da mão de obra de R$ 4.964,28 da fabricação de conjunto de cozinha (orçamento nº 0004)."
+  if (isLabor(r) && T > 0) return `${pct === 100 ? `${lead} de 100%` : `${lead} de ${fmtPct(pct)}% (${money(v)})`} do valor da mão de obra de ${money(T)} da fabricação de ${serv}${num}.`;
   const part = !T ? `${lead} de ${money(v)}` : pct === 100 ? `${lead} de 100% do valor total de ${money(T)}` : `${lead} de ${fmtPct(pct)}% (${money(v)}) do valor total de ${money(T)}`;
   return `${part} do serviço de mão de obra de fabricação de ${serv}${r.quoteNumber ? ` (orçamento nº ${pad4(r.quoteNumber)})` : ""}.`;
 }
@@ -4170,8 +4204,30 @@ function renderReceiptDesc() {
   if (receipt.descAuto) { receipt.desc = receiptAutoDesc(receipt); if (document.activeElement !== $("r-desc")) { $("r-desc").value = receipt.desc; growBox($("r-desc")); } }
   $("r-desc-hint").hidden = !receipt.descAuto;
   $("r-desc-auto").hidden = !!receipt.descAuto;
+  const raw = (receipt.serv || "").trim().replace(/\.$/, ""), clean = cleanServ(raw);
+  $("r-serv-hint").hidden = !raw || clean === raw;
+  if (!$("r-serv-hint").hidden) $("r-serv-hint").textContent = clean ? `No texto entra só: "${clean}". Aqui basta o nome do móvel.` : "Aqui basta o nome do móvel (ex.: conjunto de cozinha).";
 }
 $("r-serv").oninput = (e) => { receipt.serv = e.target.value; renderReceiptDesc(); };
+// Botões "Este recibo é sobre: Só a mão de obra / Valor total" (só nos recibos feitos de um orçamento)
+function renderReceiptBase() {
+  const on = !!receipt.quoteId; $("r-baserow").hidden = !on;
+  if (!on) return;
+  for (const b of document.querySelectorAll("#r-baserow [data-base]")) b.setAttribute("aria-pressed", String(b.dataset.base === (isLabor(receipt) ? "labor" : "total")));
+  $("r-base-hint").textContent = isLabor(receipt)
+    ? `O material o cliente paga direto na loja. Entrada, parcelas e saldo saem só da mão de obra (${money(receipt.quoteTotal)}).`
+    : `Entrada, parcelas e saldo saem do valor total do orçamento (${money(receipt.quoteTotal)}), material e mão de obra.`;
+}
+for (const b of document.querySelectorAll("#r-baserow [data-base]")) b.onclick = () => {
+  const base = b.dataset.base, q = quotes.find((x) => x.id === receipt.quoteId);
+  if (base === (isLabor(receipt) ? "labor" : "total")) return;
+  if (!q) { toast("O orçamento deste recibo não está mais nos Salvos"); return; }
+  const T = quoteBase(q, base);
+  if (!(T > 0)) { toast(base === "labor" ? "Este orçamento não tem valor de mão de obra" : "Este orçamento está sem valor"); return; }
+  receipt.base = base; receipt.quoteTotal = T; receipt.quoteFull = calc(q).total; receipt.descAuto = true;
+  applyReceiptKind();
+  toast(base === "labor" ? "Recibo calculado só sobre a mão de obra" : "Recibo calculado sobre o valor total");
+};
 $("r-desc-auto").onclick = () => { receipt.descAuto = true; renderReceiptDesc(); toast("Texto automático de volta"); };
 
 // O tipo do pagamento ajusta o valor sozinho (pedido do Marcos, 06/10/2026), quando o recibo veio de um orçamento:
@@ -4196,10 +4252,11 @@ function renderReceiptPct() {
   if (!on) return;
   const pct = parseNum(receipt.pct), v = parseNum(receipt.amount);
   for (const b of document.querySelectorAll("#r-pctrow [data-pct]")) b.setAttribute("aria-pressed", String(+b.dataset.pct === pct));
+  $("r-pct-label").textContent = isLabor(receipt) ? "Porcentagem da mão de obra" : "Porcentagem do orçamento";
   if (document.activeElement !== $("r-pct")) $("r-pct").value = pct && !R_PCTS.includes(pct) ? fmtPct(pct) : "";
   $("r-pct-res").textContent = pct
-    ? `${fmtPct(pct)}% de ${money(receipt.quoteTotal)} = ${money(v)}${v < cents(receipt.quoteTotal * pct / 100) ? " (o que falta receber)" : ""}`
-    : `Valor digitado: ${fmtPct(Math.round(v / receipt.quoteTotal * 1000) / 10)}% do valor do orçamento.`;
+    ? `${fmtPct(pct)}% de ${money(receipt.quoteTotal)}${isLabor(receipt) ? " (mão de obra)" : ""} = ${money(v)}${v < cents(receipt.quoteTotal * pct / 100) ? " (o que falta receber)" : ""}`
+    : `Valor digitado: ${fmtPct(Math.round(v / receipt.quoteTotal * 1000) / 10)}% ${isLabor(receipt) ? "da mão de obra" : "do valor do orçamento"}.`;
 }
 for (const b of document.querySelectorAll("#r-pctrow [data-pct]")) b.onclick = () => { receipt.pct = +b.dataset.pct; $("r-pct").value = ""; applyReceiptKind(); };
 $("r-pct").oninput = (e) => { const p = parseNum(e.target.value); if (p > 0 && p <= 100) { receipt.pct = p; applyReceiptKind(); } };
@@ -4226,13 +4283,15 @@ $("btn-r-new").onclick = () => confirmNew($("btn-r-new"), "Novo recibo", receipt
 $("btn-r-new-2").onclick = () => confirmNew($("btn-r-new-2"), "Novo recibo", receiptDraft(), () => { show("receipt"); newReceipt(); });
 
 function receiptFromQuote(q) {
-  const total = calc(q).total, before = receivedFor(q.id, "");
+  const full = calc(q).total, labor = laborNet(calc(q)), base = labor > 0 ? "labor" : "total", total = base === "labor" ? labor : full;
+  const before = receivedFor(q.id, "");
   receipt = { ...blankReceipt(), payer: { name: q.client.name, doc: q.client.doc, phone: q.client.phone, email: q.client.email },
-    quoteId: q.id, quoteNumber: q.number, quoteTotal: total, amount: Math.max(0, Math.round((total - before) * 100) / 100),
-    kind: before > 0 ? "saldo" : "total", descAuto: true,
+    quoteId: q.id, quoteNumber: q.number, quoteTotal: total, quoteFull: full, base, amount: Math.max(0, Math.round((total - before) * 100) / 100),
+    kind: before > 0 ? "saldo" : base === "labor" ? "entrada" : "total", pct: before > 0 || base !== "labor" ? 0 : 50, descAuto: true,
     serv: (receipts.filter((r) => r.quoteId === q.id && r.serv).sort((a, b) => (b.updated || "").localeCompare(a.updated || ""))[0] || {}).serv || "" }; // o "fabricação de" do recibo anterior deste orçamento
+  if (receipt.kind === "entrada") receipt.amount = cents(total * 0.5); // primeiro recibo da mão de obra: entrada de 50%
   show("receipt"); renderReceipt();
-  if (before > 0) toast("Valor preenchido com o saldo que falta receber");
+  if (before > 0) toast(base === "labor" ? "Valor preenchido com o que falta receber da mão de obra" : "Valor preenchido com o saldo que falta receber");
 }
 
 // Botões "Recibo" no orçamento (topo e barra de baixo; pedido do Marcos, 06/10/2026). Na aba Orçamento abrem o recibo
@@ -4324,7 +4383,9 @@ function buildReceiptPdf(r) {
     doc.autoTable({
       startY: y, margin: { left: M, right: M },
       head: [[`Orçamento nº ${pad4(r.quoteNumber)}`, "Valor"]],
-      body: [["Total do orçamento", money(r.quoteTotal)], ["Recebido antes deste recibo", money(before)], ["Este recibo", money(v)], ["Saldo a receber", money(left)]],
+      body: isLabor(r)
+        ? [["Mão de obra do orçamento", money(r.quoteTotal)], ["Recebido antes deste recibo", money(before)], ["Este recibo", money(v)], ["Falta receber da mão de obra", money(left)]]
+        : [["Total do orçamento", money(r.quoteTotal)], ["Recebido antes deste recibo", money(before)], ["Este recibo", money(v)], ["Saldo a receber", money(left)]],
       styles: { font: "helvetica", fontSize: 9.5, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
       headStyles: { fillColor: HEAD, textColor: HEADTXT }, columnStyles: { 1: { halign: "right", cellWidth: 45 } },
     });
@@ -4469,7 +4530,11 @@ function renderHome() {
   $("st-quotes").textContent = String(quotes.length);
   const ym = todayISO().slice(0, 7);
   $("st-month").textContent = money(receipts.filter((r) => (r.date || "").startsWith(ym)).reduce((s, r) => s + parseNum(r.amount), 0));
-  const open = quotes.reduce((s, q) => { const got = receivedFor(q.id, ""); return got > 0 ? s + Math.max(0, calc(q).total - got) : s; }, 0);
+  const open = quotes.reduce((s, q) => {
+    const got = receivedFor(q.id, ""); if (!(got > 0)) return s;
+    const last = receipts.filter((r) => r.quoteId === q.id).sort((a, b) => (b.updated || "").localeCompare(a.updated || ""))[0] || {};
+    return s + Math.max(0, quoteBase(q, isLabor(last) ? "labor" : "total") - got); // recibos da mão de obra: falta só da mão de obra
+  }, 0);
   $("st-open").textContent = money(open);
 }
 // Orçamento e Recibo abrem na lista: o botão "+ Novo" em cima e os salvos logo abaixo (pedido do Marcos)
