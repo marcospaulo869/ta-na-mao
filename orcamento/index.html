@@ -265,6 +265,7 @@ textarea.msgbox { display: block; width: 100%; box-sizing: border-box; font: inh
 .dtype-l { font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .dtypes { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 6px; }
 .dtbtn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 700 0.9rem/1.15 var(--font-body); border-radius: 10px; padding: 8px 6px; min-height: 44px; cursor: pointer; }
+.dtypes.dmodes { grid-template-columns: 1fr 1fr; }
 .dtbtn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 @media (max-width: 400px) { .dtbtn { font-size: 0.82rem; } }
 #q-labor-auto { margin-top: 6px; }
@@ -722,7 +723,14 @@ body.pv-open { overflow: hidden; }
       <div class="row addrow" id="add-row"><button class="btn" id="btn-add">+ Adicionar<span class="wide"> material</span></button><button class="btn out" id="btn-add-out" type="button">COMPRAR FORA</button><button class="mic" id="btn-add-voice" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar novo item</span></button></div>
       <div class="grid2 pair">
         <div class="field"><label for="q-labor">Mão de obra (R$)</label><input id="q-labor" class="num" inputmode="decimal" placeholder="0"></div>
-        <div class="field"><label for="q-discount">Desconto (%)</label><input id="q-discount" class="num" inputmode="decimal" placeholder="0"></div>
+        <div class="field"><label for="q-discount" id="q-disc-l">Desconto (%)</label><input id="q-discount" class="num" inputmode="decimal" placeholder="0"></div>
+      </div>
+      <div class="dtype" role="group" aria-labelledby="q-disc-mode-l">
+        <span class="dtype-l" id="q-disc-mode-l">Desconto em</span>
+        <div class="dtypes dmodes" id="q-disc-mode">
+          <button type="button" class="dtbtn" data-mode="pct" aria-pressed="true">Porcentagem (%)</button>
+          <button type="button" class="dtbtn" data-mode="value" aria-pressed="false">Valor (R$)</button>
+        </div>
       </div>
       <div class="dtype" role="group" aria-labelledby="q-disc-type-l">
         <span class="dtype-l" id="q-disc-type-l">Desconto sobre</span>
@@ -1853,11 +1861,14 @@ const calc = (q) => {
   const items = q.items;
   const materials = items.reduce((s, it) => s + (it.out ? 0 : lineTotal(it)), 0);
   const outside = items.reduce((s, it) => s + (it.out ? lineTotal(it) : 0), 0);
-  const labor = q.laborAuto ? cents((materials + outside) * LABOR_X) : parseNum(q.labor), pct = typeof q.discountPct === "number" ? clampPct(q.discountPct) : null;
+  const labor = q.laborAuto ? cents((materials + outside) * LABOR_X) : parseNum(q.labor);
+  let pct = typeof q.discountPct === "number" ? clampPct(q.discountPct) : null;
   const type = discType(q), base = type === "labor" ? labor : type === "materials" ? materials : materials + labor;
-  const discount = pct != null ? cents(base * pct / 100) : parseNum(q.discount);
+  let discount = pct != null ? cents(base * pct / 100) : parseNum(q.discount);
+  // desconto em R$ (discountMode "value", v81): o valor digitado, até o tamanho da base; a % mostrada é calculada a partir dele
+  if (q.discountMode === "value") { discount = cents(Math.min(Math.max(0, parseNum(q.discountValue)), base)); pct = base > 0 ? discount / base * 100 : 0; }
   const subtotal = Math.max(0, materials + labor - discount);
-  return { materials, labor, discount, pct, type, base, outside, subtotal, hasOut: items.some((it) => it.out), total: subtotal + outside };
+  return { materials, labor, discount, pct, mode: q.discountMode === "value" ? "value" : "pct", type, base, outside, subtotal, hasOut: items.some((it) => it.out), total: subtotal + outside };
 };
 // Texto do desconto nos totais e no PDF: "Desconto (50% da mão de obra)"; short = versão curta para a coluna estreita do PDF
 const discLabel = (t, short) => {
@@ -2766,7 +2777,14 @@ function renderTotals() {
   $("q-labor-auto").hidden = !!quote.laborAuto;
   const dt = discType(quote);
   document.querySelectorAll("#q-disc-type button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.type === dt)));
-  $("q-disc-hint").textContent = t.pct
+  const dm = t.mode;
+  document.querySelectorAll("#q-disc-mode button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === dm)));
+  $("q-disc-l").textContent = dm === "value" ? "Desconto (R$)" : "Desconto (%)";
+  const sobre = dt === "labor" ? "a mão de obra" : dt === "materials" ? "os materiais" : "os materiais e a mão de obra";
+  $("q-disc-hint").textContent = dm === "value" ? (t.discount
+    ? `Desconto de ${money(t.discount)} sobre ${sobre} (${money(t.base)}) = ${fmtPct(t.pct)}%.${parseNum(quote.discountValue) > t.base ? ` O desconto vai até ${money(t.base)}.` : ""}${dt !== "labor" && t.hasOut ? " O Comprar fora não entra no desconto." : ""}`
+    : "Escolha sobre o que o desconto incide e digite o valor em reais. O app calcula a porcentagem.")
+    : t.pct
     ? `Desconto de ${fmtPct(t.pct)}% sobre ${dt === "labor" ? "a mão de obra" : dt === "materials" ? "os materiais" : "os materiais e a mão de obra"} (${money(t.base)}) = ${money(t.discount)}.${dt !== "labor" && t.hasOut ? " O Comprar fora não entra no desconto." : ""}`
     : "Escolha sobre o que o desconto incide e digite a porcentagem.";
 }
@@ -2858,21 +2876,41 @@ $("q-labor").addEventListener("change", () => { if (quote.laborAuto) renderTotal
 $("q-labor-auto").onclick = () => { quote.laborAuto = true; renderTotals(); toast("Mão de obra igual ao valor dos materiais"); };
 // Campo de desconto em %; orçamento antigo (desconto em R$) mostra a porcentagem equivalente
 function discountField(q) {
+  if (q.discountMode === "value") return parseNum(q.discountValue) ? parseNum(q.discountValue).toFixed(2).replace(".", ",") : "";
   if (typeof q.discountPct === "number") return q.discountPct ? fmtPct(q.discountPct) : "";
   const t = calc(q), base = t.materials + t.labor;
   return t.discount > 0 && base > 0 ? fmtPct(t.discount / base * 100) : "";
 }
 $("q-discount").oninput = (e) => {
   const v = parseNum(e.target.value);
+  if (quote.discountMode === "value") {
+    quote.discountValue = Math.max(0, v); quote.discount = 0;
+    const t = calc(quote); if (v > t.base) toast(`O desconto vai até ${money(t.base)}`);
+    return renderTotals();
+  }
   quote.discountPct = clampPct(v); quote.discount = 0;
   if (v > 100) toast("O desconto vai até 100%");
   renderTotals();
 };
 $("q-discount").addEventListener("change", (e) => { e.target.value = discountField(quote); });
+// Desconto em % ou em R$ (v81). Ao trocar, o desconto continua o mesmo: R$ vira a % equivalente e vice-versa.
+// O último modo usado fica guardado no aparelho para os próximos orçamentos novos.
+function lastDiscMode() { try { return localStorage.getItem("orc-disc-mode") === "value" ? "value" : "pct"; } catch (e) { return "pct"; } } // function: o newQuote pode rodar antes desta linha
+document.querySelectorAll("#q-disc-mode button").forEach((b) => {
+  b.onclick = () => {
+    const mode = b.dataset.mode, t = calc(quote);
+    if (mode === "value") { quote.discountValue = t.discount; quote.discountMode = "value"; }
+    else { quote.discountPct = clampPct(t.pct != null ? t.pct : t.base > 0 ? t.discount / t.base * 100 : 0); quote.discountMode = "pct"; }
+    quote.discount = 0;
+    try { localStorage.setItem("orc-disc-mode", mode); } catch (e) {}
+    $("q-discount").value = discountField(quote);
+    renderTotals();
+  };
+});
 // Tipo do desconto: mão de obra, material ou os dois. Orçamento antigo (desconto em R$) vira % antes de trocar, para o valor não mudar sozinho
 document.querySelectorAll("#q-disc-type button").forEach((b) => {
   b.onclick = () => {
-    if (typeof quote.discountPct !== "number") {
+    if (typeof quote.discountPct !== "number" && quote.discountMode !== "value") {
       const t = calc(quote);
       quote.discountPct = t.base > 0 ? clampPct(t.discount / t.base * 100) : 0; quote.discount = 0;
     }
@@ -2979,7 +3017,7 @@ const newQuote = () => {
   const start = todayISO();
   quote = { id: "", number: 0, start, valid: addBizDays(start, validDays()),
     client: { name: "", doc: "", phone: "", email: "", cep: "", street: "", number: "", comp: "", district: "", city: "", uf: "", address: "" },
-    items: [{ desc: "", un: "UN", qty: 1, price: 0 }], labor: 0, laborAuto: true, discount: 0, discountPct: 0, discountType: "total", obs: profile.obs || DEFAULT_OBS, clientSig: "" };
+    items: [{ desc: "", un: "UN", qty: 1, price: 0 }], labor: 0, laborAuto: true, discount: 0, discountPct: 0, discountValue: 0, discountMode: lastDiscMode(), discountType: "total", obs: profile.obs || DEFAULT_OBS, clientSig: "" };
   renderEditor(); window.scrollTo(0, 0);
   refreshCatalog(true);
 };
@@ -3795,7 +3833,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "80";
+const APP_VERSION = "81";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
