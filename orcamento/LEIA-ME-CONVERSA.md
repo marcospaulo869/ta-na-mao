@@ -504,3 +504,9 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
 
 - **Pedido do Marcos (print do PDF):** "inverter essa sequência, colocar primeiro o valor do material depois o de mão de obra com desconto".
 - **Agora:** no Resumo do Demonstrativo (tela e PDF) vem primeiro **Material** (e a linha "Saldo materiais comprados fora"), depois **Mão de obra (com desconto)**.
+
+## Atualização (26/11/2026): nova ordem do Resumo (versão 88)
+
+- **Pedido do Marcos (print do Resumo do PDF):** "1 total de material, 2 materiais comprados fora, 3 total mão de obra, 4 total mão de obra com desconto, 5 desconto na mão de obra por indicação, 6 saldo material comprado fora".
+- **Agora (tela e PDF):** Total de material (contratado e pago) → Materiais comprados fora (o valor dos itens Comprar fora) → Total mão de obra (sem desconto) → Total mão de obra com desconto (contratado, pago e saldo) → Desconto na mão de obra por indicação (10%) em vermelho → Saldo materiais comprados fora → Total (contratado, pago, saldo) → quadro Saldo a receber.
+- Sem desconto, a mão de obra vem numa linha só ("Total mão de obra" com pago e saldo). Sem itens Comprar fora, a linha 2 não aparece. A linha "Valor sem desconto" saiu (o Total mão de obra já mostra o valor antes do desconto). As linhas saem de stmRows(), igual para a tela e o PDF.
