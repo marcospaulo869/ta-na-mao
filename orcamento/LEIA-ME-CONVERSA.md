@@ -449,3 +449,20 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
 - **Pedido do Marcos (print com a linha marcada):** trocar "Falta pagar" por **Saldo a receber**, com o valor que falta na mesma linha. No print, num recibo de saldo final, a linha mostrava R$ 0,00 (o que sobra depois do recibo), e ele queria ver o valor que faltava.
 - **Agora o quadro (tela e PDF) fica:** Total da mão de obra → Já pago antes → **Saldo a receber** (em destaque: o que faltava antes deste recibo, ex.: R$ 2.556,79 = 51,5%) → Este recibo → Total pago → Saldo depois deste recibo (ex.: R$ 0,00).
 - No PDF: "Saldo a receber da mão de obra" (ou "dos materiais comprados fora", ou só "Saldo a receber") em negrito.
+
+## Atualização (26/11/2026): desconto em valor (R$) (versão 81)
+
+- **Pedido do Marcos (print com "Desconto (%)" marcado):** poder digitar o VALOR do desconto e o app fazer a conta.
+- **Agora:** embaixo de Mão de obra / Desconto há "Desconto em: **Porcentagem (%)** | **Valor (R$)**". Em Valor (R$) o campo vira "Desconto (R$)": digita o valor e o app calcula a porcentagem, respeitando o "Desconto sobre" (mão de obra, material ou os dois).
+- A explicação embaixo mostra, por exemplo: "Desconto de R$ 1.713,51 sobre a mão de obra (R$ 17.135,07) = 10%". Os totais e o PDF mostram "Desconto (10% da mão de obra) − R$ 1.713,51".
+- O desconto vai até o valor da base (avisa se passar). Trocar entre % e R$ mantém o mesmo desconto. Trocar o "Desconto sobre" em R$ mantém o valor.
+- O app lembra o último modo usado para os próximos orçamentos novos (neste aparelho). Orçamentos antigos seguem em %.
+- Campos novos no orçamento: discountMode ("pct" ou "value") e discountValue. Teste: .testes/t83.js.
+
+## Atualização (26/11/2026): "Desconto por indicação" bem visível no PDF (versão 82)
+
+- **Pedidos do Marcos:** (1) o desconto tem que aparecer no PDF (print com a tabela e o quadro dos totais marcados; o texto "Desc. mão de obra (100%)" encostava no valor); (2) "coloque o nome da opção como DESCONTO POR INDICAÇÃO".
+- **Nome:** o campo virou "Desconto por indicação (%)" / "Desconto por indicação (R$)", e a explicação, os totais da tela e o PDF usam "Desconto por indicação".
+- **PDF, quando há desconto:** a coluna dos totais fica mais larga e, depois da Mão de obra, vem **Valor sem desconto** (negrito) → **Desconto por indicação − R$ ...** (vermelho, negrito) com a porcentagem embaixo, menor ("10% da mão de obra") → VALOR TOTAL. Sem desconto, nada muda e a linha de desconto não aparece.
+- **Tela:** os totais mostram as mesmas linhas (Valor sem desconto; Desconto por indicação em vermelho). Sem desconto, a linha some.
+- Teste: .testes/t84.js.
