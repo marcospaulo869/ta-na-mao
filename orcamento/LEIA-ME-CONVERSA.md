@@ -488,3 +488,9 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
 - Com desconto, o quadro mostra **Valor sem desconto**, **Desconto por indicação (10% da mão de obra) − R$ ...** em vermelho e o **Total contratado** já com o desconto. O Resumo, o saldo e o PDF usam o valor com desconto (a linha da parte com desconto diz "(com desconto)"; no PDF o desconto sai em vermelho antes do Total).
 - Escolhendo o orçamento, a mão de obra e o material vêm **sem** o desconto, e o desconto do orçamento vem no campo novo (mesmo modo, % ou R$, e a mesma base). Demonstrativos salvos na versão 83 continuam iguais (desconto zero).
 - Campos: contract.discMode ("value"|"pct"), discount, discPct, discOn ("labor"|"material"|"total"). Teste: .testes/t86.js.
+
+## Atualização (26/11/2026): "Saldo materiais comprados fora" no Resumo (versão 85)
+
+- **Pedido do Marcos (print do Resumo, linha Saldo do Material marcada):** "coloca saldo materiais comprados fora".
+- **Agora:** quando o que falta do material é dos itens "Comprar fora" do orçamento (saldo do material maior que zero e até o valor dos comprados fora), a linha diz **Saldo materiais comprados fora** em vez de "Saldo". No PDF, o saldo do Material sai numa linha própria, "Saldo materiais comprados fora", logo abaixo de Material. Com saldo zero, ou maior que os comprados fora, continua "Saldo".
+- O valor dos comprados fora fica guardado no demonstrativo (contract.outside) quando vem do orçamento. Teste: .testes/t87.js.
