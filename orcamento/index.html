@@ -548,6 +548,15 @@ body.pv-open { overflow: hidden; }
 .plines:empty { display: none; }
 .pline { border: 1px solid var(--line); border-left: 4px solid var(--pay); border-radius: 10px; padding: 8px 12px 12px; display: grid; gap: 6px; background: var(--surface); }
 .pline.credito { border-left-color: var(--warm); }
+.pline.extra { border-left-color: var(--accent); }
+.xpaste { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: stretch; }
+.xpaste .xp-zone { min-height: 48px; border: 2px dashed var(--accent); border-radius: 10px; padding: 12px; color: var(--muted); font-size: 0.92rem; line-height: 1.3; background: var(--accent-soft); outline: none; overflow: hidden; max-height: 96px; -webkit-user-select: text; user-select: text; }
+.xpaste .xp-zone:focus { border-style: solid; color: var(--ink); }
+.xpaste .xp-zone:empty::before { content: attr(data-ph); }
+.xpaste .btn { min-height: 48px; }
+.xphoto { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.xphoto .proof-thumb { width: 60px; height: 60px; }
+.xphoto .xp-meta { flex: 1 1 120px; font-size: 0.85rem; color: var(--muted); }
 .pline .ph { display: flex; align-items: center; gap: 8px; min-height: 36px; }
 .pline .ph b { font-family: var(--font-display); }
 .pline .ph .rtag { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
@@ -1024,6 +1033,13 @@ body.pv-open { overflow: hidden; }
       </div>
       <button class="btn small" id="s-pull" type="button" hidden style="margin-top:8px">Puxar os recibos do orçamento</button>
       <p class="hint" id="s-pull-hint" hidden></p>
+    </section>
+    <section class="card">
+      <div class="row" style="justify-content:space-between"><h2>Materiais extras (comprados por mim)</h2><span class="hint" id="s-x-count"></span></div>
+      <p class="hint">Material que faltou e você comprou durante a fabricação. O valor soma no total e no saldo a receber. Quando o cliente pagar, lance o pagamento com "Referente a: Materiais extras".</p>
+      <div class="plines" id="s-extras"></div>
+      <div class="s-ctot" id="s-x-totrow" hidden><span>Total dos materiais extras</span><b id="s-x-total">R$ 0,00</b></div>
+      <div class="s-add" style="margin-top:10px"><button class="btn" id="s-add-extra" type="button">+ Material extra</button></div>
     </section>
     <section class="card">
       <h2>Resumo</h2>
@@ -4039,7 +4055,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "90";
+const APP_VERSION = "91";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -4747,14 +4763,14 @@ $("r-proof-del").onclick = async () => {
   if (old && old.id) proofDb.del(old.id).catch(() => {});
   toast("Comprovante removido");
 };
-async function viewProof(r) {
+async function viewProof(r, title) {
   if (!r.proof) return;
   const f = await proofDb.get(r.proof.id).catch(() => null);
   if (!f || !f.blob) return toast("O arquivo do comprovante não está neste aparelho. Restaure a cópia de segurança do aparelho onde ele foi anexado.", 6000);
-  const my = ++pvToken, isPdf = /pdf/.test(f.type || r.proof.type), name = proofFileName(r);
+  const my = ++pvToken, isPdf = /pdf/.test(f.type || r.proof.type), name = r.payer || r.number ? proofFileName(r) : `Nota-material-extra.${proofExt(r.proof)}`;
   pv = { blob: f.blob, name, onSend: () => shareProof(f.blob, name, f.type || r.proof.type) };
   pvMode(true, !isPdf);
-  $("pv-title").textContent = `Comprovante · ${r.number ? "Recibo nº " + pad4(r.number) : "Recibo novo"}${r.payer && r.payer.name ? " · " + r.payer.name : ""}`;
+  $("pv-title").textContent = title || `Comprovante · ${r.number ? "Recibo nº " + pad4(r.number) : "Recibo novo"}${r.payer && r.payer.name ? " · " + r.payer.name : ""}`;
   const box = $("pv-pages"); box.textContent = ""; box.classList.remove("zoom"); box.scrollTop = 0;
   $("pv").hidden = false; document.body.classList.add("pv-open"); openLayer("pv");
   if (!isPdf) {
@@ -4776,12 +4792,18 @@ $("r-proof-open").onclick = () => viewProof(receipt);
 // Arquivos que nenhum recibo (salvo ou na tela) usa mais são apagados ao abrir o app
 async function cleanProofs() {
   const used = new Set([...receipts, receipt].map((r) => r && r.proof && r.proof.id).filter(Boolean));
+  for (const s of [...statements, statement]) for (const x of (s && s.extras) || []) if (x.photo && x.photo.id) used.add(x.photo.id); // fotos das notas (v91)
   try { for (const k of await proofDb.keys()) if (!used.has(k)) await proofDb.del(k); } catch {}
 }
 // Cópia de segurança: os arquivos vão junto, em base64
 const blobToB64 = (b) => new Promise((ok, bad) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(",")[1] || ""); fr.onerror = () => bad(fr.error); fr.readAsDataURL(b); });
 async function proofsForBackup() {
   const out = {};
+  for (const s of [...statements, statement]) for (const x of (s && s.extras) || []) {
+    if (!x.photo || out[x.photo.id]) continue;
+    const f = await proofDb.get(x.photo.id).catch(() => null);
+    if (f && f.blob) out[x.photo.id] = { type: f.type || x.photo.type, name: f.name || "", data: await blobToB64(f.blob) };
+  }
   for (const r of [...receipts, receipt]) {
     if (!r || !r.proof || out[r.proof.id]) continue;
     const f = await proofDb.get(r.proof.id).catch(() => null);
@@ -5049,7 +5071,12 @@ function renderReceipts() {
      ou os dois), descrição e valor;
    - resumo: contratado, pago e saldo de cada parte e do total; "Saldo a receber", "Quitado" ou "Saldo a favor do cliente". */
 const S_KIND = { entrada: "Entrada", parcela: "Parcela", pagamento: "Pagamento", saldo: "Saldo final", credito: "Crédito na loja" };
-const S_ON = { labor: "Mão de obra", material: "Material", both: "Mão de obra + material" };
+const S_ON = { labor: "Mão de obra", material: "Material", both: "Mão de obra + material", extra: "Materiais extras" };
+// Materiais extras (pedido do Marcos, 26/11/2026, v91): material que faltou e ele comprou na fabricação; apresenta a nota no fim
+// e o cliente reembolsa. s.extras [{id, date, nf, desc, value}] somam no contratado e no saldo; o pagamento disso é on "extra".
+const stmExtras = (s) => (s.extras || []).filter((x) => parseNum(x.value) > 0)
+  .map((x, i) => [x, i]).sort((a, b) => String(a[0].date || "").localeCompare(String(b[0].date || "")) || a[1] - b[1]).map(([x]) => x);
+const stmExtra = (o) => ({ id: uid(), date: todayISO(), nf: "", desc: "", value: 0, ...o });
 // Forma de pagamento de cada lançamento (pedido do Marcos, 26/11/2026, v90): l.pay; no parcelado, l.n (parcelas) e
 // l.rate (taxa e juros da operadora, % digitada por ele). Os juros ficam com a operadora: não mudam o valor lançado nem o saldo.
 const S_PAY = { "": "Não informada", dinheiro: "Dinheiro", pix: "Pix", debito: "Cartão de débito", credito: "Cartão de crédito à vista", parcelado: "Cartão de crédito parcelado", transf: "Transferência bancária", boleto: "Boleto", cheque: "Cheque" };
@@ -5065,7 +5092,7 @@ const stmPayPdf = (l) => (l.pay === "parcelado" ? `Crédito ${stmN(l)}x` : S_PAY
 const STM_JUROS_AVISO = "no pagamento parcelado no cartão há incidência de juros e taxas da operadora do cartão.";
 const blankStatement = () => ({ id: "", number: 0, date: todayISO(), quoteId: "", quoteNumber: 0, serv: "",
   client: { name: "", doc: "", phone: "", email: "", address: "" }, contract: { labor: 0, material: 0, discMode: "value", discount: 0, discPct: 0, discOn: "labor" }, contractAuto: false,
-  lines: [], note: "", mySig: profile.signature || "", clientSig: "" });
+  lines: [], extras: [], note: "", mySig: profile.signature || "", clientSig: "" });
 const stmLine = (o) => ({ id: uid(), date: todayISO(), desc: "", kind: "pagamento", on: "labor", value: 0, ...o });
 // só entram nas contas e no PDF os lançamentos com valor; a ordem é a das datas (o mesmo dia fica na ordem da lista)
 const stmLines = (s) => s.lines.map((l, i) => [l, i]).filter(([l]) => parseNum(l.value) > 0)
@@ -5085,14 +5112,15 @@ function stmDisc(c) {
 const stmDiscLabel = (D) => `Desconto por indicação (${fmtPct(Math.round(D.pct * 100) / 100)}% ${S_DISC_OF[D.on]})`;
 function stmSum(s) {
   const lines = stmLines(s), by = (on) => cents(lines.filter((l) => (S_ON[l.on] ? l.on : "labor") === on).reduce((a, l) => a + parseNum(l.value), 0));
-  const D = stmDisc(s.contract), cl = D.nl, cm = D.nm, contract = cents(cl + cm);
-  const pl = by("labor"), pm = by("material"), pb = by("both"), paid = cents(pl + pm + pb);
+  const D = stmDisc(s.contract), cl = D.nl, cm = D.nm, extras = stmExtras(s), ce = cents(extras.reduce((a, x) => a + parseNum(x.value), 0));
+  const base = cents(cl + cm), contract = cents(base + ce);
+  const pl = by("labor"), pm = by("material"), pb = by("both"), pe = by("extra"), paid = cents(pl + pm + pb + pe);
   const dates = lines.map((l) => l.date).filter(Boolean).sort();
   // saldo do material que é dos itens "Comprar fora" do orçamento (pedido do Marcos, v85): a linha do saldo diz "materiais comprados fora"
   const q = s.quoteId && quotes.find((x) => x.id === s.quoteId);
   const outside = s.contract && typeof s.contract.outside === "number" ? s.contract.outside : q ? cents(calc(q).outside) : 0;
   const sm = cents(cm - pm), smOut = sm > 0.004; // v86: sempre que falta material (pedido do Marcos)
-  return { lines, D, gross: cents(D.cl + D.cm), cl, cm, contract, pl, pm, pb, paid, saldo: cents(contract - paid), from: dates[0] || "", to: dates[dates.length - 1] || "", outside, smOut };
+  return { lines, D, gross: cents(D.cl + D.cm), cl, cm, base, extras, ce, pe, contract, pl, pm, pb, paid, saldo: cents(contract - paid), from: dates[0] || "", to: dates[dates.length - 1] || "", outside, smOut };
 }
 // situação final: a receber, quitado ou a favor do cliente (sem valor contratado, mostra só o total pago)
 const stmFinal = (S) => !(S.contract > 0) ? { cls: "", label: "Total pago", value: S.paid }
@@ -5130,7 +5158,7 @@ function linkStmQuote(q) {
   toast(n ? `Orçamento nº ${pad4(q.number)}: ${n === 1 ? "1 recibo entrou" : n + " recibos entraram"} na lista. Lance também os créditos na loja e outros pagamentos.`
     : `Orçamento nº ${pad4(q.number)}: cliente e valores preenchidos. Ainda não há recibo dele; lance os pagamentos.`, 6000);
 }
-const stmDraft = () => !statement.id && !!(statement.client.name.trim() || statement.lines.some((l) => parseNum(l.value) > 0));
+const stmDraft = () => !statement.id && !!(statement.client.name.trim() || statement.lines.some((l) => parseNum(l.value) > 0) || (statement.extras || []).some((x) => parseNum(x.value) > 0));
 // "Demonstrativo" num orçamento salvo: abre o demonstrativo dele (o último salvo, já com os recibos novos) ou começa um
 let stmAsked = 0;
 function statementFromQuote(q) {
@@ -5277,6 +5305,109 @@ function addStmLine(o, focus) {
   if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
   if (inp) setTimeout(() => { inp.focus(); if (focus === "desc") { const n = inp.value.length; try { inp.setSelectionRange(n, n); } catch {} } }, 250);
 }
+function renderStmExtras() {
+  const box = $("s-extras"); box.textContent = "";
+  const xs = statement.extras || (statement.extras = []), n = xs.length;
+  $("s-x-count").textContent = n ? (n === 1 ? "1 nota" : `${n} notas`) : "";
+  xs.forEach((x, i) => {
+    const el = document.createElement("div"), p = `sx${i}-`;
+    el.className = "pline extra";
+    el.innerHTML = `<div class="ph"><b>${i + 1}</b><button class="btn small rm" type="button" aria-label="Tirar o material extra ${i + 1}">×</button></div>
+      <div class="pg">
+        <div class="xpaste"><div class="xp-zone" contenteditable="true" role="textbox" aria-label="Colar aqui a nota ou o texto do WhatsApp" inputmode="none" data-ph="Toque e segure aqui e escolha Colar (texto ou foto da nota copiada do WhatsApp)"></div><button class="btn small xp-btn" type="button">Colar</button></div>
+        <div class="xphoto" hidden><button type="button" class="proof-thumb xp-view" aria-label="Ver a foto da nota"><img alt=""><span class="proof-pdf" hidden>PDF</span></button><span class="xp-meta"></span><button class="btn small xp-del" type="button">Remover foto</button></div>
+        <div class="field f-date"><label for="${p}date">Data</label><input type="date" id="${p}date" data-k="date"></div>
+        <div class="field f-val"><label for="${p}value">Valor (R$)</label><input id="${p}value" class="num" inputmode="decimal" placeholder="0,00" data-k="value"></div>
+        <div class="field wide f-nf"><label for="${p}nf">Nº da nota / loja</label><input id="${p}nf" data-k="nf" autocomplete="off" autocapitalize="sentences" placeholder="Ex.: NF 12345 - Compensados Pereira"></div>
+        <div class="field wide f-desc"><label for="${p}desc">Descrição</label><input id="${p}desc" data-k="desc" data-fix="text" autocomplete="off" autocapitalize="sentences" autocorrect="on" spellcheck="true" placeholder="Ex.: dobradiças e corrediças que faltaram"></div>
+      </div>`;
+    const f = (k) => el.querySelector(`[data-k="${k}"]`);
+    f("date").value = x.date || ""; f("value").value = parseNum(x.value) ? priceIn(parseNum(x.value)) : ""; f("nf").value = x.nf || ""; f("desc").value = x.desc || "";
+    f("date").onchange = (e) => { x.date = e.target.value; };
+    f("value").oninput = (e) => { x.value = parseNum(e.target.value); renderStmSum(); };
+    f("value").onblur = (e) => { if (parseNum(e.target.value)) e.target.value = priceIn(parseNum(e.target.value)); };
+    f("nf").oninput = (e) => { x.nf = e.target.value; };
+    f("desc").oninput = (e) => { x.desc = e.target.value; };
+    // Colar do WhatsApp (pedido do Marcos, v91): texto preenche descrição, valor e nota; foto/print/PDF vira a foto da nota
+    const zone = el.querySelector(".xp-zone"), fill = () => { f("value").value = parseNum(x.value) ? priceIn(parseNum(x.value)) : ""; f("nf").value = x.nf || ""; f("desc").value = x.desc || ""; renderStmSum(); };
+    const take = async (file, text) => {
+      if (file) await attachExtraPhoto(x, file, el);
+      else if (text && text.trim()) { const n = applyExtraText(x, text); fill(); toast(n ? "Texto colado: confira " + n + "." : "Texto colado na descrição. Confira o valor."); }
+      else toast("Não tem nada copiado. No WhatsApp, segure a mensagem ou a foto e toque em Copiar.", 6000);
+      zone.textContent = ""; zone.blur();
+    };
+    zone.addEventListener("paste", (e) => { e.preventDefault(); const d = e.clipboardData; take(clipFile(d), d && d.getData("text/plain")); });
+    let zt = 0; // teclado que cola direto (sem o evento paste): espera parar de mexer e usa o que entrou
+    zone.addEventListener("input", () => { clearTimeout(zt); zt = setTimeout(() => { const t = zone.innerText, img = zone.querySelector("img"); if (img && img.src) fetch(img.src).then((r) => r.blob()).then((b) => take(new File([b], pastedName(b.type), { type: b.type }))).catch(() => take(null, "")); else if (t.trim()) take(null, t); }, 900); });
+    zone.addEventListener("drop", (e) => { e.preventDefault(); const d = e.dataTransfer; take(clipFile(d), d && d.getData("text/plain")); });
+    el.querySelector(".xp-btn").onclick = async () => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.read) {
+          for (const it of await navigator.clipboard.read()) {
+            const t = it.types.find((y) => /^image\//.test(y) || y === "application/pdf"); if (t) { const b = await it.getType(t); return take(new File([b], pastedName(t), { type: t })); }
+            if (it.types.includes("text/plain")) return take(null, await (await it.getType("text/plain")).text());
+          }
+          return take(null, "");
+        }
+        return take(null, await navigator.clipboard.readText());
+      } catch { zone.focus(); toast("Toque e segure no quadro pontilhado e escolha Colar.", 6000); }
+    };
+    renderExtraPhoto(x, el);
+    const rm = el.querySelector(".rm");
+    rm.onclick = () => {
+      if (rm.dataset.confirm !== "1" && (parseNum(x.value) || (x.desc || "").trim())) { rm.dataset.confirm = "1"; rm.textContent = "Tirar?"; setTimeout(() => { if (rm.isConnected) { rm.dataset.confirm = ""; rm.textContent = "×"; } }, 4000); return; }
+      statement.extras = statement.extras.filter((y) => y !== x); renderStmExtras(); renderStmSum();
+    };
+    box.appendChild(el);
+  });
+}
+// texto da nota ou da conversa: o valor (o que vem depois de "total", senão o maior R$), o nº da nota e a descrição
+function applyExtraText(x, text) {
+  const t = String(text).replace(/\r/g, "").trim(), got = [];
+  const money = (m) => parseNum(m.replace(/\s/g, ""));
+  const amts = [...t.matchAll(/(?:R\$\s*)?(\d{1,3}(?:\.\d{3})+,\d{2}|\d+,\d{2}|\d+\.\d{2}(?!\d))/g)].map((m) => ({ v: /,/.test(m[1]) ? money(m[1]) : parseFloat(m[1]), i: m.index, rs: /R\$/.test(m[0]) }));
+  const tot = t.search(/total/i);
+  let pick = tot >= 0 ? amts.find((a) => a.i > tot) : null;
+  if (!pick && amts.length) pick = amts.filter((a) => a.rs).sort((a, b) => b.v - a.v)[0] || amts.slice().sort((a, b) => b.v - a.v)[0];
+  if (pick && pick.v > 0 && !parseNum(x.value)) { x.value = cents(pick.v); got.push("o valor"); }
+  const nf = t.match(/(?:NF-?e?|nota(?:\s+fiscal)?|cupom)\s*(?:n[º°o.]*|#)?\s*[:\-]?\s*(\d[\d.\/-]{1,})/i);
+  if (nf && !(x.nf || "").trim()) { x.nf = "NF " + nf[1].replace(/[.\/-]+$/, ""); got.push("o nº da nota"); }
+  const desc = t.split("\n").map((l) => l.trim()).filter(Boolean).join(" · ").slice(0, 200);
+  if (desc) { x.desc = (x.desc || "").trim() ? x.desc.trim() + " · " + desc : desc; got.push("a descrição"); }
+  return got.join(", ").replace(/, ([^,]*)$/, " e $1");
+}
+async function attachExtraPhoto(x, f, el) {
+  const isPdf = /\.pdf$/i.test(f.name || "") || f.type === "application/pdf", isImg = /^image\//.test(f.type);
+  if (!isPdf && !isImg) return toast("Cole uma foto, um print ou o PDF da nota");
+  let blob = f;
+  if (isImg) { try { blob = await shrinkProof(f); } catch { blob = f; } }
+  if (blob.size > PROOF_MAX) return toast("Arquivo muito grande (mais de 8 MB). Mande um print da nota.", 6000);
+  const id = "nx-" + uid(), type = isPdf ? "application/pdf" : blob.type || "image/jpeg";
+  try { await proofDb.put(id, { blob, type, name: f.name || "" }); } catch { return toast("Não consegui guardar a foto da nota neste navegador. Tente de novo.", 6000); }
+  const old = x.photo; x.photo = { id, type, size: blob.size, at: new Date().toISOString() };
+  if (old && old.id) proofDb.del(old.id).catch(() => {});
+  renderExtraPhoto(x, el);
+  toast(isPdf ? "PDF da nota guardado" : "Foto da nota guardada. Ela vai no fim do PDF do demonstrativo.", 5000);
+}
+async function renderExtraPhoto(x, el) {
+  const box = el.querySelector(".xphoto"), p = x.photo, img = box.querySelector("img");
+  box.hidden = !p; if (!p) return;
+  const isPdf = /pdf/.test(p.type);
+  box.querySelector(".proof-pdf").hidden = !isPdf; img.hidden = isPdf;
+  box.querySelector(".xp-meta").textContent = (isPdf ? "PDF da nota" : "Foto da nota") + " · " + kb(p.size || 0);
+  box.querySelector(".xp-view").onclick = () => viewProof({ proof: p }, "Nota do material extra" + (x.nf ? " · " + x.nf : ""));
+  box.querySelector(".xp-del").onclick = () => { const old = x.photo; x.photo = null; renderExtraPhoto(x, el); if (old && old.id) proofDb.del(old.id).catch(() => {}); toast("Foto da nota removida"); };
+  if (isPdf) return;
+  const f = await proofDb.get(p.id).catch(() => null);
+  if (!f || !f.blob) { box.querySelector(".xp-meta").textContent = "A foto não está neste aparelho."; return; }
+  const u = URL.createObjectURL(f.blob); img.onload = () => setTimeout(() => URL.revokeObjectURL(u), 1000); img.src = u;
+}
+$("s-add-extra").onclick = () => {
+  (statement.extras || (statement.extras = [])).push(stmExtra());
+  renderStmExtras(); renderStmSum();
+  const el = $("s-extras").lastElementChild;
+  if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+};
 $("s-add-pay").onclick = () => addStmLine({ kind: statement.lines.some((l) => l.kind !== "credito") ? "parcela" : "entrada", on: "labor" }, "value");
 $("s-add-credit").onclick = () => addStmLine({ kind: "credito", on: "material", desc: "Crédito lançado na " }, "desc");
 $("s-pull").onclick = () => { const n = pullStmReceipts(); renderStmLines(); renderStmSum(); renderStmPull(); toast(n === 1 ? "1 recibo entrou na lista" : `${n} recibos entraram na lista`); };
@@ -5298,6 +5429,7 @@ function stmRows(S) {
   if (S.pb) R.push({ l: "Mão de obra + material", p: S.pb });
   const sm = cents(S.cm - S.pm);
   if (split && (S.cm || S.pm) && Math.abs(sm) > 0.004) R.push({ l: sm > 0 ? "Saldo materiais comprados fora" : "Saldo do material", s: sm });
+  if (S.ce || S.pe) R.push({ l: "Materiais extras (comprados por mim)", c: S.ce, p: S.pe, s: split ? cents(S.ce - S.pe) : undefined });
   R.push({ l: "Total", c: S.contract, p: S.paid, s: S.saldo, bold: true });
   return R;
 }
@@ -5322,7 +5454,8 @@ function renderStmSum() {
   html += `<div class="sfinal ${F.cls}"><span>${F.label}</span><b>${F.note ? "R$ 0,00" : money(F.value)}</b>${F.note ? `<small>${F.note}</small>` : ""}</div>`;
   if (!S.lines.length) html += `<p class="dn">Nenhum pagamento lançado ainda. Toque em "+ Pagamento" ou "+ Crédito na loja".</p>`;
   $("s-sum").innerHTML = html;
-  $("s-c-total").textContent = money(S.contract);
+  $("s-c-total").textContent = money(S.base);
+  $("s-x-totrow").hidden = !S.ce; $("s-x-total").textContent = money(S.ce);
   $("sbar-hint").textContent = F.label;
   $("sbar-total").textContent = money(F.value);
   $("sbar-total").classList.toggle("pay", F.cls !== "open");
@@ -5336,7 +5469,7 @@ function renderStatement() {
   for (const k of ["name", "doc", "phone", "email", "address"]) $("s-" + k).value = s.client[k] || "";
   markOwnPhone("s-phone");
   $("s-note").value = s.note || "";
-  renderStmContract(); renderStmLines(); renderStmSum(); renderStmPull();
+  renderStmContract(); renderStmLines(); renderStmExtras(); renderStmSum(); renderStmPull();
   sigSMe.set(s.mySig); sigSClient.set(s.clientSig);
 }
 $("s-quote").onchange = (e) => {
@@ -5393,6 +5526,7 @@ async function saveStatement(silent) {
   s.lines = s.lines.filter((l) => parseNum(l.value) > 0 || (l.desc || "").trim());
   const keep = s.lines.filter((l) => !(parseNum(l.value) > 0));
   s.lines = [...stmLines(s), ...keep]; // salvo em ordem de data
+  s.extras = [...stmExtras(s), ...(s.extras || []).filter((x) => !(parseNum(x.value) > 0) && ((x.desc || "").trim() || (x.nf || "").trim()))];
   s.mySig = sigSMe.value(); s.clientSig = sigSClient.value();
   s.updated = new Date().toISOString();
   try { await store.saveStatement(s); if (!silent) toast("Demonstrativo salvo"); }
@@ -5460,6 +5594,25 @@ function buildStatementPdf(s) {
     doc.setTextColor(...INK); doc.setFont("helvetica", "normal");
     y += h + 7;
   }
+  // Materiais extras comprados pela empresa (v91)
+  if (S.extras.length) {
+    if (y > 240) { doc.addPage(); header(); y = 44; }
+    doc.autoTable({
+      startY: y, margin: { left: M, right: M, top: 38 },
+      head: [[{ content: "Materiais extras comprados durante a fabricação (reembolso)", colSpan: 5 }], ["#", "Data", "Nota / loja", "Descrição", "Valor"]],
+      body: S.extras.map((x, i) => [i + 1, fmtDate(x.date), x.nf || "-", x.desc || "-", money(parseNum(x.value))]),
+      foot: [[{ content: "Total dos materiais extras", colSpan: 4, styles: { halign: "right" } }, { content: money(S.ce), styles: { halign: "right" } }]],
+      showFoot: "lastPage",
+      styles: { font: "helvetica", fontSize: 9, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
+      headStyles: { fillColor: HEAD, textColor: HEADTXT, fontStyle: "bold" },
+      footStyles: { fillColor: SOFT, textColor: INK, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: ALT },
+      columnStyles: { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 21 }, 2: { cellWidth: 45 }, 4: { cellWidth: 28, halign: "right" } },
+      didParseCell: (c) => { if (c.section === "head" && c.row.index === 1 && c.column.index === 4) c.cell.styles.halign = "right"; },
+      didDrawPage: (d) => { if (d.pageNumber > 1) header(); },
+    });
+    y = doc.lastAutoTable.finalY + 7;
+  }
   // Resumo: contratado, pago e saldo de cada parte
   if (S.contract > 0) {
     if (y > 225) { doc.addPage(); header(); y = 44; }
@@ -5510,6 +5663,14 @@ function buildStatementPdf(s) {
   };
   sigBlock(M, s.mySig, profile.owner || profile.name, profile.doc, profile.name && profile.owner ? profile.name : "Prestador");
   sigBlock(M + colW + 16, s.clientSig, s.client.name, s.client.doc, "Cliente");
+  // fotos das notas dos materiais extras, uma por página (v91)
+  for (const n of s._notas || []) {
+    doc.addPage(); header();
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(...INK);
+    doc.text(`Nota do material extra ${n.i}${n.nf ? " · " + n.nf : ""}${n.v ? " · " + money(n.v) : ""}`, M, 46);
+    const bw2 = W - 2 * M, bh = 285 - 52, k = Math.min(bw2 / n.w, bh / n.h), iw = n.w * k, ih = n.h * k;
+    try { doc.addImage(n.url, "JPEG", M + (bw2 - iw) / 2, 52, iw, ih); } catch {}
+  }
   const pages = doc.getNumberOfPages();
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i); doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...MUT);
@@ -5518,7 +5679,21 @@ function buildStatementPdf(s) {
   return doc;
 }
 const stmFileName = (s) => `Demonstrativo-${pad4(s.number)}-${(s.client.name || "cliente").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
-const stmPdf = async (s) => { await prepLogo(); return buildStatementPdf({ ...s, mySig: await inkBlue(s.mySig), clientSig: await inkBlue(s.clientSig) }); };
+async function stmNotas(s) {
+  const out = [];
+  for (const [i, x] of stmExtras(s).entries()) {
+    if (!x.photo || /pdf/.test(x.photo.type)) continue;
+    const f = await proofDb.get(x.photo.id).catch(() => null); if (!f || !f.blob) continue;
+    try {
+      const u = URL.createObjectURL(f.blob), img = new Image(); img.src = u; await img.decode();
+      const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight;
+      const g = c.getContext("2d"); g.fillStyle = "#FFFFFF"; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0); URL.revokeObjectURL(u);
+      out.push({ i: i + 1, nf: x.nf || "", v: parseNum(x.value), url: c.toDataURL("image/jpeg", 0.85), w: c.width, h: c.height });
+    } catch {}
+  }
+  return out;
+}
+const stmPdf = async (s) => { await prepLogo(); return buildStatementPdf({ ...s, mySig: await inkBlue(s.mySig), clientSig: await inkBlue(s.clientSig), _notas: await stmNotas(s) }); };
 function stmMessage(s) {
   const first = (s.client.name || "").split(" ")[0], S = stmSum(s), F = stmFinal(S);
   const end = !(S.contract > 0) ? "" : F.label === "Quitado" ? " Está tudo quitado." : `\n${F.label}: ${money(F.value)}.`;

@@ -525,3 +525,13 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
 - Os juros ficam com a operadora: não mudam o valor lançado, o total pago nem o saldo.
 - PDF: coluna "Tipo / forma" (ex.: "Crédito na loja / Crédito 10x") e um quadro "PAGAMENTO PARCELADO NO CARTÃO" com as
   parcelas, a taxa e o aviso em vermelho. Teste: .testes/t88.js.
+
+### v91 (26/11/2026) - Materiais extras (comprados por mim) no demonstrativo
+- Seção nova abaixo de "Pagamentos e créditos": material que faltou e o Marcos comprou na fabricação. Cada um tem data,
+  nº da nota / loja, descrição e valor. O total soma no total contratado e no saldo a receber.
+- "Referente a" dos pagamentos ganhou "Materiais extras" para lançar o reembolso do cliente.
+- Resumo: linha "Materiais extras (comprados por mim)" antes do Total. PDF: tabela própria com as notas e o total,
+  e a foto de cada nota numa página no fim.
+- Colar do WhatsApp: quadro pontilhado (toque e segure, Colar) e botão "Colar". Texto preenche valor (depois de
+  "total" ou o maior R$), nº da nota e descrição; foto/print/PDF vira a foto da nota (IndexedDB, entra na cópia de segurança).
+  Teste: .testes/t89.js.
