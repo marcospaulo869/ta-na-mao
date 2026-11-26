@@ -499,3 +499,8 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
 
 - **Retorno do Marcos:** no demonstrativo dele ainda aparecia só "Saldo" (o demonstrativo não estava ligado a um orçamento com itens Comprar fora, então a regra da v85 não valia).
 - **Agora:** sempre que o saldo do Material for maior que zero, a linha diz **Saldo materiais comprados fora** (tela e PDF). Saldo zero continua "Saldo".
+
+## Atualização (26/11/2026): Material antes da Mão de obra no Resumo (versão 87)
+
+- **Pedido do Marcos (print do PDF):** "inverter essa sequência, colocar primeiro o valor do material depois o de mão de obra com desconto".
+- **Agora:** no Resumo do Demonstrativo (tela e PDF) vem primeiro **Material** (e a linha "Saldo materiais comprados fora"), depois **Mão de obra (com desconto)**.

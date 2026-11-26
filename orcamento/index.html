@@ -4033,7 +4033,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "86";
+const APP_VERSION = "87";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -5242,8 +5242,8 @@ function renderStmSum() {
   let html = "<table>";
   if (S.contract > 0) {
     const split = !S.pb; // com pagamentos "mão de obra + material" o saldo de cada parte não dá para separar
-    if (S.cl || S.pl) html += grp("Mão de obra") + row(S.D.d && S.D.on !== "material" ? "Contratado (com desconto)" : "Contratado", S.cl) + row("Pago", S.pl) + (split ? row("Saldo", cents(S.cl - S.pl)) : "");
     if (S.cm || S.pm) html += grp("Material") + row(S.D.d && S.D.on !== "labor" ? "Contratado (com desconto)" : "Contratado", S.cm) + row("Pago", S.pm) + (split ? row(S.smOut ? "Saldo materiais comprados fora" : "Saldo", cents(S.cm - S.pm)) : "");
+    if (S.cl || S.pl) html += grp("Mão de obra") + row(S.D.d && S.D.on !== "material" ? "Contratado (com desconto)" : "Contratado", S.cl) + row("Pago", S.pl) + (split ? row("Saldo", cents(S.cl - S.pl)) : "");
     if (S.pb) html += grp("Mão de obra + material") + row("Pago", S.pb);
     html += grp("Total") + (S.D.d ? row("Valor sem desconto", S.gross) + `<tr class="disc"><td>${stmDiscLabel(S.D)}</td><td class="v">− ${money(S.D.d)}</td></tr>` : "")
       + row("Total contratado", S.contract, "tt") + row("Total pago", S.paid, "tt");
@@ -5380,9 +5380,9 @@ function buildStatementPdf(s) {
   if (S.contract > 0) {
     if (y > 225) { doc.addPage(); header(); y = 44; }
     const split = !S.pb, body = [];
-    if (S.cl || S.pl) body.push([S.D.d && S.D.on !== "material" ? "Mão de obra (com desconto)" : "Mão de obra", money(S.cl), money(S.pl), split ? money(cents(S.cl - S.pl)) : "-"]);
     if (S.cm || S.pm) body.push([S.D.d && S.D.on !== "labor" ? "Material (com desconto)" : "Material", money(S.cm), money(S.pm), split ? (S.smOut ? "" : money(cents(S.cm - S.pm))) : "-"]);
     if ((S.cm || S.pm) && split && S.smOut) body.push(["Saldo materiais comprados fora", "", "", money(cents(S.cm - S.pm))]);
+    if (S.cl || S.pl) body.push([S.D.d && S.D.on !== "material" ? "Mão de obra (com desconto)" : "Mão de obra", money(S.cl), money(S.pl), split ? money(cents(S.cl - S.pl)) : "-"]);
     if (S.pb) body.push(["Mão de obra + material", "-", money(S.pb), "-"]);
     if (S.D.d) body.push(["Valor sem desconto", money(S.gross), "", ""], [stmDiscLabel(S.D), "- " + money(S.D.d), "", ""]);
     body.push(["Total", money(S.contract), money(S.paid), money(S.saldo)]);
