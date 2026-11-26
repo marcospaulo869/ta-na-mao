@@ -564,6 +564,10 @@ body.pv-open { overflow: hidden; }
 .s-ctot { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); font-weight: 700; }
 .s-ctot b { font-family: var(--font-display); font-size: 1.15rem; font-variant-numeric: tabular-nums; }
 #s-c-auto { margin-top: 8px; }
+.s-disc { display: grid; gap: 10px; margin-top: 12px; }
+.s-ctot + .s-ctot { margin-top: 2px; padding-top: 2px; border-top: 0; }
+#s-c-gross:not([hidden]) ~ #s-c-totrow { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 6px; }
+.s-cdisc, .s-cdisc b, .sdemo tr.disc td { color: var(--danger); }
 .sdemo td.g { color: var(--accent); font-weight: 800; padding-top: 10px; }
 .sdemo tr.tt td { font-weight: 800; }
 .sfinal { margin-top: 12px; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; background: var(--pay-soft); font-weight: 800; }
@@ -980,7 +984,28 @@ body.pv-open { overflow: hidden; }
         <div class="field"><label for="s-c-labor">Mão de obra (R$)</label><input id="s-c-labor" class="num" inputmode="decimal" placeholder="0,00"></div>
         <div class="field"><label for="s-c-mat">Material (R$)</label><input id="s-c-mat" class="num" inputmode="decimal" placeholder="0,00"></div>
       </div>
-      <div class="s-ctot"><span>Total contratado</span><b id="s-c-total">R$ 0,00</b></div>
+      <div class="s-disc">
+        <div class="field"><label for="s-c-disc" id="s-c-disc-l">Desconto por indicação (R$)</label><input id="s-c-disc" class="num" inputmode="decimal" placeholder="0,00"></div>
+        <div class="dtype" role="group" aria-labelledby="s-c-disc-mode-l">
+          <span class="dtype-l" id="s-c-disc-mode-l">Desconto em</span>
+          <div class="dtypes dmodes" id="s-c-disc-mode">
+            <button type="button" class="dtbtn" data-mode="pct">Porcentagem (%)</button>
+            <button type="button" class="dtbtn" data-mode="value">Valor (R$)</button>
+          </div>
+        </div>
+        <div class="dtype" role="group" aria-labelledby="s-c-disc-on-l">
+          <span class="dtype-l" id="s-c-disc-on-l">Desconto sobre</span>
+          <div class="dtypes" id="s-c-disc-on">
+            <button type="button" class="dtbtn" data-on="labor">Mão de obra</button>
+            <button type="button" class="dtbtn" data-on="material">Material</button>
+            <button type="button" class="dtbtn" data-on="total">Material + mão de obra</button>
+          </div>
+        </div>
+        <p class="hint" id="s-c-disc-hint" hidden></p>
+      </div>
+      <div class="s-ctot" id="s-c-gross" hidden><span>Valor sem desconto</span><b id="s-c-gross-v">R$ 0,00</b></div>
+      <div class="s-ctot s-cdisc" id="s-c-discrow" hidden><span id="s-c-disc-t">Desconto por indicação</span><b id="s-c-disc-v">R$ 0,00</b></div>
+      <div class="s-ctot" id="s-c-totrow"><span>Total contratado</span><b id="s-c-total">R$ 0,00</b></div>
       <button class="btn small" id="s-c-auto" type="button" hidden>Voltar aos valores do orçamento</button>
     </section>
     <section class="card">
@@ -4008,7 +4033,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "83";
+const APP_VERSION = "84";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -5020,25 +5045,45 @@ function renderReceipts() {
 const S_KIND = { entrada: "Entrada", parcela: "Parcela", pagamento: "Pagamento", saldo: "Saldo final", credito: "Crédito na loja" };
 const S_ON = { labor: "Mão de obra", material: "Material", both: "Mão de obra + material" };
 const blankStatement = () => ({ id: "", number: 0, date: todayISO(), quoteId: "", quoteNumber: 0, serv: "",
-  client: { name: "", doc: "", phone: "", email: "", address: "" }, contract: { labor: 0, material: 0 }, contractAuto: false,
+  client: { name: "", doc: "", phone: "", email: "", address: "" }, contract: { labor: 0, material: 0, discMode: "value", discount: 0, discPct: 0, discOn: "labor" }, contractAuto: false,
   lines: [], note: "", mySig: profile.signature || "", clientSig: "" });
 const stmLine = (o) => ({ id: uid(), date: todayISO(), desc: "", kind: "pagamento", on: "labor", value: 0, ...o });
 // só entram nas contas e no PDF os lançamentos com valor; a ordem é a das datas (o mesmo dia fica na ordem da lista)
 const stmLines = (s) => s.lines.map((l, i) => [l, i]).filter(([l]) => parseNum(l.value) > 0)
   .sort((a, b) => String(a[0].date || "").localeCompare(String(b[0].date || "")) || a[1] - b[1]).map(([l]) => l);
+// Desconto por indicação no valor contratado (pedido do Marcos, 26/11/2026, v84): em % ou R$, sobre a mão de obra, o material
+// ou os dois (aí sai de cada um na proporção). contract.discMode "value"|"pct", discount (R$), discPct, discOn "labor"|"material"|"total".
+// Demonstrativos da v83 não têm o campo: desconto zero (a mão de obra deles já veio com o desconto).
+const S_DISC_OF = { labor: "da mão de obra", material: "do material", total: "do total" };
+function stmDisc(c) {
+  c = c || {};
+  const cl = cents(parseNum(c.labor)), cm = cents(parseNum(c.material)), on = S_DISC_OF[c.discOn] ? c.discOn : "labor";
+  const base = cents(on === "labor" ? cl : on === "material" ? cm : cl + cm);
+  const d = c.discMode === "pct" ? cents(base * clampPct(parseNum(c.discPct)) / 100) : cents(Math.min(Math.max(0, parseNum(c.discount)), base));
+  const dl = on === "labor" ? d : on === "material" ? 0 : cl + cm > 0 ? cents(d * cl / (cl + cm)) : 0;
+  return { cl, cm, on, base, d, pct: base > 0 ? d / base * 100 : 0, nl: cents(cl - dl), nm: cents(cm - (d - dl)) };
+}
+const stmDiscLabel = (D) => `Desconto por indicação (${fmtPct(Math.round(D.pct * 100) / 100)}% ${S_DISC_OF[D.on]})`;
 function stmSum(s) {
   const lines = stmLines(s), by = (on) => cents(lines.filter((l) => (S_ON[l.on] ? l.on : "labor") === on).reduce((a, l) => a + parseNum(l.value), 0));
-  const cl = cents(parseNum(s.contract && s.contract.labor)), cm = cents(parseNum(s.contract && s.contract.material)), contract = cents(cl + cm);
+  const D = stmDisc(s.contract), cl = D.nl, cm = D.nm, contract = cents(cl + cm);
   const pl = by("labor"), pm = by("material"), pb = by("both"), paid = cents(pl + pm + pb);
   const dates = lines.map((l) => l.date).filter(Boolean).sort();
-  return { lines, cl, cm, contract, pl, pm, pb, paid, saldo: cents(contract - paid), from: dates[0] || "", to: dates[dates.length - 1] || "" };
+  return { lines, D, gross: cents(D.cl + D.cm), cl, cm, contract, pl, pm, pb, paid, saldo: cents(contract - paid), from: dates[0] || "", to: dates[dates.length - 1] || "" };
 }
 // situação final: a receber, quitado ou a favor do cliente (sem valor contratado, mostra só o total pago)
 const stmFinal = (S) => !(S.contract > 0) ? { cls: "", label: "Total pago", value: S.paid }
   : S.saldo > 0.004 ? { cls: "open", label: "Saldo a receber", value: S.saldo }
   : S.saldo < -0.004 ? { cls: "", label: "Saldo a favor do cliente", value: -S.saldo }
   : { cls: "", label: "Quitado", value: 0, note: "Não há saldo a pagar." };
-const stmContractOf = (q) => { const t = calc(q), labor = laborNet(t); return { labor, material: cents(Math.max(0, t.total - labor)) }; };
+// do orçamento: mão de obra e material (com os comprados fora) sem o desconto, e o desconto por indicação dele
+const stmContractOf = (q) => {
+  const t = calc(q), on = t.type === "materials" ? "material" : t.type === "labor" ? "labor" : "total";
+  const c = { labor: cents(t.labor), material: cents(t.materials + t.outside), discMode: t.mode === "value" ? "value" : "pct", discount: cents(t.discount || 0), discOn: on };
+  const base = stmDisc({ ...c, discMode: "value", discount: 0 }).base; // a % fica sobre a base daqui (o material inclui os comprados fora)
+  c.discPct = base > 0 ? Math.round(c.discount / base * 10000) / 100 : 0;
+  return c;
+};
 const R2S_KIND = { total: "pagamento", entrada: "entrada", parcela: "parcela", saldo: "saldo" };
 const lineFromReceipt = (r) => stmLine({ date: r.date || todayISO(), desc: `Recibo nº ${pad4(r.number)}${r.method ? " (" + r.method + ")" : ""}`,
   kind: R2S_KIND[r.kind] || "pagamento", on: baseOf(r) === "labor" ? "labor" : baseOf(r) === "outside" ? "material" : "both", value: parseNum(r.amount), rid: r.id });
@@ -5107,11 +5152,25 @@ function renderStmQuotes() {
 function renderStmContract() {
   const s = statement, c = s.contract;
   for (const [id, k] of [["s-c-labor", "labor"], ["s-c-mat", "material"]]) if (document.activeElement !== $(id)) $(id).value = parseNum(c[k]) ? priceIn(parseNum(c[k])) : "";
-  $("s-c-total").textContent = money(cents(parseNum(c.labor) + parseNum(c.material)));
+  const D = stmDisc(c), pctMode = c.discMode === "pct";
+  $("s-c-disc-l").textContent = `Desconto por indicação (${pctMode ? "%" : "R$"})`;
+  $("s-c-disc").placeholder = pctMode ? "0" : "0,00";
+  if (document.activeElement !== $("s-c-disc")) $("s-c-disc").value = pctMode ? (parseNum(c.discPct) ? fmtPct(parseNum(c.discPct)) : "") : (parseNum(c.discount) ? priceIn(parseNum(c.discount)) : "");
+  for (const b of $("s-c-disc-mode").children) b.setAttribute("aria-pressed", String(b.dataset.mode === (pctMode ? "pct" : "value")));
+  for (const b of $("s-c-disc-on").children) b.setAttribute("aria-pressed", String(b.dataset.on === D.on));
+  const typed = pctMode ? parseNum(c.discPct) : parseNum(c.discount);
+  $("s-c-disc-hint").hidden = !D.d && !typed;
+  $("s-c-disc-hint").textContent = !D.base ? `Preencha o valor ${D.on === "labor" ? "da mão de obra" : D.on === "material" ? "do material" : "contratado"} para o desconto valer.`
+    : `Desconto de ${money(D.d)} sobre ${D.on === "labor" ? "a mão de obra" : D.on === "material" ? "o material" : "o total"} (${money(D.base)}) = ${fmtPct(Math.round(D.pct * 100) / 100)}%${!pctMode && parseNum(c.discount) > D.base + 0.004 ? ". O desconto vai até o valor da base." : ""}`;
+  $("s-c-gross").hidden = $("s-c-discrow").hidden = !D.d;
+  $("s-c-gross-v").textContent = money(cents(D.cl + D.cm));
+  $("s-c-disc-t").textContent = stmDiscLabel(D);
+  $("s-c-disc-v").textContent = "− " + money(D.d);
+  $("s-c-total").textContent = money(cents(D.nl + D.nm));
   const q = s.quoteId && quotes.find((x) => x.id === s.quoteId);
   if (q && s.contractAuto) {
     const t = calc(q);
-    $("s-c-hint").textContent = `Vieram do orçamento nº ${pad4(q.number)}: a mão de obra${t.discount && t.type !== "materials" ? " (já com o desconto)" : ""} e o material${t.outside ? ` (com ${money(cents(t.outside))} dos comprados fora)` : ""}. Pode mudar se o combinado mudou.`;
+    $("s-c-hint").textContent = `Vieram do orçamento nº ${pad4(q.number)}: a mão de obra, o material${t.outside ? ` (com ${money(cents(t.outside))} dos comprados fora)` : ""}${t.discount ? " e o desconto por indicação" : ""}. Pode mudar se o combinado mudou.`;
   } else $("s-c-hint").textContent = q ? "Valores digitados por você." : "Quanto foi combinado com o cliente. Com um orçamento escolhido, vem dele.";
   $("s-c-auto").hidden = !q || s.contractAuto;
 }
@@ -5178,10 +5237,11 @@ function renderStmSum() {
   let html = "<table>";
   if (S.contract > 0) {
     const split = !S.pb; // com pagamentos "mão de obra + material" o saldo de cada parte não dá para separar
-    if (S.cl || S.pl) html += grp("Mão de obra") + row("Contratado", S.cl) + row("Pago", S.pl) + (split ? row("Saldo", cents(S.cl - S.pl)) : "");
-    if (S.cm || S.pm) html += grp("Material") + row("Contratado", S.cm) + row("Pago", S.pm) + (split ? row("Saldo", cents(S.cm - S.pm)) : "");
+    if (S.cl || S.pl) html += grp("Mão de obra") + row(S.D.d && S.D.on !== "material" ? "Contratado (com desconto)" : "Contratado", S.cl) + row("Pago", S.pl) + (split ? row("Saldo", cents(S.cl - S.pl)) : "");
+    if (S.cm || S.pm) html += grp("Material") + row(S.D.d && S.D.on !== "labor" ? "Contratado (com desconto)" : "Contratado", S.cm) + row("Pago", S.pm) + (split ? row("Saldo", cents(S.cm - S.pm)) : "");
     if (S.pb) html += grp("Mão de obra + material") + row("Pago", S.pb);
-    html += grp("Total") + row("Total contratado", S.contract, "tt") + row("Total pago", S.paid, "tt");
+    html += grp("Total") + (S.D.d ? row("Valor sem desconto", S.gross) + `<tr class="disc"><td>${stmDiscLabel(S.D)}</td><td class="v">− ${money(S.D.d)}</td></tr>` : "")
+      + row("Total contratado", S.contract, "tt") + row("Total pago", S.paid, "tt");
   } else {
     if (S.pl) html += row("Pago de mão de obra", S.pl);
     if (S.pm) html += row("Pago de material", S.pm);
@@ -5221,6 +5281,20 @@ for (const [id, k] of [["s-c-labor", "labor"], ["s-c-mat", "material"]]) {
   $(id).oninput = (e) => { statement.contract[k] = parseNum(e.target.value); statement.contractAuto = false; renderStmContract(); renderStmSum(); };
   $(id).onblur = (e) => { if (parseNum(e.target.value)) e.target.value = priceIn(parseNum(e.target.value)); };
 }
+$("s-c-disc").oninput = (e) => {
+  const c = statement.contract, v = parseNum(e.target.value);
+  if (c.discMode === "pct") c.discPct = clampPct(v); else c.discount = Math.max(0, v);
+  statement.contractAuto = false; renderStmContract(); renderStmSum();
+};
+$("s-c-disc").onblur = (e) => { const c = statement.contract; if (c.discMode !== "pct" && parseNum(e.target.value)) e.target.value = priceIn(parseNum(e.target.value)); };
+// trocar entre % e R$ mantém o mesmo desconto; trocar o "sobre" mantém o valor (em R$) ou a porcentagem (em %)
+for (const b of $("s-c-disc-mode").children) b.onclick = () => {
+  const c = statement.contract, D = stmDisc(c);
+  if (b.dataset.mode === (c.discMode === "pct" ? "pct" : "value")) return;
+  if (b.dataset.mode === "pct") { c.discMode = "pct"; c.discPct = Math.round(D.pct * 100) / 100; } else { c.discMode = "value"; c.discount = D.d; }
+  statement.contractAuto = false; renderStmContract(); renderStmSum();
+};
+for (const b of $("s-c-disc-on").children) b.onclick = () => { statement.contract.discOn = b.dataset.on; statement.contractAuto = false; renderStmContract(); renderStmSum(); };
 $("s-c-auto").onclick = () => { const q = quotes.find((x) => x.id === statement.quoteId); if (!q) return; statement.contract = stmContractOf(q); statement.contractAuto = true; renderStmContract(); renderStmSum(); };
 const newStatement = () => { statement = blankStatement(); renderStatement(); window.scrollTo(0, 0); };
 $("btn-s-new").onclick = () => confirmNew($("btn-s-new"), "Novo demonstrativo", stmDraft(), newStatement);
@@ -5301,9 +5375,10 @@ function buildStatementPdf(s) {
   if (S.contract > 0) {
     if (y > 225) { doc.addPage(); header(); y = 44; }
     const split = !S.pb, body = [];
-    if (S.cl || S.pl) body.push(["Mão de obra", money(S.cl), money(S.pl), split ? money(cents(S.cl - S.pl)) : "-"]);
-    if (S.cm || S.pm) body.push(["Material", money(S.cm), money(S.pm), split ? money(cents(S.cm - S.pm)) : "-"]);
+    if (S.cl || S.pl) body.push([S.D.d && S.D.on !== "material" ? "Mão de obra (com desconto)" : "Mão de obra", money(S.cl), money(S.pl), split ? money(cents(S.cl - S.pl)) : "-"]);
+    if (S.cm || S.pm) body.push([S.D.d && S.D.on !== "labor" ? "Material (com desconto)" : "Material", money(S.cm), money(S.pm), split ? money(cents(S.cm - S.pm)) : "-"]);
     if (S.pb) body.push(["Mão de obra + material", "-", money(S.pb), "-"]);
+    if (S.D.d) body.push(["Valor sem desconto", money(S.gross), "", ""], [stmDiscLabel(S.D), "- " + money(S.D.d), "", ""]);
     body.push(["Total", money(S.contract), money(S.paid), money(S.saldo)]);
     doc.autoTable({
       startY: y, margin: { left: M, right: M, top: 38 },
@@ -5311,7 +5386,8 @@ function buildStatementPdf(s) {
       styles: { font: "helvetica", fontSize: 9.5, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
       headStyles: { fillColor: HEAD, textColor: HEADTXT, fontStyle: "bold" },
       columnStyles: { 1: { halign: "right", cellWidth: 36 }, 2: { halign: "right", cellWidth: 36 }, 3: { halign: "right", cellWidth: 36 } },
-      didParseCell: (c) => { if (c.section === "head" && c.column.index > 0) c.cell.styles.halign = "right"; if (c.section === "body" && c.row.index === body.length - 1) c.cell.styles.fontStyle = "bold"; },
+      didParseCell: (c) => { if (c.section === "head" && c.column.index > 0) c.cell.styles.halign = "right"; if (c.section === "body" && c.row.index === body.length - 1) c.cell.styles.fontStyle = "bold";
+        if (c.section === "body" && S.D.d && c.row.index === body.length - 2 && c.column.index < 2) { c.cell.styles.textColor = [192, 57, 43]; c.cell.styles.fontStyle = "bold"; } },
       didDrawPage: (d) => { if (d.pageNumber > 1) header(); },
     });
     y = doc.lastAutoTable.finalY + 6;
