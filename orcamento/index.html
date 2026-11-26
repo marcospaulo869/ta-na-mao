@@ -534,6 +534,52 @@ body.pv-open { overflow: hidden; }
 }
 @media (pointer: coarse) and (min-width: 601px) { .item { grid-template-columns: 88px 84px minmax(0, 1fr) minmax(0, 1.2fr) minmax(96px, max-content) 44px 44px; } }
 @media (max-width: 400px) { .bar .btn { padding-inline: 12px; } .bar .total { font-size: 1.05rem; } .top .btn.small { padding-inline: 10px; } }
+/* Demonstrativo de pagamentos (v83): terceira cor, o verde de "pago" */
+:root { --pay: #2F7A4F; --pay-ink: #FFFFFF; --pay-soft: #E0F0E6; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --pay: #6CC98E; --pay-ink: #0E1417; --pay-soft: #1B3326; } }
+:root[data-theme="dark"] { --pay: #6CC98E; --pay-ink: #0E1417; --pay-soft: #1B3326; }
+.action.pay .ic { background: var(--pay-soft); color: var(--pay); }
+.btn.pay { background: var(--pay); border-color: var(--pay); color: var(--pay-ink); }
+.btn.pay.new .plus { background: rgba(255, 255, 255, 0.22); }
+.btn.stm { display: inline-flex; align-items: center; gap: 6px; border-color: var(--pay); background: var(--pay-soft); color: var(--ink); font-weight: 700; }
+.btn.stm svg { width: 18px; height: 18px; flex: none; color: var(--pay); }
+.resume .row1.statement { border-left-color: var(--pay); }
+.plines { display: grid; gap: 10px; margin-block: 10px; }
+.plines:empty { display: none; }
+.pline { border: 1px solid var(--line); border-left: 4px solid var(--pay); border-radius: 10px; padding: 8px 12px 12px; display: grid; gap: 6px; background: var(--surface); }
+.pline.credito { border-left-color: var(--warm); }
+.pline .ph { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+.pline .ph b { font-family: var(--font-display); }
+.pline .ph .rtag { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+.pline .ph .rm { margin-left: auto; color: var(--danger); min-width: 44px; }
+.pline .pg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.pline .pg .wide { grid-column: 1 / -1; }
+.pline .pg label { font-size: 0.82rem; }
+@media (min-width: 640px) {
+  .pline .pg { grid-template-columns: 150px minmax(0, 1fr) minmax(0, 1fr) 150px; }
+  .pline .f-kind { order: 1; } .pline .f-on { order: 2; } .pline .f-val { order: 3; } .pline .pg .wide { order: 4; }
+}
+.s-add { display: flex; flex-wrap: wrap; gap: 8px; }
+.s-add .btn { flex: 1 1 140px; min-height: 48px; }
+.s-ctot { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); font-weight: 700; }
+.s-ctot b { font-family: var(--font-display); font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+#s-c-auto { margin-top: 8px; }
+.sdemo td.g { color: var(--accent); font-weight: 800; padding-top: 10px; }
+.sdemo tr.tt td { font-weight: 800; }
+.sfinal { margin-top: 12px; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; background: var(--pay-soft); font-weight: 800; }
+.sfinal b { font-family: var(--font-display); font-size: 1.35rem; color: var(--pay); font-variant-numeric: tabular-nums; }
+.sfinal.open { background: var(--warm-soft); } .sfinal.open b { color: var(--warm); }
+.sfinal small { flex-basis: 100%; font-weight: 500; color: var(--muted); }
+.pill.pay { background: var(--pay-soft); color: var(--pay); }
+.bar .total.pay { color: var(--pay); }
+@media (max-width: 640px) {
+  #sbar .in { flex-wrap: wrap; row-gap: 6px; }
+  #sbar .in > .tot { width: 100%; justify-content: space-between; gap: 8px; }
+  #sbar .tv { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  #sbar .btn.view { min-height: 44px; padding-block: 4px; }
+  #sbar .in > .row { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 8px; }
+  #sbar .in > .row .btn { justify-content: center; white-space: nowrap; }
+}
 </style>
 
 <div class="wrap">
@@ -559,6 +605,10 @@ body.pv-open { overflow: hidden; }
       <button role="tab" id="tab-receipt" data-view="receipt">Recibo</button>
       <button role="tab" id="tab-receipts" data-view="receipts">Salvos</button>
     </div>
+    <div class="tabs" role="tablist" id="tabs-statement" hidden>
+      <button role="tab" id="tab-statement" data-view="statement">Demonstrativo</button>
+      <button role="tab" id="tab-statements" data-view="statements">Salvos</button>
+    </div>
   </div>
 
   <!-- INÍCIO -->
@@ -581,6 +631,11 @@ body.pv-open { overflow: hidden; }
       <button class="action receipt" id="go-receipt">
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/><path d="M9.5 16c1-1 2-1 2.5 0s1.5 1 2.5 0"/></svg></span>
         <span><b>Recibo</b><small>Comprove o pagamento com assinatura na tela</small></span>
+        <span class="go">›</span>
+      </button>
+      <button class="action pay" id="go-statement">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v3H9z"/><path d="M8 4.5H6a1 1 0 0 0-1 1V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V5.5a1 1 0 0 0-1-1h-2"/><path d="M8.5 11.5l1.5 1.5 2.5-2.5"/><path d="M14.5 12H16"/><path d="M8.5 16.5l1.5 1.5 2.5-2.5"/><path d="M14.5 17H16"/></svg></span>
+        <span><b>Demonstrativo de pagamentos</b><small>Acerto final: tudo o que o cliente já pagou e o saldo</small></span>
         <span class="go">›</span>
       </button>
     </div>
@@ -896,6 +951,82 @@ body.pv-open { overflow: hidden; }
     <div class="list" id="receipts-list"></div>
   </div>
 
+  <!-- DEMONSTRATIVO DE PAGAMENTOS (v83) -->
+  <div id="view-statement" class="stack" hidden>
+    <button class="btn pay new" id="btn-s-new" type="button"><span class="plus" aria-hidden="true">+</span>Novo demonstrativo</button>
+    <section class="card">
+      <h2 id="s-title">Novo demonstrativo</h2>
+      <p class="hint">Acerto final com o cliente: o valor contratado, tudo o que ele pagou durante a negociação (entrada, parcelas, saldo, crédito lançado na loja) e o que ainda falta.</p>
+      <div class="grid2">
+        <div class="field wide"><label for="s-quote">Orçamento</label><select id="s-quote"></select><p class="hint" id="s-quote-hint">Escolha o orçamento: o cliente, os valores e os recibos já feitos entram sozinhos.</p></div>
+        <div class="field"><label for="s-date">Data do demonstrativo</label><input type="date" id="s-date"></div>
+        <div class="field"><label for="s-serv">Obra / serviço (opcional)</label><input id="s-serv" autocomplete="off" autocapitalize="sentences" autocorrect="on" spellcheck="true" placeholder="Ex.: escritório e quarto de solteiro"></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Cliente</h2>
+      <div class="grid2">
+        <div class="field"><label for="s-name">Nome</label><input id="s-name" autocomplete="off" data-fix="name" autocapitalize="words" autocorrect="on" spellcheck="true"></div>
+        <div class="field"><label for="s-doc">CPF ou CNPJ</label><input id="s-doc" autocomplete="off"></div>
+        <div class="field"><label for="s-phone">Telefone / WhatsApp</label><input id="s-phone" inputmode="tel" autocomplete="off"><p class="err own" id="s-phone-own" hidden>Este é o seu número (o mesmo de Meus dados). Coloque aqui o WhatsApp do cliente.</p></div>
+        <div class="field"><label for="s-email">E-mail</label><input id="s-email" type="email" autocomplete="off" data-fit></div>
+        <div class="field wide"><label for="s-address">Endereço</label><input id="s-address" autocomplete="off" data-fix="address" autocapitalize="words"></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Valor contratado</h2>
+      <p class="hint" id="s-c-hint">Quanto foi combinado com o cliente. Com um orçamento escolhido, vem dele.</p>
+      <div class="grid2 pair">
+        <div class="field"><label for="s-c-labor">Mão de obra (R$)</label><input id="s-c-labor" class="num" inputmode="decimal" placeholder="0,00"></div>
+        <div class="field"><label for="s-c-mat">Material (R$)</label><input id="s-c-mat" class="num" inputmode="decimal" placeholder="0,00"></div>
+      </div>
+      <div class="s-ctot"><span>Total contratado</span><b id="s-c-total">R$ 0,00</b></div>
+      <button class="btn small" id="s-c-auto" type="button" hidden>Voltar aos valores do orçamento</button>
+    </section>
+    <section class="card">
+      <div class="row" style="justify-content:space-between"><h2>Pagamentos e créditos</h2><span class="hint" id="s-count"></span></div>
+      <p class="hint">Cada valor pago ou lançado durante a negociação. Em "Referente a" diga se foi da mão de obra ou do material.</p>
+      <div class="plines" id="s-lines"></div>
+      <div class="s-add">
+        <button class="btn pay" id="s-add-pay" type="button">+ Pagamento</button>
+        <button class="btn rec" id="s-add-credit" type="button">+ Crédito na loja</button>
+      </div>
+      <button class="btn small" id="s-pull" type="button" hidden style="margin-top:8px">Puxar os recibos do orçamento</button>
+      <p class="hint" id="s-pull-hint" hidden></p>
+    </section>
+    <section class="card">
+      <h2>Resumo</h2>
+      <div class="demo sdemo" id="s-sum"></div>
+    </section>
+    <section class="card">
+      <h2>Observações (opcional)</h2>
+      <textarea id="s-note" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true" style="min-height:80px" placeholder="Ex.: o material foi pago pelo cliente direto na loja Compensados Pereira."></textarea>
+    </section>
+    <section class="card">
+      <h2>Assinaturas</h2>
+      <p class="hint">Sua assinatura salva em Meus dados entra sozinha. O cliente assina se quiser confirmar o acerto.</p>
+      <div class="sig">
+        <label>Sua assinatura</label>
+        <canvas id="sig-s-me" aria-label="Sua assinatura"></canvas>
+        <div class="row"><button class="btn small" id="sig-s-me-clear">Limpar</button><button class="btn small" id="sig-s-me-mine">Usar minha assinatura salva</button><button class="btn small" id="sig-s-me-photo-btn" type="button">Usar foto da assinatura</button></div>
+        <input type="file" id="sig-s-me-photo" accept="image/*" hidden>
+      </div>
+      <div class="sig">
+        <label>Assinatura do cliente (opcional)</label>
+        <canvas id="sig-s-client" aria-label="Assinatura do cliente"></canvas>
+        <div class="row"><button class="btn small" id="sig-s-client-clear">Limpar</button><button class="btn small" id="sig-s-client-photo-btn" type="button">Usar foto da assinatura</button></div>
+        <input type="file" id="sig-s-client-photo" accept="image/*" hidden>
+      </div>
+    </section>
+  </div>
+
+  <div id="view-statements" class="stack" hidden>
+    <button class="btn pay new" id="btn-s-new-2" type="button"><span class="plus" aria-hidden="true">+</span>Novo demonstrativo</button>
+    <h2 id="statements-h">Demonstrativos salvos</h2>
+    <p class="hint" id="statements-where"></p>
+    <div class="list" id="statements-list"></div>
+  </div>
+
   <!-- MEUS DADOS -->
   <div id="view-profile" class="stack" hidden>
     <div id="profile-slot">
@@ -1012,6 +1143,15 @@ body.pv-open { overflow: hidden; }
       <button class="btn" id="btn-r-save">Salvar</button>
       <button class="btn orc" id="rbar-quote" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span>Orçamento</span></button>
       <button class="btn warm" id="btn-r-pdf">Enviar recibo</button>
+    </div>
+  </div>
+</div>
+<div class="bar" id="sbar" hidden>
+  <div class="in">
+    <div class="tot"><div class="tv"><div class="hint" id="sbar-hint">Saldo a receber</div><div class="total" id="sbar-total">R$ 0,00</div></div><button class="btn small view" id="sbar-view" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Ver PDF</span></button></div>
+    <div class="row">
+      <button class="btn" id="btn-s-save" type="button">Salvar</button>
+      <button class="btn pay" id="btn-s-pdf" type="button">Enviar PDF</button>
     </div>
   </div>
 </div>
@@ -1263,6 +1403,7 @@ const store = {
       this.profileRef = db.doc("data/users/" + id + "/perfil");
       this.quotesCol = this.profileRef.collection("orcamentos");
       this.receiptsCol = this.profileRef.collection("recibos");
+      this.statementsCol = this.profileRef.collection("demonstrativos");
       this.catalogRef = this.profileRef.collection("memoria").doc("materiais");
       await this.profileRef.get();
       this.mode = "db";
@@ -1318,10 +1459,24 @@ const store = {
     if (this.mode === "db") { await this.receiptsCol.doc(id).delete(); return; }
     local.set("orc.receipts", local.get("orc.receipts", []).filter((x) => x.id !== id));
   },
+  async listStatements() {
+    if (this.mode === "db") { const s = await this.statementsCol.get(); return s.docs.map((d) => d.data()); }
+    return local.get("orc.statements", []);
+  },
+  async saveStatement(x) {
+    if (this.mode === "db") { await this.statementsCol.doc(x.id).set(JSON.parse(JSON.stringify(x))); return; }
+    const all = local.get("orc.statements", []).filter((y) => y.id !== x.id);
+    all.push(x);
+    if (!local.set("orc.statements", all)) throw new Error("local");
+  },
+  async deleteStatement(id) {
+    if (this.mode === "db") { await this.statementsCol.doc(id).delete(); return; }
+    local.set("orc.statements", local.get("orc.statements", []).filter((x) => x.id !== id));
+  },
   async resetAll() {
     try { await proofDb.clear(); } catch {} // comprovantes dos recibos
     if (this.mode === "db") {
-      for (const col of [this.quotesCol, this.receiptsCol]) {
+      for (const col of [this.quotesCol, this.receiptsCol, this.statementsCol]) {
         const snap = await col.get();
         for (const d of snap.docs) await col.doc(d.id).delete();
       }
@@ -1329,7 +1484,7 @@ const store = {
       await this.profileRef.delete();
       return;
     }
-    try { for (const k of ["orc.profile", "orc.quotes", "orc.receipts", "orc.catalog", "orc.draft", "orc.bio", "orc.bioAsk", "orc.signup", "orc.backupAt"]) localStorage.removeItem(k); } catch {}
+    try { for (const k of ["orc.profile", "orc.quotes", "orc.receipts", "orc.statements", "orc.catalog", "orc.draft", "orc.bio", "orc.bioAsk", "orc.signup", "orc.backupAt"]) localStorage.removeItem(k); } catch {}
   },
 };
 
@@ -1493,6 +1648,7 @@ document.addEventListener("keydown", (e) => { if (e.target) e.target.selPending 
 let profile = blankProfile();
 let quote = sampleQuote();
 let quotes = [];
+let statements = [], statement = null; // demonstrativos de pagamentos (v83)
 
 /* Rascunho: o orçamento e o recibo que estão na tela ficam guardados neste aparelho; atualizar a página não apaga o que foi digitado */
 const DRAFT_KEY = "orc.draft";
@@ -1500,7 +1656,7 @@ let draftTimer = 0;
 function saveDraft() {
   clearTimeout(draftTimer); draftTimer = 0;
   if (!profile.registered) return;
-  local.set(DRAFT_KEY, { quote: quote && !quote.sample ? quote : null, receipt });
+  local.set(DRAFT_KEY, { quote: quote && !quote.sample ? quote : null, receipt, statement });
 }
 const draftSoon = () => { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 400); };
 for (const t of ["input", "change", "click"]) document.addEventListener(t, draftSoon, true);
@@ -3106,10 +3262,16 @@ function pdfDoc(title, num) {
       if (doc.GState) doc.setGState(new doc.GState({ opacity: 1 }));
       rx = qx - 4;
     }
-    doc.setTextColor(...ACC); doc.setFont("helvetica", "bold"); doc.setFontSize(15);
-    doc.text(title, rx, 17, { align: "right" });
-    doc.setFontSize(9); doc.setTextColor(...MUT); doc.setFont("helvetica", "normal");
-    doc.text(`Nº ${num}`, rx, 22, { align: "right" });
+    if (title) {
+      doc.setTextColor(...ACC); doc.setFont("helvetica", "bold"); doc.setFontSize(15);
+      doc.text(title, rx, 17, { align: "right" });
+      doc.setFontSize(9); doc.setTextColor(...MUT); doc.setFont("helvetica", "normal");
+      doc.text(`Nº ${num}`, rx, 22, { align: "right" });
+    } else { // título comprido (Demonstrativo de pagamentos): aqui fica só o número, o título vem logo abaixo do traço
+      doc.setTextColor(...ACC); doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+      doc.text(`Nº ${num}`, rx, 19, { align: "right" });
+      doc.setFont("helvetica", "normal");
+    }
     doc.setDrawColor(...ACC); doc.setLineWidth(0.6); doc.line(M, 33, W - M, 33);
   };
   return { doc, header, W, M, ACC, INK, MUT, LINE, HEAD, HEADTXT, SOFT, ALT };
@@ -3339,12 +3501,12 @@ const shareWhy = (e) => !e ? "" : e.name === "NotAllowedError" ? "o celular só 
 async function keepMsg(rec, kind, waMsg) {
   if (!rec) return true;
   rec.waMsg = waMsg;
-  const open = kind === "r" ? receipt : quote, list = kind === "r" ? receipts : quotes;
+  const open = kind === "r" ? receipt : kind === "s" ? statement : quote, list = kind === "r" ? receipts : kind === "s" ? statements : quotes;
   if (open && open !== rec && open.id && open.id === rec.id) open.waMsg = waMsg;
   const same = rec.id && list.find((x) => x.id === rec.id);
   if (same && same !== rec) same.waMsg = waMsg;
   if (!rec.id) return true;
-  try { await (kind === "r" ? store.saveReceipt(rec) : store.saveQuote(rec)); return true; } catch { return false; }
+  try { await (kind === "r" ? store.saveReceipt(rec) : kind === "s" ? store.saveStatement(rec) : store.saveQuote(rec)); return true; } catch { return false; }
 }
 async function sendDoc({ doc, name, who, phone, message, rec, kind }) {
   const auto = message;
@@ -3427,7 +3589,7 @@ function msgState(done) {
   $("sh-msg-save").className = dirty ? "btn small primary" : "btn small";
   $("sh-msg-save").textContent = !dirty && (done === "ok" || mine) ? "Mensagem salva ✓" : "Salvar mensagem";
   $("sh-msg-orig").hidden = !s || v === s.auto;
-  const st = $("sh-msg-state"), what = s && s.kind === "r" ? "do recibo" : "do orçamento";
+  const st = $("sh-msg-state"), what = s && s.kind === "r" ? "do recibo" : s && s.kind === "s" ? "do demonstrativo" : "do orçamento";
   st.textContent = dirty ? "Você mudou a mensagem. Toque em Salvar mensagem para guardar."
     : done === "ok" ? "✓ Mensagem salva. É ela que vai no Enviar o PDF, no Abrir WhatsApp e no Copiar mensagem."
     : done === "fail" ? "Não consegui guardar a mensagem, mas é ela que vai nos botões desta janela."
@@ -3508,19 +3670,24 @@ async function pvRenderPdf(blob, my) {
   doc.destroy();
 }
 const pvMsg = (text, dl) => { $("pv-msg").hidden = !text; $("pv-msg-t").textContent = text || ""; $("pv-dl").hidden = !dl; };
-async function viewPdf(q, onSend) {
+function viewPdf(q, onSend) {
+  return viewDocPdf({ name: fileName(q), onSend, title: `Orçamento nº ${String(q.number).padStart(4, "0")}${q.client.name ? " · " + q.client.name : ""}`,
+    build: async () => buildPdf({ ...q, clientSig: await inkBlue(q.clientSig) }) });
+}
+// Ver PDF de qualquer documento: build() devolve o jsPDF pronto (orçamento, demonstrativo)
+async function viewDocPdf({ name, title, build, onSend }) {
   if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet.");
   const my = ++pvToken;
-  pv = { blob: null, name: fileName(q), onSend };
+  pv = { blob: null, name, onSend };
   pvMode(false);
-  $("pv-title").textContent = `Orçamento nº ${String(q.number).padStart(4, "0")}${q.client.name ? " · " + q.client.name : ""}`;
+  $("pv-title").textContent = title;
   const box = $("pv-pages"); box.textContent = ""; box.classList.remove("zoom"); box.scrollTop = 0;
   pvMsg("Montando o PDF…");
   $("pv").hidden = false; document.body.classList.add("pv-open");
   openLayer("pv"); // o botão voltar do celular fecha a folha
   try {
     await prepLogo();
-    const blob = buildPdf({ ...q, clientSig: await inkBlue(q.clientSig) }).output("blob");
+    const blob = (await build()).output("blob");
     if (my !== pvToken) return;
     pv.blob = blob;
     await pvRenderPdf(blob, my);
@@ -3635,6 +3802,7 @@ function renderSaved() {
         <button class="btn small wa" data-a="send">Enviar PDF</button>
         <button class="btn small" data-a="open">Abrir</button>
         <button class="btn small" data-a="rec">Gerar recibo</button>
+        <button class="btn small stm" data-a="stm">Demonstrativo</button>
         <button class="btn small" data-a="copy">Duplicar</button>
         <button class="btn small danger" data-a="del">Excluir</button>
         <button class="btn small view" data-a="view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Ver PDF</span></button>
@@ -3643,6 +3811,7 @@ function renderSaved() {
     el.querySelector("strong").textContent = q.client.name || "Sem nome";
     el.querySelector('[data-a="open"]').onclick = () => { quote = JSON.parse(JSON.stringify(q)); show("editor"); renderEditor(); };
     el.querySelector('[data-a="rec"]').onclick = () => receiptFromQuote(q);
+    el.querySelector('[data-a="stm"]').onclick = () => statementFromQuote(q);
     el.querySelector('[data-a="send"]').onclick = () => { if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet."); sendQuote(q); };
     el.querySelector('[data-a="view"]').onclick = () => viewPdf(q, () => sendQuote(q));
     el.querySelector('[data-a="print"]').onclick = () => printQuote(q);
@@ -3839,7 +4008,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "82";
+const APP_VERSION = "83";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -3849,10 +4018,10 @@ $("home-ver").textContent = `Versão ${APP_VERSION}`;
 const BK_KEY = "orc.backupAt", BK_APP = "orcamento-e-recibo";
 const bkWhen = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : `${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`; };
 const bkCount = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-const lastChange = () => [...quotes, ...receipts].reduce((m, x) => String(x.updated || "") > m ? String(x.updated || "") : m, "");
+const lastChange = () => [...quotes, ...receipts, ...statements].reduce((m, x) => String(x.updated || "") > m ? String(x.updated || "") : m, "");
 // Lembrete no Início: há documentos salvos e nunca houve cópia, ou já faz 3 dias e houve mudança depois dela
 function needBackup() {
-  if (store.mode !== "local" || !(quotes.length + receipts.length)) return false;
+  if (store.mode !== "local" || !(quotes.length + receipts.length + statements.length)) return false;
   const at = local.get(BK_KEY, "");
   return !at || (lastChange() > at && Date.now() - new Date(at).getTime() > 3 * 864e5);
 }
@@ -3861,8 +4030,8 @@ function renderBackup() {
   $("bk-st").textContent = at ? `Última cópia feita neste aparelho: ${bkWhen(at)}.` : "Você ainda não fez nenhuma cópia neste aparelho.";
 }
 async function makeBackup() {
-  const data = { app: BK_APP, v: 1, made: new Date().toISOString(), profile, quotes, receipts, catalog: { items: catalog.items },
-    draft: { quote: quote && !quote.sample ? quote : null, receipt }, proofs: await proofsForBackup() };
+  const data = { app: BK_APP, v: 1, made: new Date().toISOString(), profile, quotes, receipts, statements, catalog: { items: catalog.items },
+    draft: { quote: quote && !quote.sample ? quote : null, receipt, statement }, proofs: await proofsForBackup() };
   const name = `copia-de-seguranca-orcamento-${todayISO()}.txt`;
   const blob = new Blob([JSON.stringify(data)], { type: "text/plain" });
   const file = new File([blob], name, { type: "text/plain" });
@@ -3902,7 +4071,8 @@ $("bk-file").onchange = async (e) => {
   bkPending = d;
   const items = d.catalog && Array.isArray(d.catalog.items) ? d.catalog.items.length : 0;
   $("bk-info").textContent = [`Cópia de ${bkWhen(d.made) || "data desconhecida"}`, bizName(d.profile) || d.profile.owner || "",
-    bkCount(d.quotes.length, "orçamento", "orçamentos"), bkCount(d.receipts.length, "recibo", "recibos"), bkCount(items, "material", "materiais")].filter(Boolean).join(" · ");
+    bkCount(d.quotes.length, "orçamento", "orçamentos"), bkCount(d.receipts.length, "recibo", "recibos"),
+    Array.isArray(d.statements) && d.statements.length ? bkCount(d.statements.length, "demonstrativo", "demonstrativos") : "", bkCount(items, "material", "materiais")].filter(Boolean).join(" · ");
   $("bk-note").textContent = fresh
     ? "Seu cadastro, seus orçamentos e seus recibos voltam como estavam. Depois é só entrar com a senha que você usava quando fez a cópia."
     : "O que já está neste aparelho continua. Os orçamentos e recibos da cópia entram nos Salvos e, se o mesmo estiver nos dois, fica a versão mais nova. Os dados da empresa passam a ser os da cópia, e a sua senha continua a mesma.";
@@ -4090,11 +4260,14 @@ async function restoreBackup(d) {
   const rs = d.receipts.filter((r) => r && r.id && r.payer && typeof r.payer === "object");
   for (const q of qs) if (newer(quotes, q)) await store.saveQuote(q);
   for (const r of rs) if (newer(receipts, r)) await store.saveReceipt(r);
+  const ss = (Array.isArray(d.statements) ? d.statements : []).filter((x) => x && x.id && x.client && typeof x.client === "object" && Array.isArray(x.lines));
+  for (const x of ss) if (newer(statements, x)) await store.saveStatement(x);
   await restoreProofs(d.proofs); // comprovantes dos recibos
   // a numeração continua depois do maior número dos dois aparelhos
   const top = (list) => list.reduce((m, x) => Math.max(m, appNumber(x.number)), 0);
   p.next = Math.max(parseNum(p.next) || 1, fresh ? 1 : parseNum(profile.next) || 1, top([...quotes, ...qs]) + 1);
   p.nextReceipt = Math.max(parseNum(p.nextReceipt) || 1, fresh ? 1 : parseNum(profile.nextReceipt) || 1, top([...receipts, ...rs]) + 1);
+  p.nextStatement = Math.max(parseNum(p.nextStatement) || 1, fresh ? 1 : parseNum(profile.nextStatement) || 1, top([...statements, ...ss]) + 1);
   await store.saveProfile(p);
   profile = p; dropSignup();
   const items = (d.catalog && Array.isArray(d.catalog.items) ? d.catalog.items : []).filter((e) => e && typeof e.desc === "string" && e.desc.trim());
@@ -4106,9 +4279,10 @@ async function restoreBackup(d) {
   // num aparelho novo, o orçamento e o recibo que estavam abertos na tela também voltam
   // (também na memória, porque ao recarregar a página o rascunho da tela é guardado de novo)
   if (fresh && d.draft && typeof d.draft === "object") {
-    const dq = d.draft.quote, dr = d.draft.receipt;
+    const dq = d.draft.quote, dr = d.draft.receipt, ds = d.draft.statement;
     if (dq && Array.isArray(dq.items) && dq.client) quote = dq;
     if (dr && dr.payer) receipt = dr;
+    if (ds && ds.client && Array.isArray(ds.lines)) statement = ds;
     saveDraft();
   }
 }
@@ -4834,6 +5008,415 @@ function renderReceipts() {
   }
 }
 
+/* ---------- Demonstrativo de pagamentos (pedido do Marcos, 26/11/2026, v83) ----------
+   No acerto final o Marcos mostra ao cliente tudo o que foi pago e lançado durante a negociação: entradas, parcelas, saldo,
+   pagamentos de material e de mão de obra e créditos lançados na loja (ex.: "crédito lançado na Compensados Pereira").
+   Antes ele usava a tela do Orçamento para isso. O demonstrativo tem numeração própria e:
+   - orçamento (opcional): puxa o cliente, o valor contratado (mão de obra já com o desconto, e material com os comprados fora)
+     e os recibos já feitos desse orçamento, cada um vira uma linha;
+   - lançamentos: data, tipo (entrada, parcela, pagamento, saldo final, crédito na loja), referente a (mão de obra, material
+     ou os dois), descrição e valor;
+   - resumo: contratado, pago e saldo de cada parte e do total; "Saldo a receber", "Quitado" ou "Saldo a favor do cliente". */
+const S_KIND = { entrada: "Entrada", parcela: "Parcela", pagamento: "Pagamento", saldo: "Saldo final", credito: "Crédito na loja" };
+const S_ON = { labor: "Mão de obra", material: "Material", both: "Mão de obra + material" };
+const blankStatement = () => ({ id: "", number: 0, date: todayISO(), quoteId: "", quoteNumber: 0, serv: "",
+  client: { name: "", doc: "", phone: "", email: "", address: "" }, contract: { labor: 0, material: 0 }, contractAuto: false,
+  lines: [], note: "", mySig: profile.signature || "", clientSig: "" });
+const stmLine = (o) => ({ id: uid(), date: todayISO(), desc: "", kind: "pagamento", on: "labor", value: 0, ...o });
+// só entram nas contas e no PDF os lançamentos com valor; a ordem é a das datas (o mesmo dia fica na ordem da lista)
+const stmLines = (s) => s.lines.map((l, i) => [l, i]).filter(([l]) => parseNum(l.value) > 0)
+  .sort((a, b) => String(a[0].date || "").localeCompare(String(b[0].date || "")) || a[1] - b[1]).map(([l]) => l);
+function stmSum(s) {
+  const lines = stmLines(s), by = (on) => cents(lines.filter((l) => (S_ON[l.on] ? l.on : "labor") === on).reduce((a, l) => a + parseNum(l.value), 0));
+  const cl = cents(parseNum(s.contract && s.contract.labor)), cm = cents(parseNum(s.contract && s.contract.material)), contract = cents(cl + cm);
+  const pl = by("labor"), pm = by("material"), pb = by("both"), paid = cents(pl + pm + pb);
+  const dates = lines.map((l) => l.date).filter(Boolean).sort();
+  return { lines, cl, cm, contract, pl, pm, pb, paid, saldo: cents(contract - paid), from: dates[0] || "", to: dates[dates.length - 1] || "" };
+}
+// situação final: a receber, quitado ou a favor do cliente (sem valor contratado, mostra só o total pago)
+const stmFinal = (S) => !(S.contract > 0) ? { cls: "", label: "Total pago", value: S.paid }
+  : S.saldo > 0.004 ? { cls: "open", label: "Saldo a receber", value: S.saldo }
+  : S.saldo < -0.004 ? { cls: "", label: "Saldo a favor do cliente", value: -S.saldo }
+  : { cls: "", label: "Quitado", value: 0, note: "Não há saldo a pagar." };
+const stmContractOf = (q) => { const t = calc(q), labor = laborNet(t); return { labor, material: cents(Math.max(0, t.total - labor)) }; };
+const R2S_KIND = { total: "pagamento", entrada: "entrada", parcela: "parcela", saldo: "saldo" };
+const lineFromReceipt = (r) => stmLine({ date: r.date || todayISO(), desc: `Recibo nº ${pad4(r.number)}${r.method ? " (" + r.method + ")" : ""}`,
+  kind: R2S_KIND[r.kind] || "pagamento", on: baseOf(r) === "labor" ? "labor" : baseOf(r) === "outside" ? "material" : "both", value: parseNum(r.amount), rid: r.id });
+const stmNewReceipts = (s) => { const have = new Set(s.lines.map((l) => l.rid).filter(Boolean)); return s.quoteId ? receipts.filter((r) => r.quoteId === s.quoteId && !have.has(r.id)) : []; };
+function pullStmReceipts() {
+  const rs = stmNewReceipts(statement).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || (a.number || 0) - (b.number || 0));
+  for (const r of rs) statement.lines.push(lineFromReceipt(r));
+  return rs.length;
+}
+// escolher o orçamento: cliente, valor contratado e os recibos dele. Os recibos de outro orçamento saem da lista.
+function linkStmQuote(q) {
+  const s = statement, c = q.client || {};
+  if (s.quoteId !== q.id) s.lines = s.lines.filter((l) => !l.rid || receipts.some((r) => r.id === l.rid && r.quoteId === q.id));
+  s.quoteId = q.id; s.quoteNumber = q.number;
+  s.client = { name: c.name || "", doc: c.doc || "", phone: c.phone || "", email: c.email || "", address: c.address || "" };
+  s.contract = stmContractOf(q); s.contractAuto = true;
+  if (!s.serv) s.serv = (receipts.filter((r) => r.quoteId === q.id && r.serv).sort((a, b) => (b.updated || "").localeCompare(a.updated || ""))[0] || {}).serv || "";
+  const n = pullStmReceipts();
+  renderStatement();
+  toast(n ? `Orçamento nº ${pad4(q.number)}: ${n === 1 ? "1 recibo entrou" : n + " recibos entraram"} na lista. Lance também os créditos na loja e outros pagamentos.`
+    : `Orçamento nº ${pad4(q.number)}: cliente e valores preenchidos. Ainda não há recibo dele; lance os pagamentos.`, 6000);
+}
+const stmDraft = () => !statement.id && !!(statement.client.name.trim() || statement.lines.some((l) => parseNum(l.value) > 0));
+// "Demonstrativo" num orçamento salvo: abre o demonstrativo dele (o último salvo, já com os recibos novos) ou começa um
+let stmAsked = 0;
+function statementFromQuote(q) {
+  const mine = statement.quoteId === q.id && (statement.id || stmDraft());
+  if (!mine && stmDraft() && Date.now() - stmAsked > 5000) {
+    stmAsked = Date.now();
+    toast(`O demonstrativo de ${statement.client.name.trim() || "outro cliente"} ainda não foi salvo. Toque de novo para fazer o deste orçamento.`, 5000);
+    return;
+  }
+  stmAsked = 0;
+  if (!mine) {
+    const old = statements.filter((x) => x.quoteId === q.id).sort((a, b) => (b.number || 0) - (a.number || 0))[0];
+    if (old) {
+      statement = JSON.parse(JSON.stringify(old));
+      const n = pullStmReceipts();
+      show("statement"); renderStatement();
+      toast(`Demonstrativo nº ${pad4(old.number)} deste orçamento${n ? `: ${n === 1 ? "1 recibo novo entrou" : n + " recibos novos entraram"}. Toque em Salvar.` : "."}`, 5000);
+      return;
+    }
+    statement = blankStatement();
+    show("statement");
+    linkStmQuote(q);
+    return;
+  }
+  show("statement"); renderStatement();
+}
+
+const sigSMe = SigPad($("sig-s-me"), () => { statement.mySig = sigSMe.value(); });
+const sigSClient = SigPad($("sig-s-client"), () => { statement.clientSig = sigSClient.value(); });
+$("sig-s-me-clear").onclick = () => sigSMe.clear();
+$("sig-s-me-mine").onclick = () => { statement.mySig = profile.signature || ""; sigSMe.set(statement.mySig); if (!profile.signature) toast("Você ainda não salvou sua assinatura em Meus dados"); };
+$("sig-s-client-clear").onclick = () => sigSClient.clear();
+bindSigPhoto(sigSMe, "sig-s-me", "Pronto: a assinatura da foto está no quadro. Confira e toque em Salvar.");
+bindSigPhoto(sigSClient, "sig-s-client", "Pronto: a assinatura da foto está no quadro. Confira e toque em Salvar.");
+
+function renderStmQuotes() {
+  const sel = $("s-quote"); sel.textContent = "";
+  sel.append(new Option("Sem orçamento (digitar os valores)", ""));
+  for (const q of [...quotes].sort(byQuoteNumber)) sel.append(new Option(`Nº ${pad4(q.number)} · ${(q.client && q.client.name) || "Sem nome"} · ${money(calc(q).total)}`, q.id));
+  if (statement.quoteId && !quotes.some((q) => q.id === statement.quoteId)) sel.append(new Option(`Nº ${pad4(statement.quoteNumber)} (não está mais nos Salvos)`, statement.quoteId));
+  sel.value = statement.quoteId || "";
+}
+function renderStmContract() {
+  const s = statement, c = s.contract;
+  for (const [id, k] of [["s-c-labor", "labor"], ["s-c-mat", "material"]]) if (document.activeElement !== $(id)) $(id).value = parseNum(c[k]) ? priceIn(parseNum(c[k])) : "";
+  $("s-c-total").textContent = money(cents(parseNum(c.labor) + parseNum(c.material)));
+  const q = s.quoteId && quotes.find((x) => x.id === s.quoteId);
+  if (q && s.contractAuto) {
+    const t = calc(q);
+    $("s-c-hint").textContent = `Vieram do orçamento nº ${pad4(q.number)}: a mão de obra${t.discount && t.type !== "materials" ? " (já com o desconto)" : ""} e o material${t.outside ? ` (com ${money(cents(t.outside))} dos comprados fora)` : ""}. Pode mudar se o combinado mudou.`;
+  } else $("s-c-hint").textContent = q ? "Valores digitados por você." : "Quanto foi combinado com o cliente. Com um orçamento escolhido, vem dele.";
+  $("s-c-auto").hidden = !q || s.contractAuto;
+}
+function renderStmPull() {
+  const n = stmNewReceipts(statement).length, all = statement.quoteId ? receipts.filter((r) => r.quoteId === statement.quoteId).length : 0;
+  $("s-pull").hidden = !n;
+  $("s-pull").textContent = n === 1 ? "Puxar 1 recibo novo do orçamento" : `Puxar ${n} recibos novos do orçamento`;
+  $("s-pull-hint").hidden = !statement.quoteId || !!n;
+  $("s-pull-hint").textContent = all ? (all === 1 ? "O recibo deste orçamento já está na lista." : `Os ${all} recibos deste orçamento já estão na lista.`) : "Este orçamento ainda não tem recibo no app.";
+}
+const opts = (map, v) => Object.entries(map).map(([k, t]) => `<option value="${k}"${k === v ? " selected" : ""}>${t}</option>`).join("");
+const STM_PH = { credito: "Ex.: crédito lançado na Compensados Pereira, ref. escritório", entrada: "Ex.: entrada da mão de obra (Pix)", parcela: "Ex.: 2ª parcela da mão de obra", pagamento: "Ex.: pagamento das ferragens compradas fora", saldo: "Ex.: saldo final na entrega" };
+function renderStmLines() {
+  const box = $("s-lines"); box.textContent = "";
+  const n = statement.lines.length;
+  $("s-count").textContent = n ? (n === 1 ? "1 lançamento" : `${n} lançamentos`) : "";
+  statement.lines.forEach((l, i) => {
+    const el = document.createElement("div"), p = `sl${i}-`;
+    el.className = "pline" + (l.kind === "credito" ? " credito" : "");
+    el.innerHTML = `<div class="ph"><b>${i + 1}</b><span class="rtag"></span><button class="btn small rm" type="button" aria-label="Tirar o lançamento ${i + 1}">×</button></div>
+      <div class="pg">
+        <div class="field f-date"><label for="${p}date">Data</label><input type="date" id="${p}date" data-k="date"></div>
+        <div class="field f-val"><label for="${p}value">Valor (R$)</label><input id="${p}value" class="num" inputmode="decimal" placeholder="0,00" data-k="value"></div>
+        <div class="field f-kind"><label for="${p}kind">Tipo</label><select id="${p}kind" data-k="kind">${opts(S_KIND, l.kind)}</select></div>
+        <div class="field f-on"><label for="${p}on">Referente a</label><select id="${p}on" data-k="on">${opts(S_ON, l.on)}</select></div>
+        <div class="field wide"><label for="${p}desc">Descrição</label><input id="${p}desc" data-k="desc" data-fix="text" autocomplete="off" autocapitalize="sentences" autocorrect="on" spellcheck="true"></div>
+      </div>`;
+    el.querySelector(".rtag").textContent = l.rid ? "veio do recibo" : "";
+    const f = (k) => el.querySelector(`[data-k="${k}"]`);
+    f("date").value = l.date || ""; f("value").value = parseNum(l.value) ? priceIn(parseNum(l.value)) : ""; f("desc").value = l.desc || "";
+    f("desc").placeholder = STM_PH[l.kind] || "";
+    f("date").onchange = (e) => { l.date = e.target.value; renderStmSum(); };
+    f("value").oninput = (e) => { l.value = parseNum(e.target.value); renderStmSum(); };
+    f("value").onblur = (e) => { if (parseNum(e.target.value)) e.target.value = priceIn(parseNum(e.target.value)); };
+    f("desc").oninput = (e) => { l.desc = e.target.value; };
+    f("kind").onchange = (e) => {
+      l.kind = e.target.value; el.classList.toggle("credito", l.kind === "credito"); f("desc").placeholder = STM_PH[l.kind] || "";
+      if (l.kind === "credito" && l.on === "labor") { l.on = "material"; f("on").value = "material"; } // crédito na loja é de material
+      renderStmSum();
+    };
+    f("on").onchange = (e) => { l.on = e.target.value; renderStmSum(); };
+    const rm = el.querySelector(".rm");
+    rm.onclick = () => {
+      if (rm.dataset.confirm !== "1" && (parseNum(l.value) || (l.desc || "").trim())) { rm.dataset.confirm = "1"; rm.textContent = "Tirar?"; setTimeout(() => { if (rm.isConnected) { rm.dataset.confirm = ""; rm.textContent = "×"; } }, 4000); return; }
+      statement.lines = statement.lines.filter((x) => x !== l); renderStmLines(); renderStmSum(); renderStmPull();
+    };
+    box.appendChild(el);
+  });
+}
+function addStmLine(o, focus) {
+  statement.lines.push(stmLine(o));
+  renderStmLines(); renderStmSum();
+  const el = $("s-lines").lastElementChild, inp = el && el.querySelector(`[data-k="${focus}"]`);
+  if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+  if (inp) setTimeout(() => { inp.focus(); if (focus === "desc") { const n = inp.value.length; try { inp.setSelectionRange(n, n); } catch {} } }, 250);
+}
+$("s-add-pay").onclick = () => addStmLine({ kind: statement.lines.some((l) => l.kind !== "credito") ? "parcela" : "entrada", on: "labor" }, "value");
+$("s-add-credit").onclick = () => addStmLine({ kind: "credito", on: "material", desc: "Crédito lançado na " }, "desc");
+$("s-pull").onclick = () => { const n = pullStmReceipts(); renderStmLines(); renderStmSum(); renderStmPull(); toast(n === 1 ? "1 recibo entrou na lista" : `${n} recibos entraram na lista`); };
+
+function renderStmSum() {
+  const S = stmSum(statement), F = stmFinal(S), row = (k, v, cls) => `<tr${cls ? ` class="${cls}"` : ""}><td>${k}</td><td class="v">${money(v)}</td></tr>`;
+  const grp = (t) => `<tr><td class="g" colspan="2">${t}</td></tr>`;
+  let html = "<table>";
+  if (S.contract > 0) {
+    const split = !S.pb; // com pagamentos "mão de obra + material" o saldo de cada parte não dá para separar
+    if (S.cl || S.pl) html += grp("Mão de obra") + row("Contratado", S.cl) + row("Pago", S.pl) + (split ? row("Saldo", cents(S.cl - S.pl)) : "");
+    if (S.cm || S.pm) html += grp("Material") + row("Contratado", S.cm) + row("Pago", S.pm) + (split ? row("Saldo", cents(S.cm - S.pm)) : "");
+    if (S.pb) html += grp("Mão de obra + material") + row("Pago", S.pb);
+    html += grp("Total") + row("Total contratado", S.contract, "tt") + row("Total pago", S.paid, "tt");
+  } else {
+    if (S.pl) html += row("Pago de mão de obra", S.pl);
+    if (S.pm) html += row("Pago de material", S.pm);
+    if (S.pb) html += row("Pago de mão de obra + material", S.pb);
+  }
+  html += "</table>";
+  html += `<div class="sfinal ${F.cls}"><span>${F.label}</span><b>${F.note ? "R$ 0,00" : money(F.value)}</b>${F.note ? `<small>${F.note}</small>` : ""}</div>`;
+  if (!S.lines.length) html += `<p class="dn">Nenhum pagamento lançado ainda. Toque em "+ Pagamento" ou "+ Crédito na loja".</p>`;
+  $("s-sum").innerHTML = html;
+  $("s-c-total").textContent = money(S.contract);
+  $("sbar-hint").textContent = F.label;
+  $("sbar-total").textContent = money(F.value);
+  $("sbar-total").classList.toggle("pay", F.cls !== "open");
+}
+function renderStatement() {
+  const s = statement;
+  fitSoon();
+  $("s-title").textContent = s.number ? `Demonstrativo nº ${pad4(s.number)}` : "Novo demonstrativo";
+  renderStmQuotes();
+  $("s-date").value = s.date || ""; $("s-serv").value = s.serv || "";
+  for (const k of ["name", "doc", "phone", "email", "address"]) $("s-" + k).value = s.client[k] || "";
+  markOwnPhone("s-phone");
+  $("s-note").value = s.note || "";
+  renderStmContract(); renderStmLines(); renderStmSum(); renderStmPull();
+  sigSMe.set(s.mySig); sigSClient.set(s.clientSig);
+}
+$("s-quote").onchange = (e) => {
+  const id = e.target.value, q = quotes.find((x) => x.id === id);
+  if (q) return linkStmQuote(q);
+  if (!id) { statement.quoteId = ""; statement.quoteNumber = 0; statement.contractAuto = false; renderStmContract(); renderStmPull(); }
+};
+$("s-date").onchange = (e) => { statement.date = e.target.value; };
+$("s-serv").oninput = (e) => { statement.serv = e.target.value; };
+$("s-note").oninput = (e) => { statement.note = e.target.value; };
+for (const k of ["name", "doc", "phone", "email", "address"]) $("s-" + k).oninput = (e) => { statement.client[k] = e.target.value; if (k === "phone") markOwnPhone("s-phone"); };
+for (const [id, k] of [["s-c-labor", "labor"], ["s-c-mat", "material"]]) {
+  $(id).oninput = (e) => { statement.contract[k] = parseNum(e.target.value); statement.contractAuto = false; renderStmContract(); renderStmSum(); };
+  $(id).onblur = (e) => { if (parseNum(e.target.value)) e.target.value = priceIn(parseNum(e.target.value)); };
+}
+$("s-c-auto").onclick = () => { const q = quotes.find((x) => x.id === statement.quoteId); if (!q) return; statement.contract = stmContractOf(q); statement.contractAuto = true; renderStmContract(); renderStmSum(); };
+const newStatement = () => { statement = blankStatement(); renderStatement(); window.scrollTo(0, 0); };
+$("btn-s-new").onclick = () => confirmNew($("btn-s-new"), "Novo demonstrativo", stmDraft(), newStatement);
+$("btn-s-new-2").onclick = () => confirmNew($("btn-s-new-2"), "Novo demonstrativo", stmDraft(), () => { show("statement"); newStatement(); });
+
+function statementOpen() {
+  if (!statement) return false;
+  if (!statement.id) return stmDraft();
+  const saved = statements.find((x) => x.id === statement.id); if (!saved) return false;
+  return !sameDoc(statement, saved, ["updated", "mySig", "clientSig"]);
+}
+function stmProblem() {
+  if (!statement.client.name.trim()) { toast("Preencha o nome do cliente"); $("s-name").focus(); return true; }
+  if (!stmLines(statement).length) { toast("Lance pelo menos um pagamento com valor"); return true; }
+  return false;
+}
+async function saveStatement(silent) {
+  const s = statement;
+  if (!s.id) {
+    s.id = uid(); s.number = parseNum(profile.nextStatement) || 1;
+    profile.nextStatement = s.number + 1;
+    try { await store.saveProfile(profile); } catch {}
+  }
+  s.client.name = fixCase(s.client.name, "name");
+  s.lines = s.lines.filter((l) => parseNum(l.value) > 0 || (l.desc || "").trim());
+  const keep = s.lines.filter((l) => !(parseNum(l.value) > 0));
+  s.lines = [...stmLines(s), ...keep]; // salvo em ordem de data
+  s.mySig = sigSMe.value(); s.clientSig = sigSClient.value();
+  s.updated = new Date().toISOString();
+  try { await store.saveStatement(s); if (!silent) toast("Demonstrativo salvo"); }
+  catch { toast("Não consegui salvar. Gere o PDF para não perder o demonstrativo."); }
+  statements = await store.listStatements().catch(() => statements);
+  renderStatement();
+}
+$("btn-s-save").onclick = () => { if (stmProblem()) return; saveStatement(false); };
+
+function buildStatementPdf(s) {
+  const num = pad4(s.number), S = stmSum(s), F = stmFinal(S);
+  const { doc, header, W, M, ACC, INK, MUT, LINE, HEAD, HEADTXT, SOFT, ALT } = pdfDoc("", num);
+  header();
+  let y = 42;
+  doc.setTextColor(...ACC); doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+  doc.text("DEMONSTRATIVO DE PAGAMENTOS", M, y);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...MUT);
+  const period = S.from ? (S.from === S.to ? `Pagamento em ${fmtDate(S.from)}` : `Período: ${fmtDate(S.from)} a ${fmtDate(S.to)}`) : "";
+  const sub = [s.quoteNumber ? `Orçamento nº ${pad4(s.quoteNumber)}` : "", period, (s.serv || "").trim()].filter(Boolean).join("  |  ");
+  const subL = doc.splitTextToSize(sub, W - 2 * M - 34);
+  doc.text(subL, M, y + 5.5);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.text("DATA", W - M, y - 4, { align: "right" });
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); doc.setTextColor(...INK); doc.text(fmtDate(s.date), W - M, y + 1.5, { align: "right" });
+  y += 5.5 + subL.length * 4 + 4;
+  // Cliente
+  doc.setFontSize(8); doc.setTextColor(...MUT); doc.setFont("helvetica", "bold"); doc.text("CLIENTE", M, y);
+  doc.setFont("helvetica", "normal"); doc.setTextColor(...INK); doc.setFontSize(10.5); doc.text(s.client.name || "-", M, y + 5.5);
+  doc.setFontSize(8.5); doc.setTextColor(...MUT);
+  let cy = y + 10.5;
+  const cl = [s.client.doc && `CPF/CNPJ ${s.client.doc}`, s.client.phone, s.client.email].filter(Boolean).join("  |  ");
+  if (cl) { doc.text(cl, M, cy); cy += 4.5; }
+  if (s.client.address) { const ls = doc.splitTextToSize(s.client.address, W - 2 * M); doc.text(ls, M, cy); cy += 4 * ls.length + 0.5; }
+  y = Math.max(cy, y + 12) + 3;
+  // Pagamentos e créditos
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M, top: 38 },
+    head: [["#", "Data", "Descrição", "Tipo", "Referente a", "Valor"]],
+    body: S.lines.length ? S.lines.map((l, i) => [i + 1, fmtDate(l.date), l.desc || "-", S_KIND[l.kind] || "", S_ON[l.on] || S_ON.labor, money(parseNum(l.value))])
+      : [[{ content: "Nenhum pagamento lançado", colSpan: 6, styles: { halign: "center", textColor: MUT } }]],
+    foot: [[{ content: "Total pago", colSpan: 5, styles: { halign: "right" } }, { content: money(S.paid), styles: { halign: "right" } }]],
+    showFoot: "lastPage",
+    styles: { font: "helvetica", fontSize: 9, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
+    headStyles: { fillColor: HEAD, textColor: HEADTXT, fontStyle: "bold" },
+    footStyles: { fillColor: SOFT, textColor: INK, fontStyle: "bold" },
+    alternateRowStyles: { fillColor: ALT },
+    columnStyles: { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 21 }, 3: { cellWidth: 25 }, 4: { cellWidth: 28 }, 5: { cellWidth: 30, halign: "right" } },
+    didDrawPage: (d) => { if (d.pageNumber > 1) header(); },
+  });
+  y = doc.lastAutoTable.finalY + 7;
+  // Resumo: contratado, pago e saldo de cada parte
+  if (S.contract > 0) {
+    if (y > 225) { doc.addPage(); header(); y = 44; }
+    const split = !S.pb, body = [];
+    if (S.cl || S.pl) body.push(["Mão de obra", money(S.cl), money(S.pl), split ? money(cents(S.cl - S.pl)) : "-"]);
+    if (S.cm || S.pm) body.push(["Material", money(S.cm), money(S.pm), split ? money(cents(S.cm - S.pm)) : "-"]);
+    if (S.pb) body.push(["Mão de obra + material", "-", money(S.pb), "-"]);
+    body.push(["Total", money(S.contract), money(S.paid), money(S.saldo)]);
+    doc.autoTable({
+      startY: y, margin: { left: M, right: M, top: 38 },
+      head: [["Resumo", "Contratado", "Pago", "Saldo"]], body,
+      styles: { font: "helvetica", fontSize: 9.5, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
+      headStyles: { fillColor: HEAD, textColor: HEADTXT, fontStyle: "bold" },
+      columnStyles: { 1: { halign: "right", cellWidth: 36 }, 2: { halign: "right", cellWidth: 36 }, 3: { halign: "right", cellWidth: 36 } },
+      didParseCell: (c) => { if (c.section === "head" && c.column.index > 0) c.cell.styles.halign = "right"; if (c.section === "body" && c.row.index === body.length - 1) c.cell.styles.fontStyle = "bold"; },
+      didDrawPage: (d) => { if (d.pageNumber > 1) header(); },
+    });
+    y = doc.lastAutoTable.finalY + 6;
+  }
+  // Situação final em destaque
+  if (y > 250) { doc.addPage(); header(); y = 44; }
+  const bw = 96, bx = W - M - bw;
+  doc.setFillColor(...SOFT); doc.roundedRect(bx, y, bw, F.note ? 18 : 14, 2, 2, "F");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(...INK);
+  doc.text(F.label.toUpperCase(), bx + 5, y + 9);
+  doc.setFontSize(15); doc.setTextColor(...ACC); doc.text(money(F.value), W - M - 5, y + 9.5, { align: "right" });
+  if (F.note) { doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...MUT); doc.text(F.note, bx + 5, y + 14.5); }
+  y += (F.note ? 18 : 14) + 8;
+  // Observações
+  const note = (s.note || "").trim();
+  if (note) {
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...MUT); doc.text("OBSERVAÇÕES", M, y); y += 5;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(...INK);
+    for (const ln of doc.splitTextToSize(note, W - 2 * M)) { if (y > 280) { doc.addPage(); header(); y = 44; } doc.text(ln, M, y); y += 4.6; }
+    y += 4;
+  }
+  // Local, data e assinaturas
+  if (y > 232) { doc.addPage(); header(); y = 44; }
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); doc.setTextColor(...INK);
+  doc.text(`${profile.city || "Local"}, ${longDate(s.date)}.`, M, y);
+  y += 34;
+  const colW = (W - 2 * M - 16) / 2;
+  const sigBlock = (x, img, name, docId, role) => {
+    if (img) { try { sigImage(doc, img, x + 6, y - 22, colW - 12, 20); } catch {} }
+    doc.setDrawColor(...INK); doc.setLineWidth(0.3); doc.line(x, y, x + colW, y);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(...INK);
+    doc.text(name || " ", x + colW / 2, y + 5, { align: "center" });
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...MUT);
+    doc.text([role, docId ? `CPF/CNPJ ${docId}` : ""].filter(Boolean), x + colW / 2, y + 9.5, { align: "center" });
+  };
+  sigBlock(M, s.mySig, profile.owner || profile.name, profile.doc, profile.name && profile.owner ? profile.name : "Prestador");
+  sigBlock(M + colW + 16, s.clientSig, s.client.name, s.client.doc, "Cliente");
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i); doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...MUT);
+    doc.text(`Demonstrativo de pagamentos nº ${num}  |  ${bizName(profile) || ""}${pages > 1 ? `  |  Página ${i} de ${pages}` : ""}`, W / 2, 289, { align: "center" });
+  }
+  return doc;
+}
+const stmFileName = (s) => `Demonstrativo-${pad4(s.number)}-${(s.client.name || "cliente").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
+const stmPdf = async (s) => { await prepLogo(); return buildStatementPdf({ ...s, mySig: await inkBlue(s.mySig), clientSig: await inkBlue(s.clientSig) }); };
+function stmMessage(s) {
+  const first = (s.client.name || "").split(" ")[0], S = stmSum(s), F = stmFinal(S);
+  const end = !(S.contract > 0) ? "" : F.label === "Quitado" ? " Está tudo quitado." : `\n${F.label}: ${money(F.value)}.`;
+  return `Olá${first ? " " + first : ""}! Segue o demonstrativo de pagamentos${s.quoteNumber ? ` do orçamento nº ${pad4(s.quoteNumber)}` : ""}, com todos os valores pagos e lançados até ${fmtDate(s.date)}.\nTotal pago: ${money(S.paid)}.${end}\nQualquer dúvida estou à disposição.${bizName(profile) ? "\n" + bizName(profile) : ""}`;
+}
+async function sendStatement(s) {
+  return sendDoc({ doc: await stmPdf(s), name: stmFileName(s), who: s.client.name, phone: s.client.phone, message: stmMessage(s), rec: s, kind: "s" });
+}
+$("btn-s-pdf").onclick = async () => {
+  if (!window.jspdf) { toast("O gerador de PDF não carregou. Verifique a internet e abra de novo."); return; }
+  if (stmProblem()) return;
+  await saveStatement(true);
+  await sendStatement(statement);
+};
+// Ver PDF na tela do demonstrativo: mostra como está agora, sem salvar e sem gastar número
+$("sbar-view").onclick = () => {
+  const s = JSON.parse(JSON.stringify(statement));
+  if (!s.number) s.number = parseNum(profile.nextStatement) || 1;
+  s.mySig = sigSMe.value(); s.clientSig = sigSClient.value();
+  viewDocPdf({ name: stmFileName(s), title: `Demonstrativo nº ${pad4(s.number)}${s.client.name ? " · " + s.client.name : ""}`, build: () => stmPdf(s), onSend: () => $("btn-s-pdf").click() });
+};
+async function printStatement(s) {
+  if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet.");
+  printPdf((await stmPdf(s)).output("blob"), stmFileName(s));
+}
+function renderStatements() {
+  $("statements-where").textContent = store.mode === "db" ? "Guardados na sua conta. Só você vê esta lista." : "Guardados neste aparelho e navegador.";
+  const box = $("statements-list"); box.textContent = "";
+  const list = [...statements].sort((a, b) => (b.number || 0) - (a.number || 0));
+  $("statements-h").textContent = list.length ? `Demonstrativos salvos (${list.length})` : "Demonstrativos salvos";
+  if (!list.length) { box.innerHTML = `<p class="hint">Nenhum demonstrativo ainda. Toque em "+ Novo demonstrativo" ou no botão "Demonstrativo" de um orçamento salvo.</p>`; return; }
+  for (const s of list) {
+    const S = stmSum(s), F = stmFinal(S), el = document.createElement("div"); el.className = "q";
+    const pill = !(S.contract > 0) ? "" : F.cls === "open" ? `<span class="pill late">Saldo ${money(F.value)}</span>` : `<span class="pill pay">${F.label === "Quitado" ? "Quitado" : "A favor do cliente"}</span>`;
+    el.innerHTML = `<div><strong></strong>${pill}
+      <div class="meta">Nº ${pad4(s.number)} · ${fmtDate(s.date)}${s.quoteNumber ? " · Orçamento nº " + pad4(s.quoteNumber) : ""} · ${S.lines.length === 1 ? "1 lançamento" : S.lines.length + " lançamentos"}</div></div>
+      <div class="val">${money(S.paid)}</div>
+      <div class="row" style="grid-column:1/-1">
+        <button class="btn small wa" data-a="send">Enviar PDF</button>
+        <button class="btn small" data-a="open">Abrir</button>
+        <button class="btn small danger" data-a="del">Excluir</button>
+        <button class="btn small view" data-a="view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Ver PDF</span></button>
+        <button class="btn small prt" data-a="print"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg><span>Imprimir</span></button>
+      </div>`;
+    el.querySelector("strong").textContent = s.client.name || "Sem nome";
+    el.querySelector('[data-a="open"]').onclick = () => { statement = JSON.parse(JSON.stringify(s)); show("statement"); renderStatement(); };
+    el.querySelector('[data-a="send"]').onclick = () => { if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet."); sendStatement(s); };
+    el.querySelector('[data-a="view"]').onclick = () => viewDocPdf({ name: stmFileName(s), title: `Demonstrativo nº ${pad4(s.number)} · ${s.client.name || ""}`, build: () => stmPdf(s), onSend: () => sendStatement(s) });
+    el.querySelector('[data-a="print"]').onclick = () => printStatement(s);
+    const del = el.querySelector('[data-a="del"]');
+    del.onclick = async () => {
+      if (del.dataset.confirm !== "1") { del.dataset.confirm = "1"; del.textContent = "Toque de novo para excluir"; return; }
+      await store.deleteStatement(s.id).catch(() => {});
+      statements = statements.filter((x) => x.id !== s.id); renderStatements(); toast("Excluído");
+    };
+    box.appendChild(el);
+  }
+}
+
 /* ---------- Início ---------- */
 function applyBrand() {
   document.documentElement.dataset.brand = profile.tone === "gold" ? "gold" : "";
@@ -4877,7 +5460,7 @@ function renderResume() {
     const row = document.createElement("div"); row.className = "row1 " + kind;
     const txt = document.createElement("div"), b = document.createElement("b"), sm = document.createElement("small");
     b.textContent = title; sm.textContent = sub; txt.append(b, sm);
-    const btn = document.createElement("button"); btn.type = "button"; btn.className = "btn " + (kind === "quote" ? "primary" : kind === "receipt" ? "warm" : ""); btn.textContent = label || "Continuar"; btn.onclick = go;
+    const btn = document.createElement("button"); btn.type = "button"; btn.className = "btn " + (kind === "quote" ? "primary" : kind === "receipt" ? "warm" : kind === "statement" ? "pay" : ""); btn.textContent = label || "Continuar"; btn.onclick = go;
     row.append(txt, btn); box.append(row);
   };
   const numLabel = (n) => "nº " + String(n).padStart(4, "0");
@@ -4889,6 +5472,11 @@ function renderResume() {
   if (receiptOpen()) {
     add("receipt", receipt.id ? `Recibo ${numLabel(receipt.number)} com mudanças não salvas` : "Recibo em andamento, ainda não salvo",
       [receipt.payer.name.trim(), parseNum(receipt.amount) > 0 ? money(parseNum(receipt.amount)) : ""].filter(Boolean).join(" · "), () => show("receipt"));
+  }
+  if (statementOpen()) {
+    const S = stmSum(statement);
+    add("statement", statement.id ? `Demonstrativo ${numLabel(statement.number)} com mudanças não salvas` : "Demonstrativo em andamento, ainda não salvo",
+      [statement.client.name.trim(), S.paid > 0 ? "pago " + money(S.paid) : ""].filter(Boolean).join(" · "), () => show("statement"));
   }
   if (needBackup()) {
     const at = local.get(BK_KEY, "");
@@ -4926,12 +5514,13 @@ function renderHome() {
 // Orçamento e Recibo abrem na lista: o botão "+ Novo" em cima e os salvos logo abaixo (pedido do Marcos)
 $("go-quote").onclick = () => show("saved");
 $("go-receipt").onclick = () => show("receipts");
+$("go-statement").onclick = () => show("statements");
 $("btn-home").onclick = () => show("home");
 $("btn-back").onclick = () => show("home");
 $("tab-profile").onclick = () => show("profile");
 
 /* ---------- Telas ---------- */
-const APP_VIEWS = ["home", "editor", "saved", "materials", "receipt", "receipts", "profile"];
+const APP_VIEWS = ["home", "editor", "saved", "materials", "receipt", "receipts", "statement", "statements", "profile"];
 /* Botão voltar do celular (a flechinha): cada tela aberta por um toque vira um passo no histórico do navegador, então
    voltar leva à tela anterior, como o Fechar. O Início é sempre o primeiro passo (voltar no Início sai do app, como em
    qualquer app do Android). A folha do Ver PDF, a janela de enviar e a pergunta de importar ou restaurar também são um
@@ -4974,7 +5563,7 @@ addEventListener("popstate", () => {
 function gate(which) {
   for (const v of [...APP_VIEWS, "loading", "welcome", "signup", "login"]) $("view-" + v).hidden = v !== which;
   fitSoon();
-  $("topbar").hidden = true; $("subnav").hidden = true; $("bar").hidden = true; $("rbar").hidden = true;
+  $("topbar").hidden = true; $("subnav").hidden = true; $("bar").hidden = true; $("rbar").hidden = true; $("sbar").hidden = true;
   if (which === "signup") { $("signup-slot").appendChild($("company-card")); renderProfile(); if (restoreSignup()) toast("Seu cadastro voltou do jeito que você deixou"); }
   if (which === "login") {
     $("l-name").textContent = bizName(profile) || "Entrar";
@@ -5009,16 +5598,20 @@ function show(view, how = "push") {
   $("subnav").hidden = view === "home";
   $("tabs-quote").hidden = !["editor", "saved", "materials"].includes(view);
   $("tabs-receipt").hidden = !["receipt", "receipts"].includes(view);
+  $("tabs-statement").hidden = !["statement", "statements"].includes(view);
   $("nav-receipt").hidden = $("top-receipt").hidden = $("tabs-quote").hidden;
   $("nav-quote").hidden = $("top-quote").hidden = $("tabs-receipt").hidden;
   $("bar").hidden = view !== "editor";
   $("rbar").hidden = view !== "receipt";
+  $("sbar").hidden = view !== "statement";
   if (view === "home") renderHome();
   if (view === "saved") renderSaved();
   if (view === "materials") renderMaterials();
   if (view === "editor") refreshCatalog();
   if (view === "receipt") renderReceiptAmount();
   if (view === "receipts") renderReceipts();
+  if (view === "statement") { renderStmQuotes(); renderStmSum(); renderStmPull(); }
+  if (view === "statements") renderStatements();
   if (view === "profile") renderProfile();
   window.scrollTo(0, 0);
 }
@@ -5043,6 +5636,12 @@ renderEditor();
   receipt = draft.receipt && draft.receipt.payer && draftOk(draft.receipt, receipts, true) ? draft.receipt : blankReceipt();
   if (!receipt.id && !receipt.mySig && profile.signature) receipt.mySig = profile.signature; // recibo novo começado antes de salvar a assinatura
   renderReceipt();
+  let statementsOk = false;
+  statements = await store.listStatements().then((r) => { statementsOk = true; return r; }).catch(() => []);
+  const ds = draft.statement;
+  statement = ds && ds.client && Array.isArray(ds.lines) && draftOk(ds, statements, statementsOk) ? ds : blankStatement();
+  if (!statement.id && !statement.mySig && profile.signature) statement.mySig = profile.signature;
+  renderStatement();
   if (receiptsOk) setTimeout(cleanProofs, 3000);
   if (!profile.registered || !profile.pwHash) gate(signupDraft() ? "signup" : "welcome");
   else if (session.get()) enterApp();

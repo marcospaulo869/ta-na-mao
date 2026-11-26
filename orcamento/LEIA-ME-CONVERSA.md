@@ -466,3 +466,17 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
 - **PDF, quando há desconto:** a coluna dos totais fica mais larga e, depois da Mão de obra, vem **Valor sem desconto** (negrito) → **Desconto por indicação − R$ ...** (vermelho, negrito) com a porcentagem embaixo, menor ("10% da mão de obra") → VALOR TOTAL. Sem desconto, nada muda e a linha de desconto não aparece.
 - **Tela:** os totais mostram as mesmas linhas (Valor sem desconto; Desconto por indicação em vermelho). Sem desconto, a linha some.
 - Teste: .testes/t84.js.
+
+## Atualização (26/11/2026): Demonstrativo de pagamentos (versão 83)
+
+- **Pedido do Marcos (prints do topo do orçamento e do PDF "ORÇAMENTO Nº"):** no acerto final ele mostrava ao cliente os valores pagos usando a tela do Orçamento (itens como "CRÉDITO LANÇADO COMPENSADOS PEREIRA..."). Quer uma opção separada, parecida com o orçamento, para o demonstrativo de toda a negociação: pagamentos, parcelas, material e mão de obra.
+- **Onde fica:** terceiro botão no Início, **Demonstrativo de pagamentos** (verde, a cor de "pago"). No alto, as abas **Demonstrativo | Salvos**, como no Orçamento e no Recibo. Cada orçamento salvo ganhou o botão **Demonstrativo**. Numeração própria (nº 0001, 0002...).
+- **Como funciona:**
+  - **Orçamento:** escolhe o orçamento na lista e entram sozinhos o cliente, o **valor contratado** (mão de obra já com o desconto; material com os comprados fora) e **todos os recibos já feitos dele** (cada recibo vira uma linha: data, tipo, mão de obra ou material, valor). Os valores contratados podem ser mudados (botão "Voltar aos valores do orçamento"). Também dá para fazer sem orçamento.
+  - **Pagamentos e créditos:** botões **+ Pagamento** e **+ Crédito na loja** (já vem "Crédito lançado na ..." e Referente a Material). Cada linha: data, valor, tipo (Entrada, Parcela, Pagamento, Saldo final, Crédito na loja), referente a (Mão de obra, Material, Mão de obra + material) e descrição. "×" tira a linha (pede confirmação se tiver valor). Recibo feito depois: aparece "Puxar 1 recibo novo do orçamento".
+  - **Resumo:** contratado, pago e saldo da mão de obra, do material e do total, e o quadro final **Saldo a receber**, **Quitado** ou **Saldo a favor do cliente**. A barra de baixo mostra o mesmo valor, com Ver PDF, Salvar e Enviar PDF.
+  - Observações (opcional) e assinaturas (a sua, de Meus dados, e a do cliente, opcional; também por foto).
+- **PDF:** cabeçalho da empresa com "Nº 0001" ao lado do QR e, logo abaixo do traço, o título grande **DEMONSTRATIVO DE PAGAMENTOS**, com orçamento, período (da primeira à última data) e obra. Tabela dos lançamentos em ordem de data com "Total pago", tabela do Resumo, quadro do saldo, observações, local e data e as assinaturas.
+- **Salvos:** cada demonstrativo mostra o total pago e a etiqueta "Saldo R$ ..." ou "Quitado", com Enviar PDF, Abrir, Excluir, Ver PDF e Imprimir. O WhatsApp e o "Salvar mensagem" funcionam como no orçamento e no recibo.
+- Entra no rascunho (continua de onde parou, cartão "Demonstrativo em andamento" no Início) e na **cópia de segurança** (salvar e restaurar).
+- Dados: localStorage "orc.statements" (ou a coleção "demonstrativos" na conta), profile.nextStatement. Teste: .testes/t85.js.
