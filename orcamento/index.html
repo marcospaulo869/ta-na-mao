@@ -189,6 +189,7 @@ input.caps::placeholder { text-transform: none; }
 @media (max-width: 350px) { .addrow .btn, .addrow .mic { font-size: 0.74rem; } }
 .outtag { border: 1px solid var(--out); background: none; color: var(--out); font: 700 0.72rem var(--font-body); letter-spacing: 0.04em; border-radius: 999px; padding: 3px 8px; cursor: pointer; white-space: nowrap; }
 .totals .sub { font-weight: 700; border-top: 1px solid var(--line); padding-top: 6px; margin-top: 4px; }
+.totals .disc { font-weight: 700; color: var(--danger); }
 .totals .outsum { color: var(--out); font-weight: 700; }
 .mv { width: 34px; height: 34px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; cursor: pointer; font-size: 1rem; }
 .mv:disabled { opacity: 0.35; cursor: default; }
@@ -723,7 +724,7 @@ body.pv-open { overflow: hidden; }
       <div class="row addrow" id="add-row"><button class="btn" id="btn-add">+ Adicionar<span class="wide"> material</span></button><button class="btn out" id="btn-add-out" type="button">COMPRAR FORA</button><button class="mic" id="btn-add-voice" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar novo item</span></button></div>
       <div class="grid2 pair">
         <div class="field"><label for="q-labor">Mão de obra (R$)</label><input id="q-labor" class="num" inputmode="decimal" placeholder="0"></div>
-        <div class="field"><label for="q-discount" id="q-disc-l">Desconto (%)</label><input id="q-discount" class="num" inputmode="decimal" placeholder="0"></div>
+        <div class="field"><label for="q-discount" id="q-disc-l">Desconto por indicação (%)</label><input id="q-discount" class="num" inputmode="decimal" placeholder="0"></div>
       </div>
       <div class="dtype" role="group" aria-labelledby="q-disc-mode-l">
         <span class="dtype-l" id="q-disc-mode-l">Desconto em</span>
@@ -1872,10 +1873,12 @@ const calc = (q) => {
 };
 // Texto do desconto nos totais e no PDF: "Desconto (50% da mão de obra)"; short = versão curta para a coluna estreita do PDF
 const discLabel = (t, short) => {
-  if (!t.pct) return "Desconto";
-  const d = DISC_TYPES[t.type];
-  return !d.of ? `Desconto (${fmtPct(t.pct)}%)` : short ? `Desc. ${d.short} (${fmtPct(t.pct)}%)` : `Desconto (${fmtPct(t.pct)}% ${d.of})`;
+  if (!t.pct) return DISC_NAME;
+  return short ? `Desc. por indicação (${fmtPct(t.pct)}%)` : `${DISC_NAME} (${discPct(t)})`;
 };
+// nome do desconto pedido pelo Marcos (26/11/2026, v82) e a parte da porcentagem: "10% da mão de obra"
+const DISC_NAME = "Desconto por indicação";
+const discPct = (t) => { const d = DISC_TYPES[t.type]; return d.of ? `${fmtPct(t.pct)}% ${d.of}` : `${fmtPct(t.pct)}%`; };
 const fillVars = (text, q, t) => String(text || "")
   .replaceAll("{CLIENTE}", q.client.name || "o cliente")
   .replaceAll("{TOTAL}", money(t.total))
@@ -2744,7 +2747,8 @@ function renderTotals() {
   const t = calc(quote);
   quote.items.forEach((it, i) => { const el = $(`it-t-${i}`); if (el) el.textContent = money(lineTotal(it)); });
   // ordem pedida pelo Marcos (06/10/2026): Materiais, Comprar fora, Total dos materiais, Mão de obra, Desconto, VALOR TOTAL
-  const disc = `<div><span>${discLabel(t)}</span><span>− ${money(t.discount)}</span></div>`;
+  const disc = t.discount ? `<div class="sub"><span>Valor sem desconto</span><span>${money(t.total + t.discount)}</span></div>
+    <div class="disc"><span>${discLabel(t)}</span><span>− ${money(t.discount)}</span></div>` : "";
   // conferência: soma dos marcados e a conta sem eles (mão de obra automática e desconto refeitos). Os totais do quadro de
   // baixo, o PDF e o orçamento salvo continuam com todos os itens; o Total da barra mostra a conta sem os marcados.
   const sel = pickedItems(), selOwn = sel.filter((it) => !it.out).reduce((s, it) => s + lineTotal(it), 0), selOut = sel.filter((it) => it.out).reduce((s, it) => s + lineTotal(it), 0);
@@ -2779,13 +2783,13 @@ function renderTotals() {
   document.querySelectorAll("#q-disc-type button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.type === dt)));
   const dm = t.mode;
   document.querySelectorAll("#q-disc-mode button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === dm)));
-  $("q-disc-l").textContent = dm === "value" ? "Desconto (R$)" : "Desconto (%)";
+  $("q-disc-l").textContent = dm === "value" ? "Desconto por indicação (R$)" : "Desconto por indicação (%)";
   const sobre = dt === "labor" ? "a mão de obra" : dt === "materials" ? "os materiais" : "os materiais e a mão de obra";
   $("q-disc-hint").textContent = dm === "value" ? (t.discount
-    ? `Desconto de ${money(t.discount)} sobre ${sobre} (${money(t.base)}) = ${fmtPct(t.pct)}%.${parseNum(quote.discountValue) > t.base ? ` O desconto vai até ${money(t.base)}.` : ""}${dt !== "labor" && t.hasOut ? " O Comprar fora não entra no desconto." : ""}`
+    ? `Desconto por indicação de ${money(t.discount)} sobre ${sobre} (${money(t.base)}) = ${fmtPct(t.pct)}%.${parseNum(quote.discountValue) > t.base ? ` O desconto vai até ${money(t.base)}.` : ""}${dt !== "labor" && t.hasOut ? " O Comprar fora não entra no desconto." : ""}`
     : "Escolha sobre o que o desconto incide e digite o valor em reais. O app calcula a porcentagem.")
     : t.pct
-    ? `Desconto de ${fmtPct(t.pct)}% sobre ${dt === "labor" ? "a mão de obra" : dt === "materials" ? "os materiais" : "os materiais e a mão de obra"} (${money(t.base)}) = ${money(t.discount)}.${dt !== "labor" && t.hasOut ? " O Comprar fora não entra no desconto." : ""}`
+    ? `Desconto por indicação de ${fmtPct(t.pct)}% sobre ${dt === "labor" ? "a mão de obra" : dt === "materials" ? "os materiais" : "os materiais e a mão de obra"} (${money(t.base)}) = ${money(t.discount)}.${dt !== "labor" && t.hasOut ? " O Comprar fora não entra no desconto." : ""}`
     : "Escolha sobre o que o desconto incide e digite a porcentagem.";
 }
 function renderEditor() {
@@ -3191,19 +3195,21 @@ function buildPdf(q) {
   if (y > 250) { doc.addPage(); header(); y = 42; }
   const GREEN = [46, 125, 50];
   // big: total final (maior, cor de destaque); strong: negrito; color: cor da linha
+  // com desconto a coluna dos totais fica mais larga, para "Valor sem desconto" e "Desconto por indicação" ficarem folgados (v82)
+  const TX = t.discount ? 106 : 130, RED = [192, 57, 43];
   const row = (label, val, { big, strong, color } = {}) => {
     doc.setFont("helvetica", big || strong ? "bold" : "normal"); doc.setFontSize(big ? 12 : 10);
     doc.setTextColor(...(color || (big ? ACC : INK)));
-    doc.text(label, 130, y); doc.text(val, W - M, y, { align: "right" }); y += big ? 7 : 5.5;
+    doc.text(label, TX, y); doc.text(val, W - M, y, { align: "right" }); y += big ? 7 : 5.5;
   };
-  const rule = () => { doc.setDrawColor(...LINE); doc.line(130, y - 3.5, W - M, y - 3.5); y += 1.5; };
+  const rule = () => { doc.setDrawColor(...LINE); doc.line(TX, y - 3.5, W - M, y - 3.5); y += 1.5; };
   const laborAndTotal = (label) => {
     if (t.labor) row("Mão de obra", money(t.labor));
-    if (t.discount) {
-      const val = "- " + money(t.discount);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-      const lbl = discLabel(t); // a coluna dos totais é estreita: se o texto completo não couber ao lado do valor, usa o curto
-      row(doc.getTextWidth(lbl) + doc.getTextWidth(val) + 4 > W - M - 130 ? discLabel(t, true) : lbl, val);
+    if (t.discount) { // pedido do Marcos (26/11/2026): o desconto bem visível. Valor sem desconto, depois o desconto em vermelho
+      rule(); row("Valor sem desconto", money(t.total + t.discount), { strong: true });
+      // "Desconto por indicação  - R$ ..." em vermelho e, embaixo, menor, a porcentagem: "10% da mão de obra"
+      row(DISC_NAME, "- " + money(t.discount), { strong: true, color: RED });
+      if (t.pct) { doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...RED); doc.text(discPct(t), TX, y - 1.6); y += 3.4; }
     }
     rule(); row(label, money(t.total), { big: true });
   };
@@ -3833,7 +3839,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "81";
+const APP_VERSION = "82";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
