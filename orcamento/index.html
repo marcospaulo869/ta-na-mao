@@ -555,9 +555,15 @@ body.pv-open { overflow: hidden; }
 .pline .pg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .pline .pg .wide { grid-column: 1 / -1; }
 .pline .pg label { font-size: 0.82rem; }
+.pline .pg .f-pay { grid-column: 1 / -1; }
+.pline .pg .f-n[hidden], .pline .pg .f-rate[hidden], .pline .pg .pjuros[hidden] { display: none; }
+.pline .pjuros { grid-column: 1 / -1; border: 1px solid var(--warm); background: var(--warm-soft, #FBEBD8); border-radius: 8px; padding: 8px 10px; font-size: 0.88rem; line-height: 1.4; }
+.pline .pjuros b { display: block; }
+.pline .pjuros .warn { color: var(--danger); font-weight: 700; margin-top: 4px; }
 @media (min-width: 640px) {
   .pline .pg { grid-template-columns: 150px minmax(0, 1fr) minmax(0, 1fr) 150px; }
-  .pline .f-kind { order: 1; } .pline .f-on { order: 2; } .pline .f-val { order: 3; } .pline .pg .wide { order: 4; }
+  .pline .f-kind { order: 1; } .pline .f-on { order: 2; } .pline .f-val { order: 3; } .pline .pg .f-pay { order: 4; grid-column: span 2; }
+  .pline .f-n { order: 5; } .pline .f-rate { order: 6; } .pline .pjuros { order: 7; } .pline .pg .wide.f-desc { order: 8; }
 }
 .s-add { display: flex; flex-wrap: wrap; gap: 8px; }
 .s-add .btn { flex: 1 1 140px; min-height: 48px; }
@@ -4033,7 +4039,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "89";
+const APP_VERSION = "90";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -5044,6 +5050,19 @@ function renderReceipts() {
    - resumo: contratado, pago e saldo de cada parte e do total; "Saldo a receber", "Quitado" ou "Saldo a favor do cliente". */
 const S_KIND = { entrada: "Entrada", parcela: "Parcela", pagamento: "Pagamento", saldo: "Saldo final", credito: "Crédito na loja" };
 const S_ON = { labor: "Mão de obra", material: "Material", both: "Mão de obra + material" };
+// Forma de pagamento de cada lançamento (pedido do Marcos, 26/11/2026, v90): l.pay; no parcelado, l.n (parcelas) e
+// l.rate (taxa e juros da operadora, % digitada por ele). Os juros ficam com a operadora: não mudam o valor lançado nem o saldo.
+const S_PAY = { "": "Não informada", dinheiro: "Dinheiro", pix: "Pix", debito: "Cartão de débito", credito: "Cartão de crédito à vista", parcelado: "Cartão de crédito parcelado", transf: "Transferência bancária", boleto: "Boleto", cheque: "Cheque" };
+const S_PAY_PDF = { dinheiro: "Dinheiro", pix: "Pix", debito: "Débito", credito: "Crédito à vista", transf: "Transferência", boleto: "Boleto", cheque: "Cheque" };
+const M2PAY = { "Pix": "pix", "Dinheiro": "dinheiro", "Cartão de crédito": "credito", "Cartão de débito": "debito", "Transferência bancária": "transf", "Boleto": "boleto", "Cheque": "cheque" };
+const stmN = (l) => Math.max(1, Math.round(parseNum(l.n) || 1));
+// parcelado: acréscimo de taxa e juros, total com juros e valor de cada parcela
+function stmJuros(l) {
+  const v = cents(parseNum(l.value)), rate = Math.max(0, parseNum(l.rate) || 0), n = stmN(l), add = cents(v * rate / 100), tot = cents(v + add);
+  return { v, rate, n, add, tot, parc: cents(tot / n) };
+}
+const stmPayPdf = (l) => (l.pay === "parcelado" ? `Crédito ${stmN(l)}x` : S_PAY_PDF[l.pay] || "");
+const STM_JUROS_AVISO = "no pagamento parcelado no cartão há incidência de juros e taxas da operadora do cartão.";
 const blankStatement = () => ({ id: "", number: 0, date: todayISO(), quoteId: "", quoteNumber: 0, serv: "",
   client: { name: "", doc: "", phone: "", email: "", address: "" }, contract: { labor: 0, material: 0, discMode: "value", discount: 0, discPct: 0, discOn: "labor" }, contractAuto: false,
   lines: [], note: "", mySig: profile.signature || "", clientSig: "" });
@@ -5090,7 +5109,7 @@ const stmContractOf = (q) => {
   return c;
 };
 const R2S_KIND = { total: "pagamento", entrada: "entrada", parcela: "parcela", saldo: "saldo" };
-const lineFromReceipt = (r) => stmLine({ date: r.date || todayISO(), desc: `Recibo nº ${pad4(r.number)}${r.method ? " (" + r.method + ")" : ""}`,
+const lineFromReceipt = (r) => stmLine({ date: r.date || todayISO(), desc: `Recibo nº ${pad4(r.number)}${r.method ? " (" + r.method + ")" : ""}`, pay: M2PAY[r.method] || "",
   kind: R2S_KIND[r.kind] || "pagamento", on: baseOf(r) === "labor" ? "labor" : baseOf(r) === "outside" ? "material" : "both", value: parseNum(r.amount), rid: r.id });
 const stmNewReceipts = (s) => { const have = new Set(s.lines.map((l) => l.rid).filter(Boolean)); return s.quoteId ? receipts.filter((r) => r.quoteId === s.quoteId && !have.has(r.id)) : []; };
 function pullStmReceipts() {
@@ -5201,7 +5220,11 @@ function renderStmLines() {
         <div class="field f-val"><label for="${p}value">Valor (R$)</label><input id="${p}value" class="num" inputmode="decimal" placeholder="0,00" data-k="value"></div>
         <div class="field f-kind"><label for="${p}kind">Tipo</label><select id="${p}kind" data-k="kind">${opts(S_KIND, l.kind)}</select></div>
         <div class="field f-on"><label for="${p}on">Referente a</label><select id="${p}on" data-k="on">${opts(S_ON, l.on)}</select></div>
-        <div class="field wide"><label for="${p}desc">Descrição</label><input id="${p}desc" data-k="desc" data-fix="text" autocomplete="off" autocapitalize="sentences" autocorrect="on" spellcheck="true"></div>
+        <div class="field f-pay"><label for="${p}pay">Forma de pagamento</label><select id="${p}pay" data-k="pay">${opts(S_PAY, l.pay || "")}</select></div>
+        <div class="field f-n"><label for="${p}n">Parcelas</label><input id="${p}n" class="num" inputmode="numeric" placeholder="Ex.: 10" data-k="n"></div>
+        <div class="field f-rate"><label for="${p}rate">Taxa e juros (%)</label><input id="${p}rate" class="num" inputmode="decimal" placeholder="0" data-k="rate"></div>
+        <div class="pjuros" aria-live="polite"></div>
+        <div class="field wide f-desc"><label for="${p}desc">Descrição</label><input id="${p}desc" data-k="desc" data-fix="text" autocomplete="off" autocapitalize="sentences" autocorrect="on" spellcheck="true"></div>
       </div>`;
     el.querySelector(".rtag").textContent = l.rid ? "veio do recibo" : "";
     const f = (k) => el.querySelector(`[data-k="${k}"]`);
@@ -5217,6 +5240,28 @@ function renderStmLines() {
       renderStmSum();
     };
     f("on").onchange = (e) => { l.on = e.target.value; renderStmSum(); };
+    const jz = el.querySelector(".pjuros");
+    const showJuros = () => {
+      const on = l.pay === "parcelado"; jz.hidden = !on;
+      f("n").parentElement.hidden = f("rate").parentElement.hidden = !on;
+      if (!on) return;
+      const J = stmJuros(l);
+      jz.innerHTML = (J.v ? `<b>${J.n}x de ${money(J.parc)}</b>${J.rate ? `Taxa e juros ${fmtPct(J.rate)}%: acréscimo de ${money(J.add)}, total com juros ${money(J.tot)}.` : "Digite a taxa e juros (%) para ver o total com juros."}` : "Digite o valor para ver as parcelas.")
+        + `<div class="warn">Atenção: ${STM_JUROS_AVISO}</div>`;
+    };
+    f("n").value = l.pay === "parcelado" ? stmN(l) : ""; f("rate").value = parseNum(l.rate) ? fmtPct(parseNum(l.rate)) : "";
+    f("pay").onchange = (e) => {
+      l.pay = e.target.value;
+      if (l.pay === "parcelado") {
+        if (!l.n || l.n < 2) { l.n = 2; f("n").value = 2; }
+        if (!parseNum(l.rate)) { const last = statement.lines.find((x) => x !== l && x.pay === "parcelado" && parseNum(x.rate)); if (last) { l.rate = parseNum(last.rate); f("rate").value = fmtPct(l.rate); } }
+      }
+      showJuros();
+    };
+    f("n").oninput = (e) => { l.n = Math.round(parseNum(e.target.value)) || 0; showJuros(); };
+    f("rate").oninput = (e) => { l.rate = parseNum(e.target.value); showJuros(); };
+    f("value").addEventListener("input", showJuros);
+    showJuros();
     const rm = el.querySelector(".rm");
     rm.onclick = () => {
       if (rm.dataset.confirm !== "1" && (parseNum(l.value) || (l.desc || "").trim())) { rm.dataset.confirm = "1"; rm.textContent = "Tirar?"; setTimeout(() => { if (rm.isConnected) { rm.dataset.confirm = ""; rm.textContent = "×"; } }, 4000); return; }
@@ -5384,8 +5429,8 @@ function buildStatementPdf(s) {
   // Pagamentos e créditos
   doc.autoTable({
     startY: y, margin: { left: M, right: M, top: 38 },
-    head: [["#", "Data", "Descrição", "Tipo", "Referente a", "Valor"]],
-    body: S.lines.length ? S.lines.map((l, i) => [i + 1, fmtDate(l.date), l.desc || "-", S_KIND[l.kind] || "", S_ON[l.on] || S_ON.labor, money(parseNum(l.value))])
+    head: [["#", "Data", "Descrição", "Tipo / forma", "Referente a", "Valor"]],
+    body: S.lines.length ? S.lines.map((l, i) => [i + 1, fmtDate(l.date), l.desc || "-", [S_KIND[l.kind] || "", stmPayPdf(l)].filter(Boolean).join("\n"), S_ON[l.on] || S_ON.labor, money(parseNum(l.value))])
       : [[{ content: "Nenhum pagamento lançado", colSpan: 6, styles: { halign: "center", textColor: MUT } }]],
     foot: [[{ content: "Total pago", colSpan: 5, styles: { halign: "right" } }, { content: money(S.paid), styles: { halign: "right" } }]],
     showFoot: "lastPage",
@@ -5393,10 +5438,28 @@ function buildStatementPdf(s) {
     headStyles: { fillColor: HEAD, textColor: HEADTXT, fontStyle: "bold" },
     footStyles: { fillColor: SOFT, textColor: INK, fontStyle: "bold" },
     alternateRowStyles: { fillColor: ALT },
-    columnStyles: { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 21 }, 3: { cellWidth: 25 }, 4: { cellWidth: 28 }, 5: { cellWidth: 30, halign: "right" } },
+    columnStyles: { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 21 }, 3: { cellWidth: 28 }, 4: { cellWidth: 27 }, 5: { cellWidth: 28, halign: "right" } },
     didDrawPage: (d) => { if (d.pageNumber > 1) header(); },
   });
   y = doc.lastAutoTable.finalY + 7;
+  // Parcelado no cartão: parcelas, taxa e juros de cada lançamento e o aviso (v90)
+  const parc = S.lines.map((l, i) => [l, i]).filter(([l]) => l.pay === "parcelado");
+  if (parc.length) {
+    const txt = parc.map(([l, i]) => { const J = stmJuros(l);
+      return `Lançamento ${i + 1} (${money(J.v)}): ${J.n}x de ${money(J.parc)}` + (J.rate ? `, taxa e juros de ${fmtPct(J.rate)}% (acréscimo de ${money(J.add)}, total com juros ${money(J.tot)}).` : "."); });
+    doc.setFontSize(9); doc.setFont("helvetica", "normal");
+    const ls = txt.flatMap((t) => doc.splitTextToSize(t, W - 2 * M - 8));
+    doc.setFont("helvetica", "bold");
+    const aviso = doc.splitTextToSize("Aviso: " + STM_JUROS_AVISO + " Esses juros e taxas são pagos à operadora e não mudam o valor lançado nem o saldo deste demonstrativo.", W - 2 * M - 8);
+    const h = 9 + 4.3 * ls.length + 4.3 * aviso.length + 3;
+    if (y + h > 280) { doc.addPage(); header(); y = 44; }
+    doc.setFillColor(253, 243, 231); doc.setDrawColor(226, 137, 43); doc.setLineWidth(0.3); doc.roundedRect(M, y, W - 2 * M, h, 2, 2, "FD");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...INK); doc.text("PAGAMENTO PARCELADO NO CARTÃO", M + 4, y + 6);
+    doc.setFont("helvetica", "normal"); doc.text(ls, M + 4, y + 11, { lineHeightFactor: 1.35 });
+    doc.setFont("helvetica", "bold"); doc.setTextColor(192, 57, 43); doc.text(aviso, M + 4, y + 11 + 4.3 * ls.length + 1, { lineHeightFactor: 1.35 });
+    doc.setTextColor(...INK); doc.setFont("helvetica", "normal");
+    y += h + 7;
+  }
   // Resumo: contratado, pago e saldo de cada parte
   if (S.contract > 0) {
     if (y > 225) { doc.addPage(); header(); y = 44; }
