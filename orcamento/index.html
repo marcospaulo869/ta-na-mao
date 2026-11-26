@@ -4033,7 +4033,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "88";
+const APP_VERSION = "89";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -5247,7 +5247,7 @@ function stmRows(S) {
   if (D.d && D.on === "material") R.push(discRow());
   if (S.cl || S.pl) {
     const ls = split ? cents(S.cl - S.pl) : undefined;
-    if (D.d && D.on !== "material") R.push({ l: "Total mão de obra", c: D.cl }, { l: "Total mão de obra com desconto", c: S.cl, p: S.pl, s: ls }, discRow());
+    if (D.d && D.on !== "material") R.push({ l: "Total mão de obra", c: D.cl }, discRow(), { l: "Total mão de obra com desconto", c: S.cl, p: S.pl, s: ls }); // v89: desconto entre os dois (pedido do Marcos)
     else R.push({ l: "Total mão de obra", c: S.cl, p: S.pl, s: ls });
   } else if (D.d && D.on !== "material") R.push(discRow());
   if (S.pb) R.push({ l: "Mão de obra + material", p: S.pb });
