@@ -4033,7 +4033,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "87";
+const APP_VERSION = "88";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -5236,17 +5236,38 @@ $("s-add-pay").onclick = () => addStmLine({ kind: statement.lines.some((l) => l.
 $("s-add-credit").onclick = () => addStmLine({ kind: "credito", on: "material", desc: "Crédito lançado na " }, "desc");
 $("s-pull").onclick = () => { const n = pullStmReceipts(); renderStmLines(); renderStmSum(); renderStmPull(); toast(n === 1 ? "1 recibo entrou na lista" : `${n} recibos entraram na lista`); };
 
+// Linhas do Resumo, na ordem pedida pelo Marcos (v88): 1 Total de material, 2 Materiais comprados fora, 3 Total mão de obra,
+// 4 Total mão de obra com desconto, 5 Desconto na mão de obra por indicação, 6 Saldo materiais comprados fora; depois o Total.
+// Cada linha: l (texto), c (contratado), p (pago), s (saldo); red = desconto; bold = total. Valores ausentes ficam em branco.
+function stmRows(S) {
+  const R = [], split = !S.pb, D = S.D, discOnLabor = D.on === "labor";
+  const discRow = () => ({ l: discOnLabor ? `Desconto na mão de obra por indicação (${fmtPct(Math.round(D.pct * 100) / 100)}%)` : stmDiscLabel(D), c: -D.d, red: true });
+  if (S.cm || S.pm) R.push({ l: D.d && D.on !== "labor" ? "Total de material (com desconto)" : "Total de material", c: S.cm, p: S.pm });
+  if (S.outside > 0) R.push({ l: "Materiais comprados fora", c: S.outside });
+  if (D.d && D.on === "material") R.push(discRow());
+  if (S.cl || S.pl) {
+    const ls = split ? cents(S.cl - S.pl) : undefined;
+    if (D.d && D.on !== "material") R.push({ l: "Total mão de obra", c: D.cl }, { l: "Total mão de obra com desconto", c: S.cl, p: S.pl, s: ls }, discRow());
+    else R.push({ l: "Total mão de obra", c: S.cl, p: S.pl, s: ls });
+  } else if (D.d && D.on !== "material") R.push(discRow());
+  if (S.pb) R.push({ l: "Mão de obra + material", p: S.pb });
+  const sm = cents(S.cm - S.pm);
+  if (split && (S.cm || S.pm) && Math.abs(sm) > 0.004) R.push({ l: sm > 0 ? "Saldo materiais comprados fora" : "Saldo do material", s: sm });
+  R.push({ l: "Total", c: S.contract, p: S.paid, s: S.saldo, bold: true });
+  return R;
+}
+const stmMoney = (v) => (v < 0 ? "− " + money(-v) : money(v));
 function renderStmSum() {
   const S = stmSum(statement), F = stmFinal(S), row = (k, v, cls) => `<tr${cls ? ` class="${cls}"` : ""}><td>${k}</td><td class="v">${money(v)}</td></tr>`;
   const grp = (t) => `<tr><td class="g" colspan="2">${t}</td></tr>`;
   let html = "<table>";
   if (S.contract > 0) {
-    const split = !S.pb; // com pagamentos "mão de obra + material" o saldo de cada parte não dá para separar
-    if (S.cm || S.pm) html += grp("Material") + row(S.D.d && S.D.on !== "labor" ? "Contratado (com desconto)" : "Contratado", S.cm) + row("Pago", S.pm) + (split ? row(S.smOut ? "Saldo materiais comprados fora" : "Saldo", cents(S.cm - S.pm)) : "");
-    if (S.cl || S.pl) html += grp("Mão de obra") + row(S.D.d && S.D.on !== "material" ? "Contratado (com desconto)" : "Contratado", S.cl) + row("Pago", S.pl) + (split ? row("Saldo", cents(S.cl - S.pl)) : "");
-    if (S.pb) html += grp("Mão de obra + material") + row("Pago", S.pb);
-    html += grp("Total") + (S.D.d ? row("Valor sem desconto", S.gross) + `<tr class="disc"><td>${stmDiscLabel(S.D)}</td><td class="v">− ${money(S.D.d)}</td></tr>` : "")
-      + row("Total contratado", S.contract, "tt") + row("Total pago", S.paid, "tt");
+    for (const r of stmRows(S)) {
+      const vals = [["Contratado", r.c], ["Pago", r.p], ["Saldo", r.s]].filter(([, v]) => typeof v === "number");
+      const cls = r.red ? "disc" : r.bold ? "tt" : "";
+      if (vals.length === 1) { html += `<tr${cls ? ` class="${cls}"` : ""}><td>${r.l}</td><td class="v">${stmMoney(vals[0][1])}</td></tr>`; continue; }
+      html += grp(r.l) + vals.map(([k, v]) => `<tr${cls ? ` class="${cls}"` : ""}><td>${r.bold ? (k === "Contratado" ? "Total contratado" : k === "Pago" ? "Total pago" : "Saldo") : k}</td><td class="v">${stmMoney(v)}</td></tr>`).join("");
+    }
   } else {
     if (S.pl) html += row("Pago de mão de obra", S.pl);
     if (S.pm) html += row("Pago de material", S.pm);
@@ -5379,13 +5400,8 @@ function buildStatementPdf(s) {
   // Resumo: contratado, pago e saldo de cada parte
   if (S.contract > 0) {
     if (y > 225) { doc.addPage(); header(); y = 44; }
-    const split = !S.pb, body = [];
-    if (S.cm || S.pm) body.push([S.D.d && S.D.on !== "labor" ? "Material (com desconto)" : "Material", money(S.cm), money(S.pm), split ? (S.smOut ? "" : money(cents(S.cm - S.pm))) : "-"]);
-    if ((S.cm || S.pm) && split && S.smOut) body.push(["Saldo materiais comprados fora", "", "", money(cents(S.cm - S.pm))]);
-    if (S.cl || S.pl) body.push([S.D.d && S.D.on !== "material" ? "Mão de obra (com desconto)" : "Mão de obra", money(S.cl), money(S.pl), split ? money(cents(S.cl - S.pl)) : "-"]);
-    if (S.pb) body.push(["Mão de obra + material", "-", money(S.pb), "-"]);
-    if (S.D.d) body.push(["Valor sem desconto", money(S.gross), "", ""], [stmDiscLabel(S.D), "- " + money(S.D.d), "", ""]);
-    body.push(["Total", money(S.contract), money(S.paid), money(S.saldo)]);
+    const rows = stmRows(S), cell = (v) => (typeof v === "number" ? (v < 0 ? "- " + money(-v) : money(v)) : "");
+    const body = rows.map((r) => [r.l, cell(r.c), cell(r.p), cell(r.s)]);
     doc.autoTable({
       startY: y, margin: { left: M, right: M, top: 38 },
       head: [["Resumo", "Contratado", "Pago", "Saldo"]], body,
@@ -5393,7 +5409,7 @@ function buildStatementPdf(s) {
       headStyles: { fillColor: HEAD, textColor: HEADTXT, fontStyle: "bold" },
       columnStyles: { 1: { halign: "right", cellWidth: 36 }, 2: { halign: "right", cellWidth: 36 }, 3: { halign: "right", cellWidth: 36 } },
       didParseCell: (c) => { if (c.section === "head" && c.column.index > 0) c.cell.styles.halign = "right"; if (c.section === "body" && c.row.index === body.length - 1) c.cell.styles.fontStyle = "bold";
-        if (c.section === "body" && S.D.d && c.row.index === body.length - 2 && c.column.index < 2) { c.cell.styles.textColor = [192, 57, 43]; c.cell.styles.fontStyle = "bold"; } },
+        if (c.section === "body" && rows[c.row.index].red && c.column.index < 2) { c.cell.styles.textColor = [192, 57, 43]; c.cell.styles.fontStyle = "bold"; } },
       didDrawPage: (d) => { if (d.pageNumber > 1) header(); },
     });
     y = doc.lastAutoTable.finalY + 6;
