@@ -480,3 +480,11 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
 - **Salvos:** cada demonstrativo mostra o total pago e a etiqueta "Saldo R$ ..." ou "Quitado", com Enviar PDF, Abrir, Excluir, Ver PDF e Imprimir. O WhatsApp e o "Salvar mensagem" funcionam como no orçamento e no recibo.
 - Entra no rascunho (continua de onde parou, cartão "Demonstrativo em andamento" no Início) e na **cópia de segurança** (salvar e restaurar).
 - Dados: localStorage "orc.statements" (ou a coleção "demonstrativos" na conta), profile.nextStatement. Teste: .testes/t85.js.
+
+## Atualização (26/11/2026): Desconto por indicação no Demonstrativo (versão 84)
+
+- **Pedido do Marcos (print do quadro "Valor contratado" com o espaço entre Mão de obra/Material e Total contratado marcado):** "crie um campo desconto por indicação".
+- **Agora:** embaixo de Mão de obra e Material há **Desconto por indicação**, igual ao do orçamento: "Desconto em: Porcentagem (%) | Valor (R$)" e "Desconto sobre: Mão de obra | Material | Material + mão de obra". A explicação mostra, por exemplo, "Desconto de R$ 2.000,00 sobre a mão de obra (R$ 17.135,07) = 11,67%".
+- Com desconto, o quadro mostra **Valor sem desconto**, **Desconto por indicação (10% da mão de obra) − R$ ...** em vermelho e o **Total contratado** já com o desconto. O Resumo, o saldo e o PDF usam o valor com desconto (a linha da parte com desconto diz "(com desconto)"; no PDF o desconto sai em vermelho antes do Total).
+- Escolhendo o orçamento, a mão de obra e o material vêm **sem** o desconto, e o desconto do orçamento vem no campo novo (mesmo modo, % ou R$, e a mesma base). Demonstrativos salvos na versão 83 continuam iguais (desconto zero).
+- Campos: contract.discMode ("value"|"pct"), discount, discPct, discOn ("labor"|"material"|"total"). Teste: .testes/t86.js.
