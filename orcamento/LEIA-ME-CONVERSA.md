@@ -515,3 +515,13 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
 
 - **Pedido do Marcos (print do Resumo):** "coloque o desconto na mão de obra por indicação uma linha acima", para fazer sentido para quem lê.
 - **Agora (tela e PDF):** Total de material → Materiais comprados fora → Total mão de obra → **Desconto na mão de obra por indicação** → Total mão de obra com desconto → Saldo materiais comprados fora → Total.
+
+### v90 (26/11/2026) - Forma de pagamento e parcelado no demonstrativo
+- Cada lançamento do Demonstrativo tem "Forma de pagamento": dinheiro, Pix, cartão de débito, crédito à vista,
+  crédito parcelado, transferência, boleto ou cheque. Recibos puxados do orçamento já trazem a forma do recibo.
+- No "Cartão de crédito parcelado" aparecem "Parcelas" e "Taxa e juros (%)" (campo editável em cada lançamento; o
+  próximo parcelado já vem com a última taxa usada). O app mostra N x de R$, acréscimo e total com juros, e o aviso
+  "no pagamento parcelado no cartão há incidência de juros e taxas da operadora do cartão".
+- Os juros ficam com a operadora: não mudam o valor lançado, o total pago nem o saldo.
+- PDF: coluna "Tipo / forma" (ex.: "Crédito na loja / Crédito 10x") e um quadro "PAGAMENTO PARCELADO NO CARTÃO" com as
+  parcelas, a taxa e o aviso em vermelho. Teste: .testes/t88.js.
