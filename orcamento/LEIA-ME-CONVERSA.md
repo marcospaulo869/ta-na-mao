@@ -494,3 +494,8 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
 - **Pedido do Marcos (print do Resumo, linha Saldo do Material marcada):** "coloca saldo materiais comprados fora".
 - **Agora:** quando o que falta do material é dos itens "Comprar fora" do orçamento (saldo do material maior que zero e até o valor dos comprados fora), a linha diz **Saldo materiais comprados fora** em vez de "Saldo". No PDF, o saldo do Material sai numa linha própria, "Saldo materiais comprados fora", logo abaixo de Material. Com saldo zero, ou maior que os comprados fora, continua "Saldo".
 - O valor dos comprados fora fica guardado no demonstrativo (contract.outside) quando vem do orçamento. Teste: .testes/t87.js.
+
+## Atualização (26/11/2026): "Saldo materiais comprados fora" sempre que falta material (versão 86)
+
+- **Retorno do Marcos:** no demonstrativo dele ainda aparecia só "Saldo" (o demonstrativo não estava ligado a um orçamento com itens Comprar fora, então a regra da v85 não valia).
+- **Agora:** sempre que o saldo do Material for maior que zero, a linha diz **Saldo materiais comprados fora** (tela e PDF). Saldo zero continua "Saldo".

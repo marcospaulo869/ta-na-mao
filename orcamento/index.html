@@ -4033,7 +4033,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "85";
+const APP_VERSION = "86";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -5072,7 +5072,7 @@ function stmSum(s) {
   // saldo do material que é dos itens "Comprar fora" do orçamento (pedido do Marcos, v85): a linha do saldo diz "materiais comprados fora"
   const q = s.quoteId && quotes.find((x) => x.id === s.quoteId);
   const outside = s.contract && typeof s.contract.outside === "number" ? s.contract.outside : q ? cents(calc(q).outside) : 0;
-  const sm = cents(cm - pm), smOut = outside > 0 && sm > 0.004 && sm <= outside + 0.004;
+  const sm = cents(cm - pm), smOut = sm > 0.004; // v86: sempre que falta material (pedido do Marcos)
   return { lines, D, gross: cents(D.cl + D.cm), cl, cm, contract, pl, pm, pb, paid, saldo: cents(contract - paid), from: dates[0] || "", to: dates[dates.length - 1] || "", outside, smOut };
 }
 // situação final: a receber, quitado ou a favor do cliente (sem valor contratado, mostra só o total pago)
