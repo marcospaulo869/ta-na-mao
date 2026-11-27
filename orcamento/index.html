@@ -4056,7 +4056,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "92";
+const APP_VERSION = "93";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -4976,14 +4976,18 @@ function buildReceiptPdf(r) {
   header();
   let y = 44;
   // Caixa do valor
-  doc.setFillColor(...SOFT); doc.roundedRect(W - M - 70, y - 4, 70, 22, 2, 2, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...MUT);
-  doc.text("VALOR RECEBIDO", W - M - 66, y + 2);
-  doc.setFontSize(17); doc.setTextColor(...ACC); doc.text(money(v), W - M - 66, y + 12);
-  doc.setFontSize(8); doc.setTextColor(...MUT);
-  doc.text("DATA", M, y + 2); doc.text("TIPO", M + 38, y + 2); doc.text("FORMA DE PAGAMENTO", M + 76, y + 2);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); doc.setTextColor(...INK);
-  doc.text(fmtDate(r.date), M, y + 8); doc.text(kindLabel(r), M + 38, y + 8); doc.text(r.method, M + 76, y + 8);
+  // v93 (Marcos, 27/11/2026: "a frase está invadindo o campo do valor"): colunas mais juntas, caixa do valor mais estreita
+  // e cada texto diminui a letra se não couber na sua coluna, para nunca encostar na caixa
+  const BW = 54, BX = W - M - BW, C1 = M + 30, C2 = M + 64, GAP = 4;
+  const fitText = (t, x, yy, maxW, size) => { let fs = size; doc.setFontSize(fs); while (fs > 6 && doc.getTextWidth(t) > maxW) doc.setFontSize(fs -= 0.5); doc.text(t, x, yy); };
+  doc.setFillColor(...SOFT); doc.roundedRect(BX, y - 4, BW, 22, 2, 2, "F");
+  doc.setFont("helvetica", "bold"); doc.setTextColor(...MUT);
+  fitText("VALOR RECEBIDO", BX + 4, y + 2, BW - 8, 8);
+  doc.setTextColor(...ACC); fitText(money(v), BX + 4, y + 12, BW - 8, 17);
+  doc.setTextColor(...MUT);
+  fitText("DATA", M, y + 2, C1 - M - GAP, 8); fitText("TIPO", C1, y + 2, C2 - C1 - GAP, 8); fitText("FORMA DE PAGAMENTO", C2, y + 2, BX - C2 - GAP, 8);
+  doc.setFont("helvetica", "normal"); doc.setTextColor(...INK);
+  fitText(fmtDate(r.date), M, y + 8, C1 - M - GAP, 10.5); fitText(kindLabel(r), C1, y + 8, C2 - C1 - GAP, 10.5); fitText(r.method, C2, y + 8, BX - C2 - GAP, 10.5);
   y += 34;
   const who = bizName(profile) || "o prestador";
   const payer = r.payer.name + (r.payer.doc ? `, CPF/CNPJ ${r.payer.doc}` : "");
