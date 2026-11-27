@@ -401,7 +401,9 @@ body.pv-open { overflow: hidden; }
   #nav-receipt, #nav-quote { display: none; }
   #top-receipt, #top-quote { display: inline-flex; }
   #rbar .in { flex-wrap: wrap; row-gap: 6px; }
-  #rbar .in > div:first-child { width: 100%; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  #rbar .in > .tot { width: 100%; justify-content: space-between; gap: 8px; }
+  #rbar .tv { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  #rbar .btn.view { min-height: 44px; padding-block: 4px; }
   #rbar .in > .row { width: 100%; display: grid; grid-template-columns: repeat(3, auto); gap: 8px; }
   #rbar .in > .row .btn { justify-content: center; padding-inline: 6px; white-space: nowrap; }
 }
@@ -1186,7 +1188,7 @@ body.pv-open { overflow: hidden; }
 </div>
 <div class="bar" id="rbar" hidden>
   <div class="in">
-    <div><div class="hint">Valor do recibo</div><div class="total" id="rbar-total">R$ 0,00</div></div>
+    <div class="tot"><div class="tv"><div class="hint">Valor do recibo</div><div class="total" id="rbar-total">R$ 0,00</div></div><button class="btn small view" id="rbar-view" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Ver PDF</span></button></div>
     <div class="row">
       <button class="btn" id="btn-r-save">Salvar</button>
       <button class="btn orc" id="rbar-quote" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span>Orçamento</span></button>
@@ -3804,6 +3806,15 @@ async function printQuote(q) {
   await prepLogo();
   printPdf(buildPdf({ ...q, clientSig: await inkBlue(q.clientSig) }).output("blob"), fileName(q));
 }
+// Ver PDF no recibo (pedido do Marcos, 27/11/2026: "é importante ver o PDF antes de enviar"): mostra como está agora,
+// sem salvar e sem gastar número; "Enviar" na folha faz o mesmo que o botão Enviar recibo
+$("rbar-view").onclick = async () => {
+  const r = JSON.parse(JSON.stringify(receipt));
+  if (!r.number) r.number = parseNum(profile.nextReceipt) || 1;
+  r.mySig = sigRMe.value(); r.payerSig = sigRPayer.value();
+  viewDocPdf({ name: receiptFileName(r), title: `Recibo nº ${pad4(r.number)}${r.payer.name ? " · " + r.payer.name : ""}`,
+    build: async () => buildReceiptPdf({ ...r, mySig: await inkBlue(r.mySig), payerSig: await inkBlue(r.payerSig) }), onSend: () => $("btn-r-pdf").click() });
+};
 async function printReceipt(r) {
   if (!window.jspdf) return toast("O gerador de PDF não carregou. Verifique a internet.");
   await prepLogo();
@@ -4056,7 +4067,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "93";
+const APP_VERSION = "94";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
