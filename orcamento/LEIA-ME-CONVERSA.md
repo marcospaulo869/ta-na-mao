@@ -551,3 +551,8 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
 - Marcos mostrou o PDF com "FORMA DE PAGAMENTO" encostando em "VALOR RECEBIDO". Colunas Data / Tipo / Forma mais juntas
   (M, M+30, M+64), caixa do valor mais estreita (54 mm) e cada texto diminui a letra se não couber na coluna (fitText).
   Conferido com "Transferência bancária", "Entrada (33,33%)" e R$ 100.000,00. Teste: .testes/t93.js.
+
+### v94 (27/11/2026) - Botão "Ver PDF" na barra do recibo
+- Marcos: "é importante ver o PDF antes de enviar". Botão Ver PDF ao lado de "Valor do recibo" (#rbar-view), igual ao do
+  orçamento e do demonstrativo. Mostra a folha como está agora, sem salvar e sem gastar número; na folha dá para Fechar,
+  Imprimir ou Enviar PDF (faz o mesmo que Enviar recibo). No celular fica na linha do valor, à direita. Teste: .testes/t94.js.
