@@ -546,3 +546,8 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
 - As contas de saldo (já pago, saldo a receber, próximo recibo, demonstrativo) contam o valor antes do desconto, porque
   o desconto também quita a dívida. Na tabela do orçamento a linha é "Este recibo (quitado, com o desconto)".
 - Campo receipt.discount (R$). Teste: .testes/t92.js.
+
+### v93 (27/11/2026) - PDF do recibo: forma de pagamento não invade a caixa do valor
+- Marcos mostrou o PDF com "FORMA DE PAGAMENTO" encostando em "VALOR RECEBIDO". Colunas Data / Tipo / Forma mais juntas
+  (M, M+30, M+64), caixa do valor mais estreita (54 mm) e cada texto diminui a letra se não couber na coluna (fitText).
+  Conferido com "Transferência bancária", "Entrada (33,33%)" e R$ 100.000,00. Teste: .testes/t93.js.
