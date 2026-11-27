@@ -919,11 +919,12 @@ body.pv-open { overflow: hidden; }
     <section class="card">
       <h2>Pagamento</h2>
       <div class="grid2">
-        <div class="field"><label for="r-amount">Valor recebido (R$)</label><input id="r-amount" class="num" inputmode="decimal"></div>
+        <div class="field"><label for="r-amount" id="r-amount-l">Valor recebido (R$)</label><input id="r-amount" class="num" inputmode="decimal"></div>
         <div class="field"><label for="r-method">Forma de pagamento</label><select id="r-method">
           <option>Pix</option><option>Dinheiro</option><option>Cartão de crédito</option><option>Cartão de débito</option><option>Transferência bancária</option><option>Boleto</option><option>Cheque</option>
         </select></div>
       </div>
+      <div class="field"><label for="r-disc">Desconto na mão de obra de fabricação (R$)</label><input id="r-disc" class="num" inputmode="decimal" placeholder="0,00"><p class="hint" id="r-disc-res">Digite o valor do desconto. O app calcula a porcentagem.</p></div>
       <div><div class="amount-big" id="r-amount-show">R$ 0,00</div><div class="extenso" id="r-extenso"></div></div>
       <div class="field"><label for="r-serv">Fabricação de (só o nome do móvel)</label><input id="r-serv" autocomplete="off" autocapitalize="none" autocorrect="on" spellcheck="true" placeholder="Ex.: conjunto de cozinha"><p class="hint" id="r-serv-hint" hidden></p></div>
       <div class="field"><label for="r-desc">Referente a</label><textarea id="r-desc" data-fix="text" autocapitalize="sentences" autocorrect="on" spellcheck="true" style="min-height:90px" placeholder="Ex.: entrada do serviço de marcenaria da cozinha planejada"></textarea>
@@ -4055,7 +4056,7 @@ const codeNumber = (n) => { const m = String(n || "").match(/(\d+)\D*$/); return
 const byQuoteNumber = (a, b) => (appNumber(b.number) - appNumber(a.number)) || (codeNumber(b.number) - codeNumber(a.number)) || String(b.start || "").localeCompare(String(a.start || ""));
 
 // Versão do app, mostrada no fim do Início: ajuda a saber se o celular já abriu a versão nova
-const APP_VERSION = "91";
+const APP_VERSION = "92";
 $("home-ver").textContent = `Versão ${APP_VERSION}`;
 
 /* ---------- Cópia de segurança (07/10/2026: o Marcos abriu o app no celular e o cadastro tinha sumido) ----------
@@ -4464,7 +4465,7 @@ function extenso(v) {
 let receipts = [];
 const KIND = { total: "Pagamento total", entrada: "Entrada", parcela: "Parcela", saldo: "Saldo final" };
 const kindLabel = (r) => (KIND[r.kind] || "") + (r.pct && (r.kind === "entrada" || r.kind === "parcela") ? ` (${fmtPct(r.pct)}%)` : "");
-const blankReceipt = () => ({ id: "", number: 0, date: todayISO(), kind: "total", pct: 0, serv: "", descAuto: true, payer: { name: "", doc: "", phone: "", email: "" }, amount: 0, method: "Pix", desc: "", quoteId: "", quoteNumber: 0, quoteTotal: 0, quoteFull: 0, base: "total", proof: null, mySig: profile.signature || "", payerSig: "" });
+const blankReceipt = () => ({ id: "", number: 0, date: todayISO(), kind: "total", pct: 0, serv: "", descAuto: true, payer: { name: "", doc: "", phone: "", email: "" }, amount: 0, discount: 0, method: "Pix", desc: "", quoteId: "", quoteNumber: 0, quoteTotal: 0, quoteFull: 0, base: "total", proof: null, mySig: profile.signature || "", payerSig: "" });
 let receipt = blankReceipt();
 const sigRMe = SigPad($("sig-r-me"), () => { receipt.mySig = sigRMe.value(); });
 const sigRPayer = SigPad($("sig-r-payer"), () => { receipt.payerSig = sigRPayer.value(); });
@@ -4482,6 +4483,12 @@ const pctOf = (v, T) => (T > 0 ? `${fmtPct(Math.round(v / T * 1000) / 10)}%` : "
 // Números do demonstrativo (tela e PDF)
 const receiptDemo = (r) => { const T = parseNum(r.quoteTotal), before = cents(paidBefore(r)), v = parseNum(r.amount), paid = cents(before + v); return { T, before, v, paid, saldo: cents(Math.max(0, T - before)), left: cents(Math.max(0, T - paid)) }; };
 const receivedFor = (quoteId, exceptId, base) => receipts.filter((r) => r.quoteId === quoteId && r.id !== exceptId && (!base || sameGroup({ base }, r))).reduce((s, r) => s + parseNum(r.amount), 0);
+// Desconto na mão de obra de fabricação (pedido do Marcos, 27/11/2026): ele digita o desconto em R$ e o app mostra a %.
+// receipt.amount continua sendo o valor que o recibo quita (as contas de saldo não mudam); o cliente paga amount - discount.
+const R_DISC = "Desconto na mão de obra de fabricação";
+const rDisc = (r) => cents(Math.min(Math.max(0, parseNum(r.discount)), Math.max(0, parseNum(r.amount))));
+const rNet = (r) => cents(Math.max(0, parseNum(r.amount) - rDisc(r)));
+const rDiscPct = (r) => (parseNum(r.amount) > 0 ? Math.round(rDisc(r) / parseNum(r.amount) * 10000) / 100 : 0);
 const pad4 = (n) => String(n || 0).padStart(4, "0");
 // Recibo só da mão de obra (pedido do Marcos, 23/11/2026): o cliente paga o material direto na loja e o Marcos recebe só a
 // mão de obra; dela, 50% na entrada e 50% na entrega. receipt.base = "labor" (padrão dos recibos novos feitos de um orçamento)
@@ -4512,10 +4519,14 @@ const cleanServ = (s) => {
 };
 
 function renderReceiptAmount() {
-  const v = parseNum(receipt.amount);
+  const v = rNet(receipt), dc = rDisc(receipt);
   $("r-amount-show").textContent = money(v);
   $("r-extenso").textContent = v ? "(" + extenso(v) + ")" : "";
   $("rbar-total").textContent = money(v);
+  $("r-amount-l").textContent = dc > 0 ? "Valor antes do desconto (R$)" : "Valor recebido (R$)";
+  $("r-disc-res").textContent = parseNum(receipt.discount) > parseNum(receipt.amount) + 0.004 ? "O desconto é maior que o valor. Confira o valor antes do desconto."
+    : dc > 0 ? `${money(dc)} = ${fmtPct(rDiscPct(receipt))}% de ${money(parseNum(receipt.amount))}. Valor recebido: ${money(v)}.`
+    : "Digite o valor do desconto. O app calcula a porcentagem.";
   if (receipt.quoteId) renderReceiptDemo();
   $("r-link").hidden = !receipt.quoteId;
   renderReceiptBase();
@@ -4565,11 +4576,13 @@ function receiptAutoDesc(r) {
   const pct = T > 0 ? (parseNum(r.pct) && (r.kind === "entrada" || r.kind === "parcela") && cents(T * parseNum(r.pct) / 100) === v ? parseNum(r.pct) : Math.round(v / T * 10000) / 100) : 0;
   const num = r.quoteNumber ? ` (orçamento nº ${pad4(r.quoteNumber)})` : "";
   // ex.: "Entrada de 50% (R$ 2.482,14) do valor da mão de obra de R$ 4.964,28 da fabricação de conjunto de cozinha (orçamento nº 0004)."
-  if (baseOf(r) === "outside" && T > 0) return `${pct === 100 ? `${lead} de 100%` : `${lead} de ${fmtPct(pct)}% (${money(v)})`} do valor dos materiais comprados fora de ${money(T)}, para a fabricação de ${serv}${num}.`;
-  if (isLabor(r) && T > 0) return `${pct === 100 ? `${lead} de 100%` : `${lead} de ${fmtPct(pct)}% (${money(v)})`} do valor da mão de obra de ${money(T)} da fabricação de ${serv}${num}.`;
+  if (baseOf(r) === "outside" && T > 0) return `${pct === 100 ? `${lead} de 100%` : `${lead} de ${fmtPct(pct)}% (${money(v)})`} do valor dos materiais comprados fora de ${money(T)}, para a fabricação de ${serv}${num}${discTxt(r)}.`;
+  if (isLabor(r) && T > 0) return `${pct === 100 ? `${lead} de 100%` : `${lead} de ${fmtPct(pct)}% (${money(v)})`} do valor da mão de obra de ${money(T)} da fabricação de ${serv}${num}${discTxt(r)}.`;
   const part = !T ? `${lead} de ${money(v)}` : pct === 100 ? `${lead} de 100% do valor total de ${money(T)}` : `${lead} de ${fmtPct(pct)}% (${money(v)}) do valor total de ${money(T)}`;
-  return `${part} do serviço de mão de obra de fabricação de ${serv}${r.quoteNumber ? ` (orçamento nº ${pad4(r.quoteNumber)})` : ""}.`;
+  return `${part} do serviço de mão de obra de fabricação de ${serv}${r.quoteNumber ? ` (orçamento nº ${pad4(r.quoteNumber)})` : ""}${discTxt(r)}.`;
 }
+// ", com desconto na mão de obra de fabricação de R$ 500,00 (5%)" no fim do "Referente a"
+const discTxt = (r) => (rDisc(r) > 0 ? `, com ${R_DISC.toLocaleLowerCase("pt-BR")} de ${money(rDisc(r))} (${fmtPct(rDiscPct(r))}%)` : "");
 function renderReceiptDesc() {
   if (receipt.descAuto) { receipt.desc = receiptAutoDesc(receipt); if (document.activeElement !== $("r-desc")) { $("r-desc").value = receipt.desc; growBox($("r-desc")); } }
   $("r-desc-hint").hidden = !receipt.descAuto;
@@ -4860,6 +4873,7 @@ function renderReceipt() {
   for (const k of ["name", "doc", "phone", "email"]) $("r-" + k).value = receipt.payer[k] || "";
   markOwnPhone("r-phone");
   if (document.activeElement !== $("r-amount")) $("r-amount").value = numIn(receipt.amount);
+  if (document.activeElement !== $("r-disc")) $("r-disc").value = parseNum(receipt.discount) > 0 ? numIn(receipt.discount) : "";
   $("r-desc").value = receipt.desc; $("r-serv").value = receipt.serv || "";
   sigRMe.set(receipt.mySig); sigRPayer.set(receipt.payerSig);
   renderReceiptAmount();
@@ -4877,6 +4891,7 @@ $("r-amount").oninput = (e) => {
   if (receipt.autoKind && receipt.quoteId) { receipt.kind = receipt.amount < rLeft() - 0.004 ? "parcela" : "saldo"; $("r-kind").value = receipt.kind; }
   renderReceiptAmount();
 };
+$("r-disc").oninput = (e) => { receipt.discount = cents(parseNum(e.target.value)); renderReceiptAmount(); };
 $("r-desc").oninput = (e) => { receipt.desc = e.target.value; receipt.descAuto = false; $("r-desc-hint").hidden = true; $("r-desc-auto").hidden = false; }; // mudou à mão: para de se ajustar
 const newReceipt = () => { receipt = blankReceipt(); renderReceipt(); window.scrollTo(0, 0); };
 const receiptDraft = () => !receipt.id && !!(receipt.payer.name.trim() || parseNum(receipt.amount) > 0);
@@ -4956,7 +4971,7 @@ function receiptProblem() {
 }
 
 function buildReceiptPdf(r) {
-  const num = pad4(r.number), v = parseNum(r.amount);
+  const num = pad4(r.number), v = rNet(r), dc = rDisc(r);
   const { doc, header, W, M, ACC, INK, MUT, LINE, HEAD, HEADTXT, SOFT } = pdfDoc("RECIBO", num);
   header();
   let y = 44;
@@ -4978,13 +4993,24 @@ function buildReceiptPdf(r) {
   const body = `Recebi(emos) de ${payer}, a importância de ${money(v)} (${extenso(v)}), referente ${prep} ${ref}, paga por ${r.method.toLowerCase()}.\n\nPara maior clareza, firmo(amos) o presente recibo, dando quitação do valor acima recebido.`;
   doc.setFontSize(11.5);
   for (const ln of doc.splitTextToSize(body, W - 2 * M)) { doc.text(ln, M, y); y += 6.2; }
+  if (dc > 0) { // valor, desconto na mão de obra de fabricação (com a %) e o que foi recebido
+    y += 2;
+    doc.autoTable({
+      startY: y, margin: { left: M, right: M },
+      body: [["Valor antes do desconto", money(parseNum(r.amount))], [`${R_DISC} (${fmtPct(rDiscPct(r))}%)`, "- " + money(dc)], ["Valor recebido", money(v)]],
+      styles: { font: "helvetica", fontSize: 9.5, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
+      columnStyles: { 1: { halign: "right", cellWidth: 58 } },
+      didParseCell: (c) => { if (c.row.index === 1) { c.cell.styles.textColor = [176, 32, 32]; c.cell.styles.fontStyle = "bold"; } if (c.row.index === 2) c.cell.styles.fontStyle = "bold"; },
+    });
+    y = doc.lastAutoTable.finalY + 4;
+  }
   if (r.quoteId) {
     const d = receiptDemo(r), P = (n) => (d.T > 0 ? `${money(n)} (${pctOf(n, d.T)})` : money(n));
     y += 4;
     doc.autoTable({
       startY: y, margin: { left: M, right: M },
       head: [[`Orçamento nº ${pad4(r.quoteNumber)}`, "Valor"]],
-      body: [[bt(r).total, money(d.T)], ["Já pago antes deste recibo", P(d.before)], [bt(r).left, P(d.saldo)], ["Este recibo", P(d.v)],
+      body: [[bt(r).total, money(d.T)], ["Já pago antes deste recibo", P(d.before)], [bt(r).left, P(d.saldo)], [dc > 0 ? "Este recibo (quitado, com o desconto)" : "Este recibo", P(d.v)],
         ["Total pago até agora", P(d.paid)], ["Saldo depois deste recibo", P(d.left)]],
       styles: { font: "helvetica", fontSize: 9.5, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
       headStyles: { fillColor: HEAD, textColor: HEADTXT }, columnStyles: { 1: { halign: "right", cellWidth: 58 } },
@@ -5020,7 +5046,7 @@ $("btn-r-pdf").onclick = async () => {
 const receiptFileName = (r) => `Recibo-${pad4(r.number)}-${(r.payer.name || "cliente").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
 async function sendReceipt(r) {
   const first = (r.payer.name || "").split(" ")[0];
-  const message = `Olá${first ? " " + first : ""}! Segue o recibo nº ${pad4(r.number)} do pagamento de ${money(parseNum(r.amount))} recebido em ${fmtDate(r.date)}. Obrigado pela confiança!${bizName(profile) ? "\n" + bizName(profile) : ""}`;
+  const message = `Olá${first ? " " + first : ""}! Segue o recibo nº ${pad4(r.number)} do pagamento de ${money(rNet(r))} recebido em ${fmtDate(r.date)}. Obrigado pela confiança!${bizName(profile) ? "\n" + bizName(profile) : ""}`;
   const name = receiptFileName(r);
   await prepLogo();
   const pr = { ...r, mySig: await inkBlue(r.mySig), payerSig: await inkBlue(r.payerSig) }; // assinaturas antigas em preto saem azuis
@@ -5036,8 +5062,8 @@ function renderReceipts() {
   for (const r of list) {
     const el = document.createElement("div"); el.className = "q";
     el.innerHTML = `<div><strong></strong><span class="pill">${kindLabel(r)}</span>
-      <div class="meta">Nº ${pad4(r.number)} · ${fmtDate(r.date)} · ${r.method}${r.quoteNumber ? " · Orçamento nº " + pad4(r.quoteNumber) : ""}</div></div>
-      <div class="val">${money(parseNum(r.amount))}</div>
+      <div class="meta">Nº ${pad4(r.number)} · ${fmtDate(r.date)} · ${r.method}${r.quoteNumber ? " · Orçamento nº " + pad4(r.quoteNumber) : ""}${rDisc(r) > 0 ? " · desconto " + money(rDisc(r)) : ""}</div></div>
+      <div class="val">${money(rNet(r))}</div>
       <div class="row" style="grid-column:1/-1">
         <button class="btn small wa" data-a="send">Enviar recibo</button>
         <button class="btn small" data-a="open">Abrir</button>
@@ -5137,7 +5163,7 @@ const stmContractOf = (q) => {
   return c;
 };
 const R2S_KIND = { total: "pagamento", entrada: "entrada", parcela: "parcela", saldo: "saldo" };
-const lineFromReceipt = (r) => stmLine({ date: r.date || todayISO(), desc: `Recibo nº ${pad4(r.number)}${r.method ? " (" + r.method + ")" : ""}`, pay: M2PAY[r.method] || "",
+const lineFromReceipt = (r) => stmLine({ date: r.date || todayISO(), desc: `Recibo nº ${pad4(r.number)}${r.method ? " (" + r.method + ")" : ""}${rDisc(r) > 0 ? `, com desconto de ${money(rDisc(r))}` : ""}`, pay: M2PAY[r.method] || "",
   kind: R2S_KIND[r.kind] || "pagamento", on: baseOf(r) === "labor" ? "labor" : baseOf(r) === "outside" ? "material" : "both", value: parseNum(r.amount), rid: r.id });
 const stmNewReceipts = (s) => { const have = new Set(s.lines.map((l) => l.rid).filter(Boolean)); return s.quoteId ? receipts.filter((r) => r.quoteId === s.quoteId && !have.has(r.id)) : []; };
 function pullStmReceipts() {
@@ -5830,7 +5856,7 @@ function renderHome() {
   $("home-hello").textContent = first ? `Olá, ${first}` : "Bem-vindo";
   $("st-quotes").textContent = String(quotes.length);
   const ym = todayISO().slice(0, 7);
-  $("st-month").textContent = money(receipts.filter((r) => (r.date || "").startsWith(ym)).reduce((s, r) => s + parseNum(r.amount), 0));
+  $("st-month").textContent = money(receipts.filter((r) => (r.date || "").startsWith(ym)).reduce((s, r) => s + rNet(r), 0));
   const open = quotes.reduce((s, q) => {
     const rs = receipts.filter((r) => r.quoteId === q.id); if (!rs.length) return s;
     const sum = (list) => list.reduce((a, r) => a + parseNum(r.amount), 0);
