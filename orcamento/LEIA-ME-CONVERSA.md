@@ -535,3 +535,14 @@ Veja "O que falta" no Panorama, no começo deste arquivo.
 - Colar do WhatsApp: quadro pontilhado (toque e segure, Colar) e botão "Colar". Texto preenche valor (depois de
   "total" ou o maior R$), nº da nota e descrição; foto/print/PDF vira a foto da nota (IndexedDB, entra na cópia de segurança).
   Teste: .testes/t89.js.
+
+### v92 (27/11/2026) - Desconto na mão de obra de fabricação no recibo
+- Campo novo "Desconto na mão de obra de fabricação (R$)" no recibo, abaixo de Valor / Forma de pagamento. O Marcos
+  digita o desconto em R$ e o app mostra a % ("R$ 500,00 = 10% de R$ 5.000,00. Valor recebido: R$ 4.500,00").
+- Com desconto, o campo de valor passa a se chamar "Valor antes do desconto". O valor grande, o valor por extenso, a barra
+  de baixo, a lista de Salvos, a mensagem do WhatsApp e o "Recebido no mês" usam o valor recebido (valor menos desconto).
+- O "Referente a" automático termina com ", com desconto na mão de obra de fabricação de R$ 500,00 (10%)".
+- PDF: a importância é o valor recebido; quadro Valor antes do desconto / Desconto (x%) em vermelho / Valor recebido.
+- As contas de saldo (já pago, saldo a receber, próximo recibo, demonstrativo) contam o valor antes do desconto, porque
+  o desconto também quita a dívida. Na tabela do orçamento a linha é "Este recibo (quitado, com o desconto)".
+- Campo receipt.discount (R$). Teste: .testes/t92.js.
